@@ -1,0 +1,27 @@
+{
+  "name": "whatsapp-auto-responder",
+  "version": "1.0.0",
+  "description": "Répondeur automatique WhatsApp avec IA Claude",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "prod": "pm2 start ecosystem.config.js",
+    "logs": "pm2 logs whatsapp-bot",
+    "stop": "pm2 stop whatsapp-bot",
+    "restart": "pm2 restart whatsapp-bot",
+    "contacts": "node show-contacts.js",
+    "setup-db": "node setup-db.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.13.6",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "groq-sdk": "^0.37.0",
+    "mysql2": "^3.18.2",
+    "openai": "^6.25.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}

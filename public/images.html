@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>صور الزبائن — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white; text-decoration: none; margin-right: 12px;
+      font-size: 0.88rem; padding: 6px 12px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    /* ── Stats ── */
+    .stats { display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap; }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 16px 22px;
+      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+    }
+    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      padding: 0 24px 16px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1; min-width: 180px;
+      padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.9rem; outline: none; direction: rtl;
+    }
+    .search-input:focus { border-color: #128c7e; }
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-green { background: #25d366; color: white; }
+
+    /* ── Gallery ── */
+    .gallery-wrap { padding: 0 24px 32px; }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .img-card {
+      background: white; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .img-card:hover { transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+    .img-card img {
+      width: 100%; height: 160px; object-fit: cover;
+      display: block; background: #eee;
+    }
+    .img-info {
+      padding: 10px 12px;
+      font-size: 0.8rem; color: #555;
+    }
+    .img-info .phone-tag {
+      background: #e8f5e9; color: #2e7d32;
+      padding: 2px 8px; border-radius: 6px;
+      font-family: monospace; font-size: 0.78rem;
+      display: inline-block; margin-bottom: 4px;
+    }
+    .img-info .time { color: #999; font-size: 0.76rem; }
+    .img-info .size { color: #aaa; font-size: 0.74rem; }
+
+    /* ── Lightbox ── */
+    #lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); z-index: 200;
+      align-items: center; justify-content: center; flex-direction: column;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 90vw; max-height: 80vh;
+      border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #lightbox .lb-info {
+      color: white; margin-top: 14px; font-size: 0.88rem; text-align: center;
+    }
+    #lightbox .lb-close {
+      position: absolute; top: 20px; left: 20px;
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+    }
+    #lightbox .lb-download {
+      margin-top: 12px; padding: 8px 20px;
+      background: #25d366; color: white; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.88rem; font-weight: 600; text-decoration: none;
+    }
+
+    .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 22px;
+      border-radius: 10px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 300;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📸 صور الزبائن</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/messages.html">💬 الرسائل</a>
+    <a href="/responses.html">📋 الردود</a>
+    <a href="/images.html" class="active">📸 الصور</a>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الصور</div></div>
+  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">صور اليوم</div></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف...">
+  <button class="btn btn-green" onclick="load()">🔄 تحديث</button>
+</div>
+
+<!-- Gallery -->
+<div class="gallery-wrap">
+  <div class="gallery" id="gallery">
+    <div class="empty" style="grid-column:1/-1">جاري التحميل...</div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <button class="lb-close" onclick="closeLb()">✕</button>
+  <img id="lbImg" src="" alt="">
+  <div class="lb-info" id="lbInfo"></div>
+  <a id="lbDownload" href="#" download class="lb-download">⬇️ تحميل الصورة</a>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  async function loadStats() {
+    try {
+      const res   = await fetch("/api/images/stats");
+      const stats = await res.json();
+      document.getElementById("sTotal").textContent = stats.total;
+      document.getElementById("sToday").textContent = stats.today;
+    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+  }
+
+  async function load() {
+    const phone = document.getElementById("searchPhone").value.trim();
+    let url = "/api/images?limit=100";
+    if (phone) url += `&phone=${encodeURIComponent(phone)}`;
+    try {
+      const res  = await fetch(url);
+      const list = await res.json();
+      renderGallery(list);
+    } catch { showToast("❌ خطأ في تحميل الصور"); }
+  }
+
+  function renderGallery(list) {
+    const g = document.getElementById("gallery");
+    if (!list.length) {
+      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد صور مستلمة بعد 📭</div>`;
+      return;
+    }
+    g.innerHTML = list.map(img => {
+      const src  = `/uploads/images/${img.filename}`;
+      const time = new Date(img.created_at).toLocaleString("ar-MA");
+      const kb   = (img.filesize / 1024).toFixed(1);
+      return `
+        <div class="img-card" onclick="openLb('${src}', '${img.name}', '+${img.phone}', '${time}')">
+          <img src="${src}" alt="صورة ${img.name}" loading="lazy"
+               onerror="this.style.height='80px';this.style.background='#f5f5f5';">
+          <div class="img-info">
+            <b>${img.name}</b><br>
+            <span class="phone-tag">+${img.phone}</span><br>
+            <span class="time">${time}</span>
+            <span class="size"> · ${kb} KB</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function openLb(src, name, phone, time) {
+    document.getElementById("lbImg").src       = src;
+    document.getElementById("lbInfo").textContent = `${name} ${phone} — ${time}`;
+    document.getElementById("lbDownload").href  = src;
+    document.getElementById("lbDownload").download = src.split("/").pop();
+    document.getElementById("lightbox").classList.add("open");
+  }
+
+  function closeLb() {
+    document.getElementById("lightbox").classList.remove("open");
+    document.getElementById("lbImg").src = "";
+  }
+
+  document.getElementById("lightbox").addEventListener("click", function(e) {
+    if (e.target === this) closeLb();
+  });
+
+  document.getElementById("searchPhone").addEventListener("input", load);
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadStats();
+  load();
+  setInterval(() => { loadStats(); load(); }, 30000);
+</script>
+</body>
+</html>

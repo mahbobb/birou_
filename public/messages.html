@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سجل الرسائل — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white; text-decoration: none; margin-right: 16px;
+      font-size: 0.9rem; opacity: 0.85; padding: 6px 12px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); opacity: 1; }
+
+    .stats {
+      display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 16px 22px;
+      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+    }
+    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+
+    .toolbar {
+      padding: 0 24px 12px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .search-input, select {
+      padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.9rem; outline: none; direction: rtl;
+    }
+    .search-input { flex: 1; min-width: 180px; }
+    .search-input:focus, select:focus { border-color: #128c7e; }
+
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: opacity 0.2s; white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-green  { background: #25d366; color: white; }
+    .btn-gray   { background: #aaa; color: white; }
+
+    .table-wrap { padding: 0 24px 24px; overflow-x: auto; }
+    table {
+      width: 100%; background: white; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-collapse: collapse;
+    }
+    thead { background: #075e54; color: white; }
+    th, td { padding: 11px 14px; text-align: right; font-size: 0.87rem; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fffe; }
+
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 600;
+    }
+    .badge-in  { background: #e3f2fd; color: #1565c0; }
+    .badge-out { background: #e8f5e9; color: #2e7d32; }
+    .badge-ai     { background: #f3e5f5; color: #6a1b9a; }
+    .badge-custom { background: #fff3e0; color: #e65100; }
+    .badge-user   { background: #e3f2fd; color: #1565c0; }
+    .badge-manual { background: #fce4ec; color: #880e4f; }
+
+    .phone-tag {
+      background: #e8f5e9; color: #2e7d32;
+      padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-family: monospace;
+    }
+    .msg-body { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .time { color: #888; font-size: 0.8rem; white-space: nowrap; }
+
+    .empty { text-align: center; padding: 40px; color: #aaa; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 22px;
+      border-radius: 10px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+
+    .pagination {
+      display: flex; justify-content: center; gap: 8px;
+      padding: 16px 24px;
+    }
+    .page-btn {
+      padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px;
+      background: white; cursor: pointer; font-size: 0.85rem;
+    }
+    .page-btn.active { background: #075e54; color: white; border-color: #075e54; }
+    .page-btn:hover:not(.active) { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💬 سجل الرسائل</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/messages.html" class="active">💬 الرسائل</a>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الرسائل</div></div>
+  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">رسائل اليوم</div></div>
+  <div class="stat-card"><div class="num" id="sIn">—</div><div class="label">📥 واردة</div></div>
+  <div class="stat-card"><div class="num" id="sOut">—</div><div class="label">📤 صادرة</div></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف...">
+  <select id="filterDir">
+    <option value="">كل الرسائل</option>
+    <option value="in">📥 واردة</option>
+    <option value="out">📤 صادرة</option>
+  </select>
+  <select id="filterSource">
+    <option value="">كل المصادر</option>
+    <option value="user">👤 مستخدم</option>
+    <option value="ai">🤖 ذكاء اصطناعي</option>
+    <option value="custom">📋 مبرمج</option>
+    <option value="manual">✍️ يدوي</option>
+  </select>
+  <button class="btn btn-green" onclick="loadMessages()">🔄 تحديث</button>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>الاسم</th>
+        <th>الهاتف</th>
+        <th>الاتجاه</th>
+        <th>الرسالة</th>
+        <th>المصدر</th>
+        <th>الوقت</th>
+      </tr>
+    </thead>
+    <tbody id="msgBody">
+      <tr><td colspan="7" class="empty">جاري التحميل...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination" id="pagination"></div>
+<div id="toast"></div>
+
+<script>
+  let currentOffset = 0;
+  const LIMIT = 50;
+  let totalMsgs = 0;
+
+  // قراءة الرقم من URL تلقائياً
+  const urlPhone = new URLSearchParams(window.location.search).get("phone");
+  if (urlPhone) {
+    document.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("searchPhone");
+      if (input) { input.value = urlPhone; }
+    });
+  }
+
+  async function loadStats() {
+    try {
+      const res   = await fetch("/api/messages/stats");
+      const stats = await res.json();
+      document.getElementById("sTotal").textContent = stats.total;
+      document.getElementById("sToday").textContent = stats.today;
+      document.getElementById("sIn").textContent    = stats.incoming;
+      document.getElementById("sOut").textContent   = stats.outgoing;
+      totalMsgs = stats.total;
+    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+  }
+
+  async function loadMessages(offset = 0) {
+    currentOffset = offset;
+    const phone  = document.getElementById("searchPhone").value.trim();
+    const dir    = document.getElementById("filterDir").value;
+    const source = document.getElementById("filterSource").value;
+
+    let url = `/api/messages?limit=${LIMIT}&offset=${offset}`;
+    if (phone)  url += `&phone=${encodeURIComponent(phone)}`;
+
+    try {
+      const res  = await fetch(url);
+      let   list = await res.json();
+
+      if (dir)    list = list.filter(m => m.direction === dir);
+      if (source) list = list.filter(m => m.source    === source);
+
+      renderTable(list);
+      renderPagination();
+    } catch { showToast("❌ خطأ في تحميل الرسائل"); }
+  }
+
+  function renderTable(list) {
+    const body = document.getElementById("msgBody");
+    if (!list.length) {
+      body.innerHTML = `<tr><td colspan="7" class="empty">لا توجد رسائل</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map((m, i) => {
+      const time = new Date(m.created_at).toLocaleString("ar-MA");
+      const dirBadge    = m.direction === "in"
+        ? `<span class="badge badge-in">📥 واردة</span>`
+        : `<span class="badge badge-out">📤 صادرة</span>`;
+      const srcBadge = {
+        ai:     `<span class="badge badge-ai">🤖 IA</span>`,
+        custom: `<span class="badge badge-custom">📋 مبرمج</span>`,
+        user:   `<span class="badge badge-user">👤 مستخدم</span>`,
+        manual: `<span class="badge badge-manual">✍️ يدوي</span>`,
+      }[m.source] || `<span class="badge badge-gray">${m.source}</span>`;
+
+      return `<tr>
+        <td>${currentOffset + i + 1}</td>
+        <td><b>${m.name}</b></td>
+        <td><span class="phone-tag">+${m.phone}</span></td>
+        <td>${dirBadge}</td>
+        <td class="msg-body" title="${m.body.replace(/"/g,'&quot;')}">${m.body}</td>
+        <td>${srcBadge}</td>
+        <td class="time">${time}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderPagination() {
+    const total = totalMsgs;
+    const pages = Math.ceil(total / LIMIT);
+    const cur   = Math.floor(currentOffset / LIMIT);
+    const pg    = document.getElementById("pagination");
+    if (pages <= 1) { pg.innerHTML = ""; return; }
+
+    let html = "";
+    if (cur > 0) html += `<button class="page-btn" onclick="loadMessages(${(cur-1)*LIMIT})">◀ السابق</button>`;
+    for (let p = Math.max(0, cur-2); p <= Math.min(pages-1, cur+2); p++) {
+      html += `<button class="page-btn ${p===cur?'active':''}" onclick="loadMessages(${p*LIMIT})">${p+1}</button>`;
+    }
+    if (cur < pages-1) html += `<button class="page-btn" onclick="loadMessages(${(cur+1)*LIMIT})">التالي ▶</button>`;
+    pg.innerHTML = html;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  // فلترة فورية عند الكتابة
+  document.getElementById("searchPhone").addEventListener("input", () => loadMessages(0));
+  document.getElementById("filterDir").addEventListener("change",    () => loadMessages(0));
+  document.getElementById("filterSource").addEventListener("change", () => loadMessages(0));
+
+  // إذا جاء رقم من URL — ضعه في الخانة وفلتر مباشرة
+  if (urlPhone) {
+    document.getElementById("searchPhone").value = urlPhone;
+  }
+
+  loadStats();
+  loadMessages();
+  setInterval(() => { loadStats(); loadMessages(currentOffset); }, 30000);
+</script>
+</body>
+</html>

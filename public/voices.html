@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رسائل صوتية — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white; text-decoration: none; margin-right: 12px;
+      font-size: 0.88rem; padding: 6px 12px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    .stats { display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap; }
+    .stat-card {
+      background: white; border-radius: 12px; padding: 16px 22px;
+      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+    }
+    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+
+    .toolbar {
+      padding: 0 24px 16px;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .search-input {
+      flex: 1; padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.9rem; outline: none; direction: rtl;
+    }
+    .search-input:focus { border-color: #128c7e; }
+    .btn {
+      padding: 8px 16px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-green  { background: #25d366; color: white; }
+    .btn-blue   { background: #128c7e; color: white; }
+    .btn-red    { background: #e53935; color: white; }
+
+    .list-wrap { padding: 0 24px 32px; }
+
+    .voice-card {
+      background: white; border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .voice-icon {
+      font-size: 2rem; width: 50px; height: 50px;
+      background: #e8f5e9; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .voice-info { flex: 1; min-width: 140px; }
+    .voice-info .sender { font-weight: 700; font-size: 0.95rem; }
+    .voice-info .phone-tag {
+      background: #e8f5e9; color: #2e7d32;
+      padding: 2px 8px; border-radius: 6px;
+      font-family: monospace; font-size: 0.78rem;
+      display: inline-block; margin: 4px 0;
+    }
+    .voice-info .meta { font-size: 0.78rem; color: #999; }
+    .voice-note-wrap { width: 100%; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+    .note-input {
+      flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.82rem; direction: rtl; outline: none; font-family: inherit;
+      background: #fafafa; color: #333;
+    }
+    .note-input:focus { border-color: #128c7e; background: white; }
+    .note-save-btn {
+      padding: 5px 12px; background: #128c7e; color: white;
+      border: none; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+    }
+    .note-save-btn:hover { opacity: 0.85; }
+    .voice-player { flex: 1; min-width: 200px; }
+    .voice-player audio { width: 100%; height: 36px; }
+
+    .actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .dl-btn {
+      padding: 6px 14px; background: #075e54; color: white;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .dl-btn:hover { opacity: 0.85; }
+
+    .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
+
+    /* ── Modal ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 16px; padding: 28px;
+      width: 90%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal h3 { margin-bottom: 14px; font-size: 1.1rem; color: #075e54; }
+    .modal .to-info {
+      background: #f5f5f5; border-radius: 8px; padding: 8px 14px;
+      margin-bottom: 14px; font-size: 0.85rem; color: #555;
+    }
+    /* Tabs */
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-btn {
+      flex: 1; padding: 8px; border: 2px solid #ddd; background: white;
+      border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
+      transition: all 0.2s; color: #666;
+    }
+    .tab-btn.active { border-color: #128c7e; background: #e8f5e9; color: #075e54; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .modal textarea {
+      width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd;
+      border-radius: 10px; font-size: 0.9rem; resize: vertical;
+      outline: none; direction: rtl; font-family: inherit;
+    }
+    .modal textarea:focus { border-color: #128c7e; }
+    /* Voice upload */
+    .voice-upload-area {
+      border: 2px dashed #ddd; border-radius: 12px; padding: 24px;
+      text-align: center; cursor: pointer; transition: border-color 0.2s;
+    }
+    .voice-upload-area:hover, .voice-upload-area.drag { border-color: #128c7e; }
+    .voice-upload-area p { color: #888; font-size: 0.88rem; margin-top: 8px; }
+    .voice-upload-area .icon { font-size: 2rem; }
+    #voiceFileInput { display: none; }
+    #voicePreview { margin-top: 12px; width: 100%; display: none; }
+    .voice-name { font-size: 0.8rem; color: #555; margin-top: 6px; text-align: center; }
+    .record-area { text-align: center; margin-bottom: 10px; }
+    .btn-record {
+      background: #128c7e; color: white; padding: 10px 24px;
+      border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-record.recording { background: #e53935; }
+    .or-sep { text-align: center; color: #bbb; font-size: 0.8rem; margin: 8px 0; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 22px;
+      border-radius: 10px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎤 الرسائل الصوتية</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/messages.html">💬 الرسائل</a>
+    <a href="/images.html">📸 الصور</a>
+    <a href="/voices.html" class="active">🎤 الصوتيات</a>
+    <a href="/videos.html">🎬 الفيديوهات</a>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الصوتيات</div></div>
+  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">صوتيات اليوم</div></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف أو تعليق...">
+  <button class="btn btn-green" onclick="load()">🔄 تحديث</button>
+</div>
+
+<!-- List -->
+<div class="list-wrap" id="voiceList">
+  <div class="empty">جاري التحميل...</div>
+</div>
+
+<!-- Reply Modal -->
+<div class="overlay" id="replyOverlay">
+  <div class="modal">
+    <h3>💬 رد على الزبون</h3>
+    <div class="to-info" id="replyTo"></div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabText" onclick="switchTab('text')">📝 نص</button>
+      <button class="tab-btn"        id="tabVoice" onclick="switchTab('voice')">🎤 صوت</button>
+    </div>
+
+    <!-- Text panel -->
+    <div class="tab-panel active" id="panelText">
+      <textarea id="replyText" placeholder="اكتب ردك هنا..."></textarea>
+    </div>
+
+    <!-- Voice panel -->
+    <div class="tab-panel" id="panelVoice">
+      <!-- تسجيل من الميكروفون -->
+      <div class="record-area">
+        <button id="recordBtn" class="btn btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
+        <div id="recordTimer" style="display:none; margin-top:8px; text-align:center; color:#e53935; font-weight:700;">
+          ⏺️ <span id="timerDisplay">0:00</span>
+        </div>
+      </div>
+      <div class="or-sep">— أو اختر ملف —</div>
+      <!-- رفع ملف -->
+      <div class="voice-upload-area" onclick="document.getElementById('voiceFileInput').click()">
+        <div class="icon">📁</div>
+        <p>mp3 · ogg · wav · m4a · opus</p>
+      </div>
+      <input type="file" id="voiceFileInput" accept="audio/*">
+      <audio id="voicePreview" controls style="display:none; margin-top:12px; width:100%;"></audio>
+      <div class="voice-name" id="voiceName"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" style="background:#eee;color:#333" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-green" onclick="sendReply()">إرسال ✉️</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let replyPhone = "";
+  let activeTab  = "text";
+  let voiceData  = null;
+  let voiceMime  = null;
+  let mediaRecorder = null;
+  let recordChunks  = [];
+  let recordInterval = null;
+  let recordSeconds  = 0;
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById("panelText").classList.toggle("active", tab === "text");
+    document.getElementById("panelVoice").classList.toggle("active", tab === "voice");
+    document.getElementById("tabText").classList.toggle("active", tab === "text");
+    document.getElementById("tabVoice").classList.toggle("active", tab === "voice");
+  }
+
+  // إخفاء زر التسجيل إذا الميكروفون غير متاح (HTTP من جهاز آخر)
+  if (!navigator.mediaDevices || !window.isSecureContext) {
+    document.getElementById("recordBtn").style.display = "none";
+    document.getElementById("recordTimer").style.display = "none";
+    document.querySelector(".or-sep").textContent = "اختر ملف صوتي";
+  }
+
+  // ── تسجيل الصوت ──────────────────────────────────────────────────────────
+  async function toggleRecord() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      recordChunks  = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordChunks, { type: "audio/ogg; codecs=opus" });
+        voiceMime = "audio/ogg";
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          voiceData = e.target.result.split(",")[1];
+          const preview = document.getElementById("voicePreview");
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(blob);
+        document.getElementById("voiceName").textContent = `🎙️ تسجيل — ${recordSeconds} ثانية`;
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mediaRecorder.start();
+      recordSeconds = 0;
+      document.getElementById("recordBtn").textContent = "⏹️ إيقاف التسجيل";
+      document.getElementById("recordBtn").classList.add("recording");
+      document.getElementById("recordTimer").style.display = "block";
+      recordInterval = setInterval(() => {
+        recordSeconds++;
+        const m = Math.floor(recordSeconds / 60);
+        const s = recordSeconds % 60;
+        document.getElementById("timerDisplay").textContent = `${m}:${s.toString().padStart(2, "0")}`;
+      }, 1000);
+    } catch (err) {
+      showToast("❌ تعذر الوصول للميكروفون");
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+    clearInterval(recordInterval);
+    document.getElementById("recordBtn").textContent = "🎙️ ابدأ التسجيل";
+    document.getElementById("recordBtn").classList.remove("recording");
+    document.getElementById("recordTimer").style.display = "none";
+  }
+
+  // ── رفع ملف ──────────────────────────────────────────────────────────────
+  document.getElementById("voiceFileInput").addEventListener("change", function() {
+    const file = this.files[0];
+    if (!file) return;
+    voiceMime = file.type || "audio/ogg";
+    document.getElementById("voiceName").textContent = `🎵 ${file.name}`;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      voiceData = e.target.result.split(",")[1];
+      const preview = document.getElementById("voicePreview");
+      preview.src = e.target.result;
+      preview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function loadStats() {
+    try {
+      const res   = await fetch("/api/voices/stats");
+      const stats = await res.json();
+      document.getElementById("sTotal").textContent = stats.total;
+      document.getElementById("sToday").textContent = stats.today;
+    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+  }
+
+  async function load() {
+    const q = document.getElementById("searchPhone").value.trim();
+    let url = "/api/voices?limit=100";
+    // إذا كان رقماً → بحث برقم الهاتف، وإلا → بحث عام (اسم + تعليق)
+    if (q) {
+      if (/^\d+$/.test(q)) url += `&phone=${encodeURIComponent(q)}`;
+      else url += `&search=${encodeURIComponent(q)}`;
+    }
+    try {
+      const res  = await fetch(url);
+      const list = await res.json();
+      renderList(list);
+    } catch { showToast("❌ خطأ في تحميل الصوتيات"); }
+  }
+
+  async function saveNote(id) {
+    const note = document.getElementById(`note-${id}`).value.trim();
+    try {
+      const res = await fetch(`/api/voices/${id}/note`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note })
+      });
+      const data = await res.json();
+      if (data.ok) showToast("✅ تم حفظ التعليق");
+      else showToast("❌ فشل الحفظ");
+    } catch { showToast("❌ خطأ في الاتصال"); }
+  }
+
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function renderList(list) {
+    const container = document.getElementById("voiceList");
+    if (!list.length) {
+      container.innerHTML = `<div class="empty">لا توجد رسائل صوتية مستلمة بعد 🎙️</div>`;
+      return;
+    }
+    container.innerHTML = list.map(v => {
+      const src  = `/uploads/voices/${v.filename}`;
+      const time = new Date(v.created_at).toLocaleString("ar-MA");
+      const kb   = (v.filesize / 1024).toFixed(1);
+      const note = v.note ? escHtml(v.note) : "";
+      return `
+        <div class="voice-card" id="vc-${v.id}">
+          <div class="voice-icon">🎤</div>
+          <div class="voice-info">
+            <div class="sender">${escHtml(v.name)}</div>
+            <span class="phone-tag">+${v.phone}</span>
+            <div class="meta">${time} · ${kb} KB</div>
+          </div>
+          <div class="voice-player">
+            <audio controls src="${src}" preload="none"></audio>
+          </div>
+          <div class="actions">
+            <a href="${src}" download="${v.filename}" class="dl-btn">⬇️ تحميل</a>
+            <button class="btn btn-blue" onclick="openReply('${v.phone}', '${escHtml(v.name)}')">↩️ رد</button>
+            <button class="btn btn-red"  onclick="deleteItem(${v.id})">🗑️ حذف</button>
+          </div>
+          <div class="voice-note-wrap">
+            <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق للبحث لاحقاً..." value="${note}"
+                   onkeydown="if(event.key==='Enter') saveNote(${v.id})">
+            <button class="note-save-btn" onclick="saveNote(${v.id})">حفظ</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function openReply(phone, name) {
+    replyPhone = phone;
+    voiceData  = null; voiceMime = null;
+    document.getElementById("replyTo").textContent = `إلى: ${name} (+${phone})`;
+    document.getElementById("replyText").value = "";
+    document.getElementById("voiceFileInput").value = "";
+    document.getElementById("voicePreview").style.display = "none";
+    document.getElementById("voiceName").textContent = "";
+    switchTab("text");
+    document.getElementById("replyOverlay").classList.add("open");
+    document.getElementById("replyText").focus();
+  }
+
+  function closeModal() {
+    stopRecording();
+    document.getElementById("replyOverlay").classList.remove("open");
+  }
+
+  async function sendReply() {
+    if (activeTab === "voice") {
+      if (!voiceData) return showToast("⚠️ اختر ملف صوتي أولاً");
+      try {
+        const res = await fetch("/api/send-voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: replyPhone, data: voiceData, mimetype: voiceMime })
+        });
+        const data = await res.json();
+        if (data.ok) { showToast("✅ تم إرسال الصوت"); closeModal(); }
+        else showToast("❌ فشل الإرسال: " + (data.error || ""));
+      } catch { showToast("❌ خطأ في الاتصال"); }
+    } else {
+      const text = document.getElementById("replyText").value.trim();
+      if (!text) return showToast("⚠️ اكتب رسالة أولاً");
+      try {
+        const res = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: replyPhone, message: text })
+        });
+        const data = await res.json();
+        if (data.ok) { showToast("✅ تم إرسال الرد"); closeModal(); }
+        else showToast("❌ فشل الإرسال: " + (data.error || ""));
+      } catch { showToast("❌ خطأ في الاتصال"); }
+    }
+  }
+
+  async function deleteItem(id) {
+    if (!confirm("هل تريد حذف هذه الرسالة الصوتية؟")) return;
+    try {
+      const res = await fetch(`/api/voices/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById(`vc-${id}`)?.remove();
+        showToast("🗑️ تم الحذف");
+        loadStats();
+      } else {
+        showToast("❌ فشل الحذف");
+      }
+    } catch { showToast("❌ خطأ في الاتصال"); }
+  }
+
+  // إغلاق المودال عند النقر خارجه
+  document.getElementById("replyOverlay").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  document.getElementById("searchPhone").addEventListener("input", load);
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadStats();
+  load();
+  setInterval(() => { loadStats(); load(); }, 30000);
+</script>
+</body>
+</html>

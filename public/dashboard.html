@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      direction: rtl;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    header span { font-size: 0.85rem; opacity: 0.85; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .status-badge.on  { background: #25d366; color: #fff; }
+    .status-badge.off { background: #e74c3c; color: #fff; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-pause  { background: #f39c12; color: white; }
+    .btn-resume { background: #25d366; color: white; }
+    .btn-send   { background: #075e54; color: white; }
+    .btn-cancel { background: #aaa; color: white; }
+
+    /* ── Stats ── */
+    .stats {
+      display: flex;
+      gap: 16px;
+      padding: 20px 24px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 24px;
+      flex: 1;
+      min-width: 140px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .stat-card .num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #075e54;
+    }
+    .stat-card .label {
+      font-size: 0.82rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ── Search ── */
+    .toolbar {
+      padding: 0 24px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      padding: 9px 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      direction: rtl;
+    }
+    .search-input:focus { border-color: #128c7e; }
+
+    /* ── Table ── */
+    .table-wrap {
+      padding: 0 24px 24px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-collapse: collapse;
+    }
+    thead { background: #075e54; color: white; }
+    th, td {
+      padding: 12px 14px;
+      text-align: right;
+      font-size: 0.88rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fffe; }
+
+    .phone-tag {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+    .msg-count {
+      background: #e3f2fd;
+      color: #1565c0;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .last-msg {
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #555;
+    }
+
+    /* ── Modal ── */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 14px;
+      padding: 28px;
+      width: 420px;
+      max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal h3 { margin-bottom: 16px; color: #075e54; }
+    .modal-to {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .modal textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      resize: vertical;
+      outline: none;
+      direction: rtl;
+      font-family: inherit;
+    }
+    .modal textarea:focus { border-color: #128c7e; }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      justify-content: flex-end;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+
+    .empty { text-align: center; padding: 40px; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🤖 لوحة التحكم — واتساب بوت</h1>
+    <span>abrajeimmo.com · مراكش</span>
+  </div>
+  <div class="controls">
+    <a href="/messages.html"  style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">💬 الرسائل</a>
+    <a href="/responses.html" style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">📋 الردود</a>
+    <a href="/images.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">📸 الصور</a>
+    <a href="/voices.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">🎤 الصوتيات</a>
+    <a href="/videos.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">🎬 الفيديوهات</a>
+    <a href="/chat.html"      style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">💬 الشات</a>
+    <span id="statusBadge" class="status-badge on"><span class="dot"></span> شغال</span>
+    <button class="btn btn-pause"  onclick="pauseBot()">⏸ إيقاف</button>
+    <button class="btn btn-resume" onclick="resumeBot()">▶ استئناف</button>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,80,80,0.35);border-radius:8px;font-size:0.85rem;">🚪 خروج</a>
+  </div>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="num" id="statTotal">—</div>
+    <div class="label">إجمالي الزبائن</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="statToday">—</div>
+    <div class="label">رسائل اليوم</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="statStatus">—</div>
+    <div class="label">حالة البوت</div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-input" type="text" id="searchInput" placeholder="🔍 ابحث باسم أو رقم..." oninput="filterContacts()">
+  <button class="btn btn-resume" onclick="loadData()">🔄 تحديث</button>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>الاسم</th>
+        <th>الهاتف</th>
+        <th>الرسائل</th>
+        <th>آخر رسالة</th>
+        <th>آخر ظهور</th>
+        <th>إرسال</th>
+        <th>الرسائل</th>
+      </tr>
+    </thead>
+    <tbody id="contactsBody">
+      <tr><td colspan="7" class="empty">جاري التحميل...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Send Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>📤 إرسال رسالة</h3>
+    <div class="modal-to" id="modalTo"></div>
+    <textarea id="modalMsg" placeholder="اكتب رسالتك هنا..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-send"   onclick="sendMsg()">إرسال ✅</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let allContacts = [];
+  let selectedPhone = "";
+
+  async function loadData() {
+    try {
+      const [statsRes, contactsRes] = await Promise.all([
+        fetch("/api/stats"),
+        fetch("/api/contacts"),
+      ]);
+      const stats    = await statsRes.json();
+      allContacts    = await contactsRes.json();
+
+      document.getElementById("statTotal").textContent  = stats.total;
+      document.getElementById("statToday").textContent  = stats.today;
+      document.getElementById("statStatus").textContent = stats.botPaused ? "⏸ موقوف" : "🟢 شغال";
+
+      const badge = document.getElementById("statusBadge");
+      badge.className = "status-badge " + (stats.botPaused ? "off" : "on");
+      badge.innerHTML = `<span class="dot"></span> ${stats.botPaused ? "موقوف" : "شغال"}`;
+
+      filterContacts();
+    } catch (e) {
+      showToast("❌ خطأ في الاتصال بالسيرفر");
+    }
+  }
+
+  function filterContacts() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    const filtered = allContacts.filter(c =>
+      c.name.toLowerCase().includes(q) || c.phone.includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function renderTable(list) {
+    const body = document.getElementById("contactsBody");
+    if (list.length === 0) {
+      body.innerHTML = `<tr><td colspan="7" class="empty">لا يوجد نتائج</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map((c, i) => {
+      const date = new Date(c.lastSeen).toLocaleDateString("ar-MA");
+      const msg  = (c.lastMessage || "").substring(0, 40);
+      return `
+        <tr>
+          <td>${i + 1}</td>
+          <td><b>${c.name}</b></td>
+          <td><span class="phone-tag">+${c.phone}</span></td>
+          <td><span class="msg-count">${c.totalMessages}</span></td>
+          <td class="last-msg" title="${c.lastMessage || ""}">${msg}</td>
+          <td>${date}</td>
+          <td><button class="btn btn-send" onclick="openModal('${c.phone}','${c.name}')">📤</button></td>
+          <td><a href="/messages.html?phone=${c.phone}" class="btn" style="background:#128c7e;color:white;text-decoration:none;">💬 قراءة</a></td>
+        </tr>`;
+    }).join("");
+  }
+
+  function openModal(phone, name) {
+    selectedPhone = phone;
+    document.getElementById("modalTo").textContent = `إلى: ${name} (+${phone})`;
+    document.getElementById("modalMsg").value = "";
+    document.getElementById("modalBg").classList.add("open");
+    setTimeout(() => document.getElementById("modalMsg").focus(), 100);
+  }
+
+  function closeModal() {
+    document.getElementById("modalBg").classList.remove("open");
+  }
+
+  async function sendMsg() {
+    const message = document.getElementById("modalMsg").value.trim();
+    if (!message) return showToast("⚠️ اكتب رسالة أولاً");
+    try {
+      const res  = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: selectedPhone, message }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast("✅ تم الإرسال بنجاح");
+        closeModal();
+      } else {
+        showToast("❌ " + (data.error || "خطأ في الإرسال"));
+      }
+    } catch {
+      showToast("❌ فشل الاتصال بالسيرفر");
+    }
+  }
+
+  async function pauseBot() {
+    await fetch("/api/pause", { method: "POST" });
+    showToast("⏸ البوت موقوف");
+    loadData();
+  }
+
+  async function resumeBot() {
+    await fetch("/api/resume", { method: "POST" });
+    showToast("▶ البوت شغال");
+    loadData();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  // إغلاق المودال عند الضغط خارجه
+  document.getElementById("modalBg").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // تحديث تلقائي كل 30 ثانية
+  loadData();
+  setInterval(loadData, 30000);
+</script>
+</body>
+</html>

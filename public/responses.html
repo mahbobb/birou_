@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الردود — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white; text-decoration: none; margin-right: 12px;
+      font-size: 0.88rem; padding: 6px 12px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    .container { padding: 24px; max-width: 900px; margin: 0 auto; }
+
+    /* ── بطاقة الفورم ── */
+    .card {
+      background: white; border-radius: 14px;
+      padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 1.1rem; color: #075e54; margin-bottom: 18px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; font-weight: 600; }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.9rem; outline: none; direction: rtl;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: #128c7e; }
+    .form-group textarea { min-height: 90px; resize: vertical; }
+    .form-hint { font-size: 0.78rem; color: #999; margin-top: 4px; }
+
+    .btn {
+      padding: 9px 20px; border: none; border-radius: 10px;
+      cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-green  { background: #25d366; color: white; }
+    .btn-red    { background: #e74c3c; color: white; padding: 5px 12px; font-size: 0.8rem; border-radius: 8px; }
+    .btn-reset  { background: #eee; color: #555; }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 6px; }
+
+    /* ── قائمة الردود ── */
+    .response-item {
+      background: white; border-radius: 12px;
+      padding: 16px 18px; margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .response-body { flex: 1; }
+    .response-reply {
+      font-size: 0.92rem; color: #1a1a2e; margin-bottom: 8px;
+      background: #f5f5f5; padding: 8px 12px; border-radius: 8px;
+      border-right: 3px solid #25d366;
+    }
+    .response-keywords {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .kw-tag {
+      background: #e3f2fd; color: #1565c0;
+      padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
+    }
+    .voice-tag {
+      background: #f3e5f5; color: #6a1b9a;
+      padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
+    }
+    .response-actions { display: flex; align-items: center; }
+
+    .empty { text-align: center; padding: 40px; color: #aaa; }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 22px;
+      border-radius: 10px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+
+    .count-badge {
+      background: #075e54; color: white;
+      padding: 2px 10px; border-radius: 20px; font-size: 0.8rem;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📋 إدارة الردود المبرمجة</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/messages.html">💬 الرسائل</a>
+    <a href="/responses.html" class="active">📋 الردود</a>
+    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- فورم الإضافة -->
+  <div class="card">
+    <h2>➕ إضافة رد جديد</h2>
+
+    <div class="form-group">
+      <label>الكلمات المفتاحية *</label>
+      <input type="text" id="fKeywords" placeholder="سلام, hello, مرحبا, bonjour">
+      <div class="form-hint">افصل بين الكلمات بفاصلة — البوت يجاوب إذا وجد أي كلمة منها</div>
+    </div>
+
+    <div class="form-group">
+      <label>نص الرد *</label>
+      <textarea id="fReply" placeholder="اكتب الرد هنا..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>ملف صوتي (اختياري)</label>
+      <input type="text" id="fVoice" placeholder="salam.ogg">
+      <div class="form-hint">اسم الملف فقط — يجب أن يكون موجوداً في مجلد voice/</div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-green" onclick="addResponse()">✅ حفظ الرد</button>
+      <button class="btn btn-reset" onclick="resetForm()">🗑 مسح</button>
+    </div>
+  </div>
+
+  <!-- قائمة الردود -->
+  <div style="display:flex;align-items:center;margin-bottom:12px;">
+    <h2 style="font-size:1.05rem;color:#075e54;">الردود المبرمجة</h2>
+    <span class="count-badge" id="countBadge">0</span>
+  </div>
+
+  <div id="responsesList">
+    <div class="empty">جاري التحميل...</div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let allResponses = [];
+
+  async function loadResponses() {
+    try {
+      const res  = await fetch("/api/responses");
+      allResponses = await res.json();
+      document.getElementById("countBadge").textContent = allResponses.length;
+      renderList();
+    } catch { showToast("❌ خطأ في تحميل الردود"); }
+  }
+
+  function renderList() {
+    const container = document.getElementById("responsesList");
+    if (!allResponses.length) {
+      container.innerHTML = `<div class="empty">لا توجد ردود مبرمجة بعد</div>`;
+      return;
+    }
+    container.innerHTML = allResponses.map((r, i) => {
+      const kws = r.keywords.map(k => `<span class="kw-tag">${k}</span>`).join("");
+      const voice = r.voice ? `<span class="voice-tag">🎤 ${r.voice}</span>` : "";
+      return `
+        <div class="response-item">
+          <div class="response-body">
+            <div class="response-reply">${r.reply}</div>
+            <div class="response-keywords">${kws} ${voice}</div>
+          </div>
+          <div class="response-actions">
+            <button class="btn btn-red" onclick="deleteResponse(${i})">🗑 حذف</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  async function addResponse() {
+    const keywords = document.getElementById("fKeywords").value.trim();
+    const reply    = document.getElementById("fReply").value.trim();
+    const voice    = document.getElementById("fVoice").value.trim();
+
+    if (!keywords || !reply) return showToast("⚠️ الكلمات المفتاحية والرد مطلوبين");
+
+    try {
+      const body = { keywords, reply };
+      if (voice) body.voice = voice;
+
+      const res  = await fetch("/api/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast("✅ تم حفظ الرد بنجاح");
+        resetForm();
+        loadResponses();
+      } else {
+        showToast("❌ " + (data.error || "خطأ"));
+      }
+    } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
+  }
+
+  async function deleteResponse(index) {
+    if (!confirm("هل تريد حذف هذا الرد؟")) return;
+    try {
+      const res  = await fetch(`/api/responses/${index}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.ok) {
+        showToast("🗑 تم الحذف");
+        loadResponses();
+      } else {
+        showToast("❌ " + (data.error || "خطأ في الحذف"));
+      }
+    } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
+  }
+
+  function resetForm() {
+    document.getElementById("fKeywords").value = "";
+    document.getElementById("fReply").value    = "";
+    document.getElementById("fVoice").value    = "";
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadResponses();
+</script>
+</body>
+</html>

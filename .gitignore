@@ -1,0 +1,10 @@
+node_modules/
+session/
+.env
+*.log
+logs/
+public/uploads/
+*.rar
+*.zip
+.wwebjs_cache/
+contacts.json

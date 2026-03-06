@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 360px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .logo h1 {
+      font-size: 20px;
+      color: #1a1a2e;
+      font-weight: 700;
+    }
+    .logo p {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 7px;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      direction: ltr;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input[type="password"]:focus {
+      border-color: #25d366;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: #25d366;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 6px;
+    }
+    .btn-login:hover { background: #1da851; }
+    .btn-login:disabled { background: #aaa; cursor: not-allowed; }
+    .error-msg {
+      background: #fff0f0;
+      color: #c0392b;
+      border: 1px solid #f5c6cb;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+      text-align: center;
+    }
+    .error-msg.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <span class="logo-icon">🤖</span>
+      <h1>لوحة تحكم البوت</h1>
+      <p>abrajeimmo.com — مراكش</p>
+    </div>
+
+    <div class="error-msg" id="errorMsg">كلمة المرور غير صحيحة</div>
+
+    <div class="form-group">
+      <label for="passwordInput">كلمة المرور</label>
+      <input type="password" id="passwordInput" placeholder="••••••••" autofocus>
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">دخول</button>
+  </div>
+
+  <script>
+    document.getElementById("passwordInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") doLogin();
+    });
+
+    async function doLogin() {
+      const password = document.getElementById("passwordInput").value;
+      if (!password) return;
+      const btn = document.getElementById("loginBtn");
+      const err = document.getElementById("errorMsg");
+      btn.disabled = true;
+      btn.textContent = "جاري التحقق...";
+      err.classList.remove("show");
+      try {
+        const res  = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.href = "/";
+        } else {
+          err.textContent = data.error || "كلمة المرور غير صحيحة";
+          err.classList.add("show");
+          document.getElementById("passwordInput").value = "";
+          document.getElementById("passwordInput").focus();
+        }
+      } catch {
+        err.textContent = "خطأ في الاتصال بالخادم";
+        err.classList.add("show");
+      }
+      btn.disabled = false;
+      btn.textContent = "دخول";
+    }
+  </script>
+</body>
+</html>
