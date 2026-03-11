@@ -12,100 +12,181 @@
       background: linear-gradient(135deg, #075e54, #128c7e);
       color: white; padding: 16px 24px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 8px;
     }
     header h1 { font-size: 1.3rem; }
     .nav-links a {
-      color: white; text-decoration: none; margin-right: 12px;
-      font-size: 0.88rem; padding: 6px 12px;
+      color: white; text-decoration: none; margin-right: 10px;
+      font-size: 0.85rem; padding: 5px 10px;
       border-radius: 8px; transition: background 0.2s;
     }
     .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
 
-    /* ── Stats ── */
-    .stats { display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap; }
+    /* Stats */
+    .stats { display: flex; gap: 16px; padding: 20px 24px 10px; flex-wrap: wrap; }
     .stat-card {
-      background: white; border-radius: 12px; padding: 16px 22px;
-      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+      background: white; border-radius: 12px; padding: 14px 22px;
+      flex: 1; min-width: 110px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
     }
-    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+    .stat-card .num { font-size: 1.7rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.78rem; color: #666; margin-top: 3px; }
 
-    /* ── Toolbar ── */
+    /* Toolbar */
     .toolbar {
-      padding: 0 24px 16px;
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 10px 24px 16px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
     .search-input {
-      flex: 1; min-width: 180px;
-      padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.9rem; outline: none; direction: rtl;
+      flex: 1; min-width: 160px;
+      padding: 8px 14px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.88rem; outline: none; direction: rtl; background: white;
     }
     .search-input:focus { border-color: #128c7e; }
     .btn {
-      padding: 8px 16px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.85rem; font-weight: 600;
-      transition: opacity 0.2s;
+      padding: 8px 15px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.82rem; font-weight: 600;
+      transition: opacity 0.2s; white-space: nowrap;
     }
     .btn:hover { opacity: 0.85; }
-    .btn-green { background: #25d366; color: white; }
+    .btn-green  { background: #25d366; color: white; }
+    .btn-blue   { background: #128c7e; color: white; }
+    .btn-red    { background: #e53935; color: white; }
+    .btn-gray   { background: #ccc; color: #333; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
 
-    /* ── Gallery ── */
+    /* Selection bar */
+    .sel-bar {
+      display: none; align-items: center; gap: 10px;
+      padding: 8px 24px; background: #e8f5e9;
+      border-bottom: 1px solid #c8e6c9; flex-wrap: wrap;
+    }
+    .sel-bar.show { display: flex; }
+    .sel-count { font-size: 0.88rem; color: #2e7d32; font-weight: 600; flex: 1; }
+
+    /* Gallery */
     .gallery-wrap { padding: 0 24px 32px; }
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px;
     }
+
     .img-card {
       background: white; border-radius: 12px; overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       transition: transform 0.2s, box-shadow 0.2s;
-      cursor: pointer;
+      position: relative;
     }
-    .img-card:hover { transform: translateY(-3px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+    .img-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
+    .img-card.selected { outline: 3px solid #128c7e; }
+
+    /* Checkbox overlay */
+    .card-cb {
+      position: absolute; top: 8px; right: 8px;
+      width: 22px; height: 22px;
+      background: white; border: 2px solid #ccc; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 2; transition: border-color 0.15s, background 0.15s;
+      font-size: 0.75rem; color: white;
+    }
+    .img-card.selected .card-cb { background: #128c7e; border-color: #128c7e; }
+    .img-card.selected .card-cb::after { content: "✓"; }
+
+    .card-img-wrap { cursor: pointer; }
     .img-card img {
-      width: 100%; height: 160px; object-fit: cover;
+      width: 100%; height: 155px; object-fit: cover;
       display: block; background: #eee;
     }
     .img-info {
-      padding: 10px 12px;
-      font-size: 0.8rem; color: #555;
+      padding: 8px 12px; font-size: 0.78rem; color: #555;
     }
-    .img-info .phone-tag {
+    .img-info b { display: block; font-size: 0.82rem; color: #222; margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .phone-tag {
       background: #e8f5e9; color: #2e7d32;
-      padding: 2px 8px; border-radius: 6px;
-      font-family: monospace; font-size: 0.78rem;
-      display: inline-block; margin-bottom: 4px;
+      padding: 1px 7px; border-radius: 5px;
+      font-family: monospace; font-size: 0.76rem; display: inline-block; margin-bottom: 3px;
     }
-    .img-info .time { color: #999; font-size: 0.76rem; }
-    .img-info .size { color: #aaa; font-size: 0.74rem; }
+    .img-info .time { color: #999; font-size: 0.73rem; }
 
-    /* ── Lightbox ── */
+    /* card actions */
+    .card-actions {
+      display: flex; gap: 6px; padding: 6px 10px 10px;
+    }
+    .card-actions button {
+      flex: 1; padding: 5px; border: none; border-radius: 6px;
+      font-size: 0.75rem; cursor: pointer; font-weight: 600;
+    }
+    .ca-view   { background: #e3f2fd; color: #1565c0; }
+    .ca-dl     { background: #e8f5e9; color: #2e7d32; }
+    .ca-del    { background: #ffebee; color: #c62828; }
+
+    /* Lightbox */
     #lightbox {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.85); z-index: 200;
-      align-items: center; justify-content: center; flex-direction: column;
+      background: rgba(0,0,0,0.88); z-index: 200;
+      align-items: center; justify-content: center; flex-direction: column; gap: 14px;
     }
     #lightbox.open { display: flex; }
-    #lightbox img {
-      max-width: 90vw; max-height: 80vh;
-      border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    }
-    #lightbox .lb-info {
-      color: white; margin-top: 14px; font-size: 0.88rem; text-align: center;
-    }
+    #lightbox img { max-width: 90vw; max-height: 78vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    #lightbox .lb-info { color: #ccc; font-size: 0.85rem; text-align: center; }
     #lightbox .lb-close {
-      position: absolute; top: 20px; left: 20px;
-      background: rgba(255,255,255,0.2); border: none; color: white;
-      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      position: absolute; top: 18px; left: 18px;
+      background: rgba(255,255,255,0.18); border: none; color: white;
+      width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
       font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
     }
-    #lightbox .lb-download {
-      margin-top: 12px; padding: 8px 20px;
-      background: #25d366; color: white; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.88rem; font-weight: 600; text-decoration: none;
+    #lightbox .lb-btns { display: flex; gap: 10px; }
+    #lightbox .lb-dl {
+      padding: 8px 20px; background: #25d366; color: white;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      text-decoration: none;
     }
+    #lightbox .lb-del {
+      padding: 8px 16px; background: #e53935; color: white;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    }
+
+    /* Upload modal */
+    #uploadOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); z-index: 300;
+      align-items: center; justify-content: center;
+    }
+    #uploadOverlay.open { display: flex; }
+    .upload-modal {
+      background: white; border-radius: 14px; padding: 26px;
+      width: 90%; max-width: 460px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .upload-modal h3 { font-size: 1.05rem; color: #075e54; margin-bottom: 14px; }
+    .upload-modal label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 5px; margin-top: 10px; }
+    .upload-modal input[type=text], .upload-modal input[type=tel] {
+      width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.88rem; outline: none; direction: rtl;
+    }
+    .upload-modal input:focus { border-color: #128c7e; }
+    .drop-zone {
+      border: 2px dashed #ccc; border-radius: 10px; padding: 22px;
+      text-align: center; cursor: pointer; margin-top: 12px;
+      color: #888; background: #fafafa; transition: border-color 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #128c7e; color: #128c7e; }
+    .drop-zone .dz-icon { font-size: 2rem; }
+    #uploadFileInput { display: none; }
+    .upload-preview {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(70px,1fr));
+      gap: 6px; margin-top: 10px;
+    }
+    .up-thumb {
+      aspect-ratio: 1; border-radius: 6px; overflow: hidden; position: relative; background: #eee;
+    }
+    .up-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .up-thumb .rm { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+      background: rgba(0,0,0,0.55); color: white; border: none; border-radius: 50%;
+      font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .upload-modal .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+    .up-progress { margin-top: 10px; font-size: 0.8rem; color: #128c7e; display: none; }
 
     .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
 
@@ -113,7 +194,7 @@
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       background: #1a1a2e; color: white; padding: 10px 22px;
       border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 300;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 400;
     }
     #toast.show { opacity: 1; }
   </style>
@@ -127,6 +208,8 @@
     <a href="/messages.html">💬 الرسائل</a>
     <a href="/responses.html">📋 الردود</a>
     <a href="/images.html" class="active">📸 الصور</a>
+    <a href="/qr.html">📲 QR</a>
+    <a href="/sync.html">🔄 مزامنة</a>
     <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
   </nav>
 </header>
@@ -135,12 +218,16 @@
 <div class="stats">
   <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الصور</div></div>
   <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">صور اليوم</div></div>
+  <div class="stat-card"><div class="num" id="sSelected">0</div><div class="label">محددة</div></div>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
   <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف...">
-  <button class="btn btn-green" onclick="load()">🔄 تحديث</button>
+  <button class="btn btn-blue"  onclick="openUploadModal()">📤 رفع صور</button>
+  <button class="btn btn-green" onclick="toggleSelectAll()" id="btnSelAll">☑️ تحديد الكل</button>
+  <button class="btn btn-red"   id="btnDelSel" onclick="deleteSelected()" disabled>🗑️ حذف المحددة (<span id="selCount">0</span>)</button>
+  <button class="btn btn-gray"  onclick="load()">🔄 تحديث</button>
 </div>
 
 <!-- Gallery -->
@@ -155,71 +242,285 @@
   <button class="lb-close" onclick="closeLb()">✕</button>
   <img id="lbImg" src="" alt="">
   <div class="lb-info" id="lbInfo"></div>
-  <a id="lbDownload" href="#" download class="lb-download">⬇️ تحميل الصورة</a>
+  <div class="lb-btns">
+    <a id="lbDl" href="#" download class="lb-dl">⬇️ تحميل</a>
+    <button class="lb-del" onclick="deleteFromLb()">🗑️ حذف</button>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadOverlay">
+  <div class="upload-modal">
+    <h3>📤 رفع صور يدوياً</h3>
+    <label>رقم الهاتف (اختياري)</label>
+    <input type="tel" id="upPhone" placeholder="212600123456" dir="ltr">
+    <label>اسم (اختياري)</label>
+    <input type="text" id="upName" placeholder="يدوي">
+    <div class="drop-zone" id="upDropZone" onclick="document.getElementById('uploadFileInput').click()">
+      <div class="dz-icon">🖼️</div>
+      <p style="font-size:0.85rem;margin-top:4px">اسحب الصور هنا أو اضغط للاختيار</p>
+    </div>
+    <input type="file" id="uploadFileInput" accept="image/*" multiple>
+    <div class="upload-preview" id="upPreview"></div>
+    <div class="up-progress" id="upProgress">⏳ جاري الرفع...</div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeUploadModal()">إلغاء</button>
+      <button class="btn btn-blue" id="upSendBtn" onclick="doUpload()">📤 رفع (<span id="upCount">0</span>)</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
+  let allImages  = [];
+  let selectedIds = new Set();
+  let upFiles    = [];
+  let lbCurrentId = null;
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
   async function loadStats() {
     try {
-      const res   = await fetch("/api/images/stats");
-      const stats = await res.json();
+      const stats = await fetch("/api/images/stats").then(r => r.json());
       document.getElementById("sTotal").textContent = stats.total;
       document.getElementById("sToday").textContent = stats.today;
-    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+    } catch {}
   }
 
+  // ── Load gallery ──────────────────────────────────────────────────────────
   async function load() {
     const phone = document.getElementById("searchPhone").value.trim();
-    let url = "/api/images?limit=100";
+    let url = "/api/images?limit=200";
     if (phone) url += `&phone=${encodeURIComponent(phone)}`;
     try {
-      const res  = await fetch(url);
-      const list = await res.json();
-      renderGallery(list);
+      allImages = await fetch(url).then(r => r.json());
+      selectedIds.clear();
+      updateSelUI();
+      renderGallery(allImages);
     } catch { showToast("❌ خطأ في تحميل الصور"); }
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   function renderGallery(list) {
     const g = document.getElementById("gallery");
     if (!list.length) {
-      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد صور مستلمة بعد 📭</div>`;
+      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد صور 📭</div>`;
       return;
     }
     g.innerHTML = list.map(img => {
       const src  = `/uploads/images/${img.filename}`;
       const time = new Date(img.created_at).toLocaleString("ar-MA");
-      const kb   = (img.filesize / 1024).toFixed(1);
+      const sel  = selectedIds.has(img.id) ? " selected" : "";
       return `
-        <div class="img-card" onclick="openLb('${src}', '${img.name}', '+${img.phone}', '${time}')">
-          <img src="${src}" alt="صورة ${img.name}" loading="lazy"
-               onerror="this.style.height='80px';this.style.background='#f5f5f5';">
+        <div class="img-card${sel}" id="card-${img.id}">
+          <div class="card-cb" onclick="toggleCard(${img.id})"></div>
+          <div class="card-img-wrap" onclick="openLb(${img.id})">
+            <img src="${src}" alt="" loading="lazy" onerror="this.style.height='60px';this.style.background='#f5f5f5';">
+          </div>
           <div class="img-info">
-            <b>${img.name}</b><br>
+            <b title="${img.name}">${img.name}</b>
             <span class="phone-tag">+${img.phone}</span><br>
             <span class="time">${time}</span>
-            <span class="size"> · ${kb} KB</span>
+          </div>
+          <div class="card-actions">
+            <button class="ca-view" onclick="openLb(${img.id})">🔍 عرض</button>
+            <button class="ca-dl"   onclick="dlImg(${img.id})">⬇️</button>
+            <button class="ca-del"  onclick="deleteSingle(${img.id})">🗑️</button>
           </div>
         </div>`;
     }).join("");
   }
 
-  function openLb(src, name, phone, time) {
-    document.getElementById("lbImg").src       = src;
-    document.getElementById("lbInfo").textContent = `${name} ${phone} — ${time}`;
-    document.getElementById("lbDownload").href  = src;
-    document.getElementById("lbDownload").download = src.split("/").pop();
+  // ── Selection ─────────────────────────────────────────────────────────────
+  function toggleCard(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    updateSelUI();
+    const card = document.getElementById(`card-${id}`);
+    if (card) card.classList.toggle("selected", selectedIds.has(id));
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === allImages.length) {
+      selectedIds.clear();
+    } else {
+      allImages.forEach(img => selectedIds.add(img.id));
+    }
+    updateSelUI();
+    document.querySelectorAll(".img-card").forEach(card => {
+      const id = parseInt(card.id.replace("card-", ""));
+      card.classList.toggle("selected", selectedIds.has(id));
+    });
+  }
+
+  function updateSelUI() {
+    const n = selectedIds.size;
+    document.getElementById("sSelected").textContent = n;
+    document.getElementById("selCount").textContent  = n;
+    document.getElementById("btnDelSel").disabled    = n === 0;
+    document.getElementById("btnSelAll").textContent =
+      (n === allImages.length && n > 0) ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  async function deleteSingle(id) {
+    if (!confirm("حذف هذه الصورة نهائياً؟")) return;
+    const ok = await doDelete(id);
+    if (ok) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
+  }
+
+  async function deleteSelected() {
+    if (!selectedIds.size) return;
+    if (!confirm(`حذف ${selectedIds.size} صورة نهائياً؟`)) return;
+    let done = 0;
+    for (const id of [...selectedIds]) {
+      if (await doDelete(id)) done++;
+    }
+    showToast(`✅ تم حذف ${done} صورة`);
+    await load(); await loadStats();
+  }
+
+  async function doDelete(id) {
+    try {
+      const r = await fetch(`/api/images/${id}`, { method: "DELETE" });
+      return (await r.json()).ok;
+    } catch { return false; }
+  }
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  function openLb(id) {
+    const img = allImages.find(i => i.id === id);
+    if (!img) return;
+    lbCurrentId = id;
+    const src = `/uploads/images/${img.filename}`;
+    document.getElementById("lbImg").src   = src;
+    document.getElementById("lbDl").href   = src;
+    document.getElementById("lbDl").download = img.filename;
+    document.getElementById("lbInfo").textContent =
+      `${img.name} · +${img.phone} · ${new Date(img.created_at).toLocaleString("ar-MA")}`;
     document.getElementById("lightbox").classList.add("open");
   }
 
   function closeLb() {
     document.getElementById("lightbox").classList.remove("open");
     document.getElementById("lbImg").src = "";
+    lbCurrentId = null;
   }
 
-  document.getElementById("lightbox").addEventListener("click", function(e) {
-    if (e.target === this) closeLb();
+  async function deleteFromLb() {
+    if (!lbCurrentId || !confirm("حذف هذه الصورة نهائياً؟")) return;
+    const id = lbCurrentId;
+    closeLb();
+    if (await doDelete(id)) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
+  }
+
+  function dlImg(id) {
+    const img = allImages.find(i => i.id === id);
+    if (!img) return;
+    const a = document.createElement("a");
+    a.href = `/uploads/images/${img.filename}`;
+    a.download = img.filename;
+    a.click();
+  }
+
+  document.getElementById("lightbox").addEventListener("click", e => {
+    if (e.target === document.getElementById("lightbox")) closeLb();
+  });
+
+  // ── Upload Modal ──────────────────────────────────────────────────────────
+  function openUploadModal() {
+    upFiles = [];
+    document.getElementById("upPhone").value   = "";
+    document.getElementById("upName").value    = "";
+    document.getElementById("upPreview").innerHTML = "";
+    document.getElementById("upProgress").style.display = "none";
+    document.getElementById("upCount").textContent = "0";
+    document.getElementById("uploadFileInput").value = "";
+    document.getElementById("uploadOverlay").classList.add("open");
+  }
+
+  function closeUploadModal() {
+    document.getElementById("uploadOverlay").classList.remove("open");
+  }
+
+  document.getElementById("uploadOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("uploadOverlay")) closeUploadModal();
+  });
+
+  const upDrop = document.getElementById("upDropZone");
+  upDrop.addEventListener("dragover",  e => { e.preventDefault(); upDrop.classList.add("drag-over"); });
+  upDrop.addEventListener("dragleave", () => upDrop.classList.remove("drag-over"));
+  upDrop.addEventListener("drop", e => {
+    e.preventDefault(); upDrop.classList.remove("drag-over");
+    addUpFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/")));
+  });
+
+  document.getElementById("uploadFileInput").addEventListener("change", function () {
+    addUpFiles(Array.from(this.files));
+    this.value = "";
+  });
+
+  function addUpFiles(files) {
+    files.forEach(file => {
+      const entry = { file, mime: file.type || "image/jpeg", dataUrl: null, data: null };
+      upFiles.push(entry);
+      const reader = new FileReader();
+      reader.onload = e => {
+        entry.dataUrl = e.target.result;
+        entry.data    = e.target.result.split(",")[1];
+        renderUpPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById("upCount").textContent = upFiles.length;
+    renderUpPreview();
+  }
+
+  function removeUpFile(i) {
+    upFiles.splice(i, 1);
+    document.getElementById("upCount").textContent = upFiles.length;
+    renderUpPreview();
+  }
+
+  function renderUpPreview() {
+    document.getElementById("upPreview").innerHTML = upFiles.map((f, i) =>
+      f.dataUrl
+        ? `<div class="up-thumb"><img src="${f.dataUrl}"><button class="rm" onclick="removeUpFile(${i})">✕</button></div>`
+        : `<div class="up-thumb" style="background:#eee;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#aaa">...</div>`
+    ).join("");
+  }
+
+  async function doUpload() {
+    if (!upFiles.length) return showToast("⚠️ اختر صورة أولاً");
+    if (upFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل التحميل");
+    const phone = document.getElementById("upPhone").value.trim() || "000000000";
+    const name  = document.getElementById("upName").value.trim()  || "يدوي";
+    const prog  = document.getElementById("upProgress");
+    const btn   = document.getElementById("upSendBtn");
+    prog.style.display = "block"; btn.disabled = true;
+    let sent = 0, failed = 0;
+    for (const f of upFiles) {
+      try {
+        prog.textContent = `⏳ ${sent + failed + 1} / ${upFiles.length}`;
+        const r = await fetch("/api/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, name, data: f.data, mimetype: f.mime }),
+        });
+        const d = await r.json();
+        if (d.ok) sent++; else failed++;
+      } catch { failed++; }
+    }
+    prog.textContent = `✅ تم رفع ${sent}${failed ? ` · ❌ فشل ${failed}` : ""}`;
+    btn.disabled = false;
+    if (sent > 0) {
+      setTimeout(() => { closeUploadModal(); load(); loadStats(); }, 1200);
+    }
+  }
+
+  // ── Keyboard ──────────────────────────────────────────────────────────────
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeLb(); closeUploadModal(); }
   });
 
   document.getElementById("searchPhone").addEventListener("input", load);

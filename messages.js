@@ -1,34 +1,105 @@
-const mysql = require("mysql2/promise");
+const pool = require("./db");
 
-const pool = mysql.createPool({
-  host:     process.env.DB_HOST     || "localhost",
-  port:     parseInt(process.env.DB_PORT) || 3306,
-  user:     process.env.DB_USER     || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME     || "whatsapp_bot",
-  waitForConnections: true,
-  connectionLimit: 10,
-});
+// ─── تطبيع رقم الهاتف ────────────────────────────────────────────────────
 
-async function saveMessage(phone, name, direction, body, source) {
+function normalizePhone(phone) {
+  let p = String(phone || "").replace(/\D/g, "");
+  if (p.startsWith("00")) p = p.slice(2);
+  return p.length > 9 ? p.slice(-9) : p;
+}
+
+// ─── تحديد نوع الوسيلة من الـbody ────────────────────────────────────────
+
+function parseBody(body) {
+  const b = (body || "").trim();
+  if (b.startsWith("/uploads/images/"))  return { text: null, media_url: b, media_type: "image"  };
+  if (b.startsWith("/uploads/videos/"))  return { text: null, media_url: b, media_type: "video"  };
+  if (b.startsWith("/uploads/voices/"))  return { text: null, media_url: b, media_type: "audio"  };
+  return { text: b || null, media_url: null, media_type: null };
+}
+
+// ─── حفظ رسالة ────────────────────────────────────────────────────────────
+// UNIQUE KEY (contact, body(200), created_at) يمنع التكرار تلقائياً
+
+async function saveMessage(phone, _name, direction, body, source, createdAt = null, wa_msg_id = null) {
   try {
-    await pool.query(
-      `INSERT INTO messages (phone, name, direction, body, source) VALUES (?, ?, ?, ?, ?)`,
-      [phone, name || "غير معروف", direction, body, source]
-    );
+    const contact  = normalizePhone(phone);
+    const dir      = direction === "out" ? "outgoing" : "incoming";
+    const ts       = createdAt ? new Date(createdAt) : new Date();
+    const { text, media_url, media_type } = parseBody(body);
+    const bodyVal  = text || media_url || body || "";
+    const src      = source  || null;
+    const waId     = wa_msg_id || null;
+
+    if (waId) {
+      // تكرار: يمنعه الفهرس الفريد على wa_msg_id
+      await pool.query(
+        `INSERT IGNORE INTO messages (contact, direction, body, media_url, media_type, source, wa_msg_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [contact, dir, bodyVal, media_url, media_type, src, waId, ts]
+      );
+    } else {
+      // INSERT IGNORE: إذا (contact, body, created_at) موجود → يتجاهل
+      await pool.query(
+        `INSERT IGNORE INTO messages (contact, direction, body, media_url, media_type, source, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [contact, dir, bodyVal, media_url, media_type, src, ts]
+      );
+    }
   } catch (err) {
     console.error("❌ خطأ في حفظ الرسالة:", err.message);
   }
 }
 
+// ─── تحقق من وجود رسالة (نافذة ±90 ثانية) ─────────────────────────────────
+
+async function checkMessageExists(phone, direction, timestampMs) {
+  try {
+    const contact = normalizePhone(phone);
+    const dir     = direction === "out" ? "outgoing" : "incoming";
+    const [rows]  = await pool.query(
+      `SELECT id FROM messages
+        WHERE contact = ? AND direction = ?
+          AND created_at BETWEEN ? AND ?
+        LIMIT 1`,
+      [contact, dir, new Date(timestampMs - 90000), new Date(timestampMs + 90000)]
+    );
+    return rows.length > 0;
+  } catch { return false; }
+}
+
+// ─── جلب الرسائل (مع alias للتوافق مع الـfrontend) ───────────────────────
+
 async function getMessages({ phone, limit = 100, offset = 0 }) {
   try {
-    let sql    = `SELECT * FROM messages`;
-    const vals = [];
-    if (phone) { sql += ` WHERE phone = ?`; vals.push(phone); }
-    sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    vals.push(limit, offset);
-    const [rows] = await pool.query(sql, vals);
+    const contact = normalizePhone(phone || "");
+    const lim     = parseInt(limit)  || 100;
+    const off     = parseInt(offset) || 0;
+
+    const select = `
+      SELECT id,
+             contact                                          AS phone,
+             CASE direction WHEN 'outgoing' THEN 'out' ELSE 'in' END AS direction,
+             COALESCE(media_url, body)                        AS body,
+             media_url,
+             media_type,
+             source,
+             wa_msg_id,
+             created_at
+        FROM messages
+    `;
+
+    if (contact) {
+      const [rows] = await pool.query(
+        `${select} WHERE contact = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [contact, lim, off]
+      );
+      return rows;
+    }
+    const [rows] = await pool.query(
+      `${select} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [lim, off]
+    );
     return rows;
   } catch (err) {
     console.error("❌ خطأ في جلب الرسائل:", err.message);
@@ -36,16 +107,49 @@ async function getMessages({ phone, limit = 100, offset = 0 }) {
   }
 }
 
+// ─── إحصائيات ─────────────────────────────────────────────────────────────
+
 async function getMessageStats() {
   try {
-    const [[{ total }]]   = await pool.query(`SELECT COUNT(*) AS total FROM messages`);
-    const [[{ today }]]   = await pool.query(`SELECT COUNT(*) AS today FROM messages WHERE DATE(created_at) = CURDATE()`);
-    const [[{ incoming }]]= await pool.query(`SELECT COUNT(*) AS incoming FROM messages WHERE direction='in'`);
-    const [[{ outgoing }]]= await pool.query(`SELECT COUNT(*) AS outgoing FROM messages WHERE direction='out'`);
+    const [[{ total }]]    = await pool.query(`SELECT COUNT(*) AS total    FROM messages`);
+    const [[{ today }]]    = await pool.query(`SELECT COUNT(*) AS today    FROM messages WHERE DATE(created_at) = CURDATE()`);
+    const [[{ incoming }]] = await pool.query(`SELECT COUNT(*) AS incoming FROM messages WHERE direction='incoming'`);
+    const [[{ outgoing }]] = await pool.query(`SELECT COUNT(*) AS outgoing FROM messages WHERE direction='outgoing'`);
     return { total, today, incoming, outgoing };
+  } catch { return { total: 0, today: 0, incoming: 0, outgoing: 0 }; }
+}
+
+// ─── جلب المحادثات غير المردودة ───────────────────────────────────────────
+// الزبائن الذين آخر رسالتهم واردة ولا يوجد رد بعدها
+
+async function getUnansweredContacts() {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        m.contact                              AS phone,
+        COALESCE(c.name, m.contact)            AS name,
+        COALESCE(m.media_url, m.body)          AS lastBody,
+        m.created_at                           AS lastAt
+      FROM messages m
+      LEFT JOIN contacts c ON c.phone = m.contact
+      WHERE m.direction = 'incoming'
+        AND m.created_at = (
+          SELECT MAX(m2.created_at) FROM messages m2
+          WHERE m2.contact = m.contact
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM messages m3
+          WHERE m3.contact = m.contact
+            AND m3.direction = 'outgoing'
+            AND m3.created_at > m.created_at
+        )
+      ORDER BY m.created_at DESC
+    `);
+    return rows;
   } catch (err) {
-    return { total: 0, today: 0, incoming: 0, outgoing: 0 };
+    console.error("❌ خطأ في getUnansweredContacts:", err.message);
+    return [];
   }
 }
 
-module.exports = { saveMessage, getMessages, getMessageStats };
+module.exports = { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts };

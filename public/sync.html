@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مزامنة الوسائط — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white; padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white; text-decoration: none; margin-right: 12px;
+      font-size: 0.85rem; padding: 6px 12px;
+      border-radius: 8px; transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    .container { max-width: 680px; margin: 40px auto; padding: 0 20px; }
+
+    .card {
+      background: white; border-radius: 16px; padding: 36px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1.2rem; color: #075e54; margin-bottom: 8px; }
+    .card p  { font-size: 0.9rem; color: #666; line-height: 1.6; margin-bottom: 20px; }
+
+    .stats-row {
+      display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1; min-width: 110px; background: #f8f9fa; border-radius: 12px;
+      padding: 14px 16px; text-align: center;
+    }
+    .stat .num  { font-size: 1.8rem; font-weight: 700; color: #075e54; }
+    .stat .lbl  { font-size: 0.78rem; color: #888; margin-top: 4px; }
+
+    .progress-wrap {
+      background: #e8e8e8; border-radius: 8px; height: 14px;
+      overflow: hidden; margin-bottom: 12px; display: none;
+    }
+    .progress-bar {
+      height: 100%; background: linear-gradient(90deg, #25d366, #128c7e);
+      transition: width 0.4s; width: 0;
+    }
+    .progress-text {
+      font-size: 0.85rem; color: #555; margin-bottom: 6px;
+      min-height: 20px;
+    }
+    .current-chat {
+      font-size: 0.8rem; color: #888; margin-bottom: 20px;
+      min-height: 18px; font-style: italic;
+    }
+
+    .btn {
+      padding: 12px 28px; border: none; border-radius: 10px;
+      cursor: pointer; font-size: 0.95rem; font-weight: 700;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-green  { background: #25d366; color: white; }
+    .btn-gray   { background: #aaa; color: white; margin-right: 10px; }
+
+    .notice {
+      background: #fff8e1; border-right: 4px solid #ffc107;
+      border-radius: 8px; padding: 12px 16px; font-size: 0.85rem;
+      color: #666; margin-top: 20px; line-height: 1.6;
+    }
+    .done-msg {
+      background: #e8f5e9; border-right: 4px solid #25d366;
+      border-radius: 8px; padding: 12px 16px; font-size: 0.9rem;
+      color: #2e7d32; margin-top: 16px; display: none; font-weight: 600;
+    }
+    .error-msg {
+      background: #fce4ec; border-right: 4px solid #e53935;
+      border-radius: 8px; padding: 12px 16px; font-size: 0.85rem;
+      color: #b71c1c; margin-top: 16px; display: none;
+    }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 22px;
+      border-radius: 10px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🔄 مزامنة الوسائط</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/images.html">📸 الصور</a>
+    <a href="/videos.html">🎬 الفيديوهات</a>
+    <a href="/chat.html">💬 الشات</a>
+    <a href="/sync.html" class="active">🔄 المزامنة</a>
+    <a href="#" onclick="logout()" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>📥 استيراد الصور والفيديوهات القديمة من واتساب</h2>
+    <p>هذه الأداة تمر على جميع محادثاتك في واتساب وتحفظ الصور والفيديوهات القديمة في قاعدة البيانات حتى تظهر في لوحة التحكم والشات.</p>
+
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="sDone">—</div><div class="lbl">محادثة منتهية</div></div>
+      <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي المحادثات</div></div>
+      <div class="stat"><div class="num" id="sSaved">—</div><div class="lbl">وسائط محفوظة</div></div>
+      <div class="stat"><div class="num" id="sErrors">—</div><div class="lbl">أخطاء</div></div>
+    </div>
+
+    <div class="progress-text" id="progressText">اضغط "ابدأ المزامنة" للبدء</div>
+    <div class="current-chat" id="currentChat"></div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <button class="btn btn-green" id="startBtn" onclick="startSync()">▶ ابدأ المزامنة</button>
+
+    <div class="done-msg"  id="doneMsg">✅ اكتملت المزامنة! يمكنك الآن مشاهدة جميع الوسائط في الصور والفيديوهات.</div>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div class="notice">
+      ⚠️ <b>ملاحظات:</b><br>
+      • المزامنة قد تأخذ وقتاً حسب عدد المحادثات وحجم الوسائط.<br>
+      • واتساب يحذف الوسائط القديمة من سيرفراته — بعض الملفات قد لا تكون متاحة للتحميل.<br>
+      • لن يتم حفظ نفس الوسيلة مرتين (يتحقق من التكرار تلقائياً).<br>
+      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let pollInterval = null;
+
+  async function startSync() {
+    const btn = document.getElementById("startBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري البدء...";
+    document.getElementById("doneMsg").style.display = "none";
+    document.getElementById("errorMsg").style.display = "none";
+
+    try {
+      const res  = await fetch("/api/wa-sync-media", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showError(data.error || "فشل بدء المزامنة");
+        btn.disabled = false;
+        btn.textContent = "▶ ابدأ المزامنة";
+        return;
+      }
+      showToast("✅ " + data.message);
+      document.getElementById("progressWrap").style.display = "block";
+      pollInterval = setInterval(pollStatus, 1500);
+    } catch {
+      showError("❌ تعذر الاتصال بالسيرفر");
+      btn.disabled = false;
+      btn.textContent = "▶ ابدأ المزامنة";
+    }
+  }
+
+  async function pollStatus() {
+    try {
+      const res    = await fetch("/api/wa-sync-status");
+      const status = await res.json();
+
+      document.getElementById("sDone").textContent   = status.done   ?? "—";
+      document.getElementById("sTotal").textContent  = status.total  ?? "—";
+      document.getElementById("sSaved").textContent  = status.saved  ?? "—";
+      document.getElementById("sErrors").textContent = status.errors ?? "—";
+
+      const pct = status.total > 0 ? Math.round((status.done / status.total) * 100) : 0;
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("progressText").textContent =
+        status.running
+          ? `جاري المعالجة: ${status.done} / ${status.total} محادثة (${pct}%)`
+          : `منتهية: ${status.done} / ${status.total} محادثة`;
+      document.getElementById("currentChat").textContent =
+        status.running && status.currentChat ? `📱 ${status.currentChat}` : "";
+
+      if (!status.running) {
+        clearInterval(pollInterval);
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("startBtn").textContent = "▶ إعادة المزامنة";
+        document.getElementById("doneMsg").style.display = "block";
+      }
+    } catch { /* silent */ }
+  }
+
+  // تحميل الحالة الحالية عند فتح الصفحة
+  async function loadInitialStatus() {
+    try {
+      const res    = await fetch("/api/wa-sync-status");
+      const status = await res.json();
+      if (status.total > 0) {
+        document.getElementById("sDone").textContent   = status.done;
+        document.getElementById("sTotal").textContent  = status.total;
+        document.getElementById("sSaved").textContent  = status.saved;
+        document.getElementById("sErrors").textContent = status.errors;
+      }
+      if (status.running) {
+        document.getElementById("startBtn").disabled = true;
+        document.getElementById("startBtn").textContent = "⏳ المزامنة جارية...";
+        document.getElementById("progressWrap").style.display = "block";
+        pollInterval = setInterval(pollStatus, 1500);
+      }
+    } catch { /* silent */ }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("errorMsg");
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  function logout() {
+    fetch("/api/logout", { method: "POST" }).then(() => location.href = "/login.html");
+  }
+
+  loadInitialStatus();
+</script>
+</body>
+</html>

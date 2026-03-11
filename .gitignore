@@ -1,10 +1,9 @@
 node_modules/
+sessions/
 session/
+data/
 .env
 *.log
-logs/
-public/uploads/
-*.rar
-*.zip
-.wwebjs_cache/
-contacts.json
+.cache/
+dist/
+coverage/

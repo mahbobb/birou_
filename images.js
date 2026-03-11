@@ -1,65 +1,30 @@
-const mysql = require("mysql2/promise");
-const fs    = require("fs");
-const path  = require("path");
-
-// ─── الاتصال بقاعدة البيانات ───────────────────────────────────────────────
-
-const pool = mysql.createPool({
-  host:     process.env.DB_HOST     || "localhost",
-  port:     parseInt(process.env.DB_PORT) || 3306,
-  user:     process.env.DB_USER     || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME     || "whatsapp_bot",
-  waitForConnections: true,
-  connectionLimit:    10,
-});
-
-// ─── مجلد حفظ الصور ────────────────────────────────────────────────────────
+const pool = require("./db");
+const fs   = require("fs");
+const path = require("path");
 
 const IMAGES_DIR = path.join(__dirname, "public", "uploads", "images");
 if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
-// ─── إنشاء الجدول تلقائياً إذا لم يكن موجوداً ────────────────────────────
+// ─── حفظ صورة ─────────────────────────────────────────────────────────────
 
-pool.query(`
-  CREATE TABLE IF NOT EXISTS images (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    phone      VARCHAR(20)   NOT NULL,
-    name       VARCHAR(100)  NOT NULL DEFAULT 'غير معروف',
-    filename   VARCHAR(255)  NOT NULL,
-    mimetype   VARCHAR(100)  NOT NULL DEFAULT 'image/jpeg',
-    filesize   INT           NOT NULL DEFAULT 0,
-    created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_phone      (phone),
-    INDEX idx_created_at (created_at)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-`).then(() => {
-  console.log("✅ جدول images جاهز");
-}).catch(err => {
-  console.error("⚠️ تعذر إنشاء جدول images:", err.message);
-});
-
-// ─── حفظ صورة واردة ────────────────────────────────────────────────────────
-
-async function saveImage(phone, name, media) {
+async function saveImage(phone, name, media, createdAt = null) {
   try {
-    // تحديد الامتداد من mimetype
-    const ext = (media.mimetype || "image/jpeg").split("/")[1].split(";")[0] || "jpg";
-    const filename = `${Date.now()}_${phone}.${ext}`;
+    const ext      = (media.mimetype || "image/jpeg").split("/")[1].split(";")[0] || "jpg";
+    const ts       = createdAt ? new Date(createdAt).getTime() : Date.now();
+    const filename = `${ts}_${phone}.${ext}`;
     const filepath = path.join(IMAGES_DIR, filename);
 
-    // بعض الإصدارات ترجع data URL كاملة — نأخذ الجزء بعد الفاصلة فقط
-    const rawData = (media.data || "").includes(",")
-      ? media.data.split(",")[1]
-      : media.data;
-
-    const buffer = Buffer.from(rawData, "base64");
+    const rawData = (media.data || "").includes(",") ? media.data.split(",")[1] : media.data;
+    const buffer  = Buffer.from(rawData, "base64");
     fs.writeFileSync(filepath, buffer);
 
-    // حفظ المعلومات في قاعدة البيانات
+    const created = createdAt ? new Date(createdAt) : new Date();
+
+    // INSERT IGNORE: UNIQUE(filename) يمنع حفظ نفس الملف مرتين
     await pool.query(
-      `INSERT INTO images (phone, name, filename, mimetype, filesize) VALUES (?, ?, ?, ?, ?)`,
-      [phone, name || "غير معروف", filename, media.mimetype || "image/jpeg", buffer.length]
+      `INSERT IGNORE INTO images (phone, name, filename, mimetype, filesize, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [phone, name || "غير معروف", filename, media.mimetype || "image/jpeg", buffer.length, created]
     );
 
     console.log(`📸 صورة محفوظة من ${name} (${phone}): ${filename}`);
@@ -70,16 +35,21 @@ async function saveImage(phone, name, media) {
   }
 }
 
-// ─── جلب قائمة الصور ───────────────────────────────────────────────────────
+// ─── جلب قائمة الصور ──────────────────────────────────────────────────────
 
 async function getImages({ phone, limit = 50, offset = 0 } = {}) {
   try {
-    let sql    = `SELECT * FROM images`;
-    const vals = [];
-    if (phone) { sql += ` WHERE phone = ?`; vals.push(phone); }
-    sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-    vals.push(parseInt(limit), parseInt(offset));
-    const [rows] = await pool.query(sql, vals);
+    if (phone) {
+      const [rows] = await pool.query(
+        `SELECT * FROM images WHERE phone = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [phone, parseInt(limit), parseInt(offset)]
+      );
+      return rows;
+    }
+    const [rows] = await pool.query(
+      `SELECT * FROM images ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [parseInt(limit), parseInt(offset)]
+    );
     return rows;
   } catch (err) {
     console.error("❌ خطأ في جلب الصور:", err.message);
@@ -87,18 +57,30 @@ async function getImages({ phone, limit = 50, offset = 0 } = {}) {
   }
 }
 
-// ─── إحصائيات الصور ────────────────────────────────────────────────────────
+// ─── إحصائيات ─────────────────────────────────────────────────────────────
 
 async function getImageStats() {
   try {
     const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM images`);
-    const [[{ today }]] = await pool.query(
-      `SELECT COUNT(*) AS today FROM images WHERE DATE(created_at) = CURDATE()`
-    );
+    const [[{ today }]] = await pool.query(`SELECT COUNT(*) AS today FROM images WHERE DATE(created_at) = CURDATE()`);
     return { total, today };
+  } catch { return { total: 0, today: 0 }; }
+}
+
+// ─── حذف صورة ─────────────────────────────────────────────────────────────
+
+async function deleteImage(id) {
+  try {
+    const [[row]] = await pool.query(`SELECT filename FROM images WHERE id = ?`, [id]);
+    if (!row) return false;
+    const filepath = path.join(IMAGES_DIR, row.filename);
+    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    await pool.query(`DELETE FROM images WHERE id = ?`, [id]);
+    return true;
   } catch (err) {
-    return { total: 0, today: 0 };
+    console.error("❌ خطأ في حذف الصورة:", err.message);
+    return false;
   }
 }
 
-module.exports = { saveImage, getImages, getImageStats };
+module.exports = { saveImage, getImages, getImageStats, deleteImage };

@@ -4,858 +4,186 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الشات — واتساب بوت</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-    /* ── Header ── */
-    header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 12px 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    header h1 { font-size: 1.1rem; }
-    .nav-links a {
-      color: white; text-decoration: none; margin-right: 10px;
-      font-size: 0.82rem; padding: 5px 10px;
-      border-radius: 8px; transition: background 0.2s;
-    }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
-
-    /* ── Layout ── */
-    .chat-layout {
-      display: flex; flex: 1; overflow: hidden;
-    }
-
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 320px; flex-shrink: 0;
-      background: white; border-left: 1px solid #e9ecef;
-      display: flex; flex-direction: column;
-    }
-    .sidebar-header {
-      padding: 14px 16px; border-bottom: 1px solid #f0f0f0;
-      background: #f8f9fa;
-    }
-    .sidebar-header h3 { font-size: 0.95rem; color: #333; margin-bottom: 10px; }
-    .search-box {
-      width: 100%; padding: 8px 12px; border: 1px solid #ddd;
-      border-radius: 20px; font-size: 0.85rem; outline: none;
-      direction: rtl; background: white;
-    }
-    .search-box:focus { border-color: #128c7e; }
-    .contacts-list { flex: 1; overflow-y: auto; }
-    .contact-item {
-      padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f5f5;
-      display: flex; align-items: center; gap: 12px;
-      transition: background 0.15s;
-    }
-    .contact-item:hover { background: #f5f5f5; }
-    .contact-item.active { background: #e8f5e9; }
-    .contact-item.unread { border-right: 4px solid #e53935; background: #fff5f5; }
-    .contact-item.unread:hover { background: #ffe8e8; }
-    .contact-item.unread.active { background: #ffe0e0; border-right-color: #c62828; }
-    .unread-dot {
-      width: 10px; height: 10px; border-radius: 50%; background: #e53935;
-      flex-shrink: 0;
-    }
-    .contact-avatar {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: linear-gradient(135deg, #128c7e, #25d366);
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-size: 1.1rem; font-weight: 700;
-      flex-shrink: 0;
-    }
-    .contact-details { flex: 1; min-width: 0; }
-    .contact-name { font-weight: 600; font-size: 0.9rem; color: #1a1a2e; }
-    .contact-preview {
-      font-size: 0.78rem; color: #888; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
-    }
-    .contact-time { font-size: 0.72rem; color: #aaa; flex-shrink: 0; }
-    .empty-contacts { text-align: center; padding: 40px 20px; color: #aaa; font-size: 0.9rem; }
-
-    /* ── Chat Panel ── */
-    .chat-panel {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
-      background: #e5ddd5 url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c3bdb8' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    }
-    .chat-no-selection {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      flex-direction: column; color: #888; gap: 12px;
-    }
-    .chat-no-selection .icon { font-size: 4rem; opacity: 0.4; }
-    .chat-no-selection p { font-size: 1rem; }
-
-    .chat-header {
-      background: #075e54; color: white;
-      padding: 12px 18px; display: flex; align-items: center; gap: 12px;
-      flex-shrink: 0;
-    }
-    .chat-header .avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; font-weight: 700;
-    }
-    .chat-header .info .name { font-weight: 700; font-size: 0.95rem; }
-    .chat-header .info .phone { font-size: 0.78rem; opacity: 0.8; }
-
-    /* ── Messages ── */
-    .messages-wrap { flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 6px; }
-    .msg-bubble {
-      max-width: 70%; padding: 8px 12px; border-radius: 10px;
-      font-size: 0.88rem; line-height: 1.5; position: relative;
-      word-break: break-word;
-    }
-    .msg-bubble.in {
-      background: white; align-self: flex-start;
-      border-radius: 0 10px 10px 10px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-    }
-    .msg-bubble.out {
-      background: #dcf8c6; align-self: flex-end;
-      border-radius: 10px 0 10px 10px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-    }
-    .msg-meta {
-      font-size: 0.68rem; color: #aaa; text-align: left;
-      margin-top: 3px; display: flex; align-items: center; gap: 4px; justify-content: flex-end;
-    }
-    .msg-bubble.out .msg-meta { color: #7eb87e; }
-    .source-badge {
-      font-size: 0.62rem; background: rgba(0,0,0,0.08);
-      padding: 1px 5px; border-radius: 4px; color: #666;
-    }
-    .msg-bubble.out .source-badge { color: #5a9a5a; background: rgba(0,0,0,0.06); }
-    .msg-date-sep {
-      text-align: center; font-size: 0.74rem; color: #888;
-      background: rgba(255,255,255,0.7); display: inline-block;
-      margin: 8px auto; padding: 3px 12px; border-radius: 10px;
-      align-self: center;
-    }
-
-    /* ── Input ── */
-    .chat-input-bar {
-      background: #f0f0f0; padding: 10px 14px;
-      display: flex; gap: 8px; align-items: center; flex-shrink: 0;
-    }
-    .chat-input-bar textarea {
-      flex: 1; padding: 10px 14px; border: none; border-radius: 22px;
-      font-size: 0.9rem; resize: none; outline: none; max-height: 100px;
-      font-family: inherit; direction: rtl; background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .send-btn {
-      width: 44px; height: 44px; border-radius: 50%;
-      border: none; cursor: pointer; font-size: 1.1rem;
-      display: flex; align-items: center; justify-content: center;
-      transition: opacity 0.2s; flex-shrink: 0;
-    }
-    .send-btn:hover { opacity: 0.85; }
-    .send-btn.text   { background: #128c7e; color: white; }
-    .send-btn.voice  { background: #25d366; color: white; }
-    .send-btn.attach { background: #607d8b; color: white; }
-
-    /* ── Media preview in bubbles ── */
-    .msg-bubble img   { max-width: 100%; border-radius: 8px; display: block; margin-bottom: 4px; cursor: pointer; }
-    .msg-bubble video { max-width: 260px; border-radius: 8px; display: block; margin-bottom: 4px; }
-    .msg-bubble audio { width: 240px; display: block; margin-bottom: 4px; }
-
-    /* ── Media Modal ── */
-    #mediaModal { max-width: 520px; }
-    .drop-zone {
-      border: 2px dashed #ccc; border-radius: 14px; padding: 22px 16px;
-      text-align: center; cursor: pointer; transition: all 0.2s; color: #888;
-      background: #fafafa;
-    }
-    .drop-zone:hover, .drop-zone.drag-over { border-color: #128c7e; background: #f0faf8; color: #128c7e; }
-    .drop-zone .dz-icon { font-size: 2.2rem; margin-bottom: 6px; }
-    .drop-zone p { font-size: 0.85rem; margin: 0; }
-    .drop-zone small { color: #aaa; font-size: 0.75rem; }
-    #mediaFileInput { display: none; }
-    .file-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 8px; margin-top: 12px; max-height: 220px; overflow-y: auto;
-    }
-    .file-thumb {
-      position: relative; border-radius: 10px; overflow: hidden;
-      background: #f0f0f0; aspect-ratio: 1; display: flex;
-      align-items: center; justify-content: center; flex-direction: column;
-      font-size: 0.72rem; color: #555; text-align: center; padding: 6px;
-    }
-    .file-thumb img, .file-thumb video {
-      width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
-    }
-    .file-thumb .file-icon { font-size: 1.8rem; margin-bottom: 4px; }
-    .file-thumb .file-name {
-      font-size: 0.65rem; word-break: break-all; line-height: 1.2;
-      max-height: 2.4em; overflow: hidden;
-    }
-    .file-thumb .rm-btn {
-      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
-      border-radius: 50%; background: rgba(0,0,0,0.55); color: white;
-      border: none; cursor: pointer; font-size: 0.65rem; line-height: 18px;
-      text-align: center; padding: 0; z-index: 2;
-    }
-    .file-thumb .file-overlay {
-      position: absolute; inset: 0; background: rgba(0,0,0,0.3);
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-size: 1.4rem;
-    }
-    .send-progress {
-      margin-top: 10px; font-size: 0.82rem; color: #128c7e;
-      text-align: center; display: none;
-    }
-    .progress-bar-wrap {
-      background: #e0e0e0; border-radius: 6px; height: 6px; margin-top: 6px; overflow: hidden;
-    }
-    .progress-bar { height: 100%; background: #25d366; transition: width 0.3s; width: 0; }
-
-    /* ── Voice Modal ── */
-    .overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5); z-index: 100;
-      align-items: center; justify-content: center;
-    }
-    .overlay.open { display: flex; }
-    .modal {
-      background: white; border-radius: 16px; padding: 28px;
-      width: 90%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .modal h3 { margin-bottom: 14px; font-size: 1.1rem; color: #075e54; }
-    .modal .to-info {
-      background: #f5f5f5; border-radius: 8px; padding: 8px 14px;
-      margin-bottom: 14px; font-size: 0.85rem; color: #555;
-    }
-    .record-area { text-align: center; margin-bottom: 10px; }
-    .btn-record {
-      background: #128c7e; color: white; padding: 10px 24px;
-      border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .btn-record.recording { background: #e53935; }
-    .or-sep { text-align: center; color: #bbb; font-size: 0.8rem; margin: 8px 0; }
-    .voice-upload-area {
-      border: 2px dashed #ddd; border-radius: 12px; padding: 20px;
-      text-align: center; cursor: pointer; transition: border-color 0.2s;
-    }
-    .voice-upload-area:hover { border-color: #128c7e; }
-    .voice-upload-area p { color: #888; font-size: 0.85rem; }
-    #vFileInput { display: none; }
-    #vPreview { margin-top: 10px; width: 100%; display: none; }
-    .v-name { font-size: 0.8rem; color: #555; margin-top: 4px; text-align: center; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
-    .btn { padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
-    .btn-green  { background: #25d366; color: white; }
-
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
-    }
-    #toast.show { opacity: 1; }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .sidebar { width: 100%; display: none; }
-      .sidebar.show { display: flex; }
-      .chat-panel { display: none; }
-      .chat-panel.show { display: flex; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/chat.css">
 </head>
 <body>
 
-<header>
-  <h1>💬 الشات</h1>
-  <nav class="nav-links">
-    <a href="/">🏠 الرئيسية</a>
-    <a href="/messages.html">📋 الرسائل</a>
-    <a href="/images.html">📸 الصور</a>
-    <a href="/voices.html">🎤 الصوتيات</a>
-    <a href="/videos.html">🎬 الفيديوهات</a>
-    <a href="/chat.html" class="active">💬 الشات</a>
-    <a href="#" onclick="logout()" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
-  </nav>
-</header>
+<!-- Top Navigation -->
+<div class="top-nav">
+  <a href="/">🏠 الرئيسية</a>
+  <span class="top-nav-sep">|</span>
+  <a href="/messages.html">📋 الرسائل</a>
+  <a href="/images.html">📸 الصور</a>
+  <a href="/voices.html">🎤 الصوتيات</a>
+  <a href="/videos.html">🎬 الفيديوهات</a>
+  <span class="top-nav-sep">|</span>
+  <a href="/chat.html" class="active">💬 الشات</a>
+  <a href="/qr.html">📲 QR</a>
+  <a href="/sync.html">🔄 مزامنة</a>
+  <span class="top-nav-sep">|</span>
+  <a href="#" onclick="logout()" class="logout">🚪 خروج</a>
+</div>
 
 <div class="chat-layout">
 
-  <!-- Sidebar -->
+  <!-- ══ SIDEBAR ══ -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h3>المحادثات (<span id="contactCount">0</span>)</h3>
-      <input class="search-box" id="searchContact" type="text" placeholder="🔍 ابحث باسم أو رقم...">
+    <div class="sidebar-top">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="sidebar-tabs" style="flex:1">
+          <button class="tab-btn active" id="tabAll" onclick="setTab('all')">
+            الكل <span class="tab-badge" id="badgeAll">0</span>
+          </button>
+          <button class="tab-btn" id="tabUnread" onclick="setTab('unread')">
+            للرد <span class="tab-badge" id="badgeUnread">0</span>
+          </button>
+        </div>
+        <button class="new-chat-btn" title="محادثة جديدة برقم الهاتف" onclick="toggleNewChat()">✏️</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-box" id="searchContact" type="text" placeholder="ابحث باسم أو رقم...">
+      </div>
+    </div>
+    <div class="new-chat-bar" id="newChatBar">
+      <input type="tel" id="newChatPhone" placeholder="أدخل رقم الهاتف مثلاً: 212600123456"
+        onkeydown="if(event.key==='Enter') openByPhone()">
+      <button class="nc-go"  onclick="openByPhone()">فتح</button>
+      <button class="nc-can" onclick="toggleNewChat()">✕</button>
     </div>
     <div class="contacts-list" id="contactsList">
       <div class="empty-contacts">جاري التحميل...</div>
     </div>
   </div>
 
-  <!-- Chat Panel -->
+  <!-- ══ CHAT PANEL ══ -->
   <div class="chat-panel" id="chatPanel">
+
+    <!-- No chat selected -->
     <div class="chat-no-selection" id="noSelection">
       <div class="icon">💬</div>
       <p>اختر محادثة من القائمة</p>
     </div>
 
-    <!-- When contact selected -->
-    <div id="chatView" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+    <!-- Chat view -->
+    <div id="chatView">
       <div class="chat-header">
         <div class="avatar" id="chatAvatar">?</div>
         <div class="info">
-          <div class="name" id="chatName">—</div>
+          <div class="name"  id="chatName">—</div>
           <div class="phone" id="chatPhone">—</div>
         </div>
+        <button class="header-resp-btn" onclick="openResponseModal()" title="إضافة رد مبرمج جديد">➕ رد مبرمج</button>
       </div>
+      <div class="chat-tabs" id="chatTabs">
+        <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 رسائل</button>
+        <button class="chat-tab-btn" onclick="setViewTab('imgs')">📸 صور</button>
+        <button class="chat-tab-btn" onclick="setViewTab('vids')">🎬 فيديوهات</button>
+      </div>
+
       <div class="messages-wrap" id="messagesWrap"></div>
-      <div class="chat-input-bar">
-        <button class="send-btn voice"  title="إرسال صوت"   onclick="openVoiceModal()">🎤</button>
-        <button class="send-btn attach" title="إرسال صورة أو فيديو" onclick="openMediaModal()">📎</button>
-        <textarea id="msgInput" rows="1" placeholder="اكتب رسالة..." oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
-        <button class="send-btn text"   onclick="sendText()">➤</button>
+
+      <div class="media-panel" id="imgsPanel">
+        <div class="media-grid" id="imgsGrid"></div>
+      </div>
+
+      <div class="media-panel" id="vidsPanel">
+        <div class="media-grid" id="vidsGrid"></div>
+      </div>
+
+      <div class="chat-input-bar" id="chatInputBar">
+        <button class="send-btn attach" id="attachBtn" title="إرسال ملفات" onclick="openMediaModal()">📎</button>
+        <textarea id="msgInput" rows="1" placeholder="اكتب رسالة..."
+          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+        <select id="botSelect" class="bot-select" title="اختر الرقم للإرسال">
+          <option value="">🤖 تلقائي</option>
+          <option value="bot1">رقم 1</option>
+          <option value="bot2">رقم 2</option>
+          <option value="bot3">رقم 3</option>
+        </select>
+        <button class="send-btn text" id="sendTextBtn" onclick="sendText()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+            <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/>
+          </svg>
+        </button>
+        <button class="send-btn voice" id="micBtn" title="تسجيل صوتي" onclick="toggleInlineRecord()">🎤</button>
+
+        <div class="rec-bar" id="recBar">
+          <div class="rec-dot"></div>
+          <span class="rec-label">جاري التسجيل...</span>
+          <span class="rec-timer" id="recTimer">0:00</span>
+        </div>
+        <button class="rec-cancel-btn" id="recCancelBtn" style="display:none" onclick="cancelInlineRecord()" title="إلغاء">✕</button>
+        <button class="rec-send-btn"   id="recSendBtn"   style="display:none" onclick="stopAndSendRecord()" title="إرسال">✓</button>
       </div>
     </div>
-  </div>
 
-</div>
-
-<!-- Voice Modal -->
-<div class="overlay" id="voiceOverlay">
-  <div class="modal">
-    <h3>🎤 إرسال رسالة صوتية</h3>
-    <div class="to-info" id="voiceTo"></div>
-    <div class="record-area">
-      <button id="recordBtn" class="btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
-      <div id="recordTimer" style="display:none; margin-top:8px; text-align:center; color:#e53935; font-weight:700;">
-        ⏺️ <span id="timerDisplay">0:00</span>
-      </div>
-    </div>
-    <div class="or-sep" id="orSep">— أو اختر ملف —</div>
-    <div class="voice-upload-area" onclick="document.getElementById('vFileInput').click()">
-      <p>📁 mp3 · ogg · wav · m4a</p>
-    </div>
-    <input type="file" id="vFileInput" accept="audio/*">
-    <audio id="vPreview" controls style="display:none; margin-top:10px; width:100%;"></audio>
-    <div class="v-name" id="vName"></div>
-    <div class="modal-actions">
-      <button class="btn" style="background:#eee;color:#333" onclick="closeVoiceModal()">إلغاء</button>
-      <button class="btn btn-green" onclick="sendVoice()">إرسال ✉️</button>
-    </div>
   </div>
 </div>
 
-<!-- Media Modal -->
+<!-- ══ Media Modal ══ -->
 <div class="overlay" id="mediaOverlay">
   <div class="modal" id="mediaModal">
     <h3>📎 إرسال ملفات</h3>
     <div class="to-info" id="mediaTo"></div>
-
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('mediaFileInput').click()">
       <div class="dz-icon">📁</div>
       <p>اسحب الملفات هنا أو اضغط للاختيار</p>
       <small>صور · فيديوهات · PDF · Word · Excel · وغيرها</small>
     </div>
     <input type="file" id="mediaFileInput" accept="*/*" multiple>
-
     <div class="file-grid" id="fileGrid" style="display:none"></div>
-
+    <div id="captionRow" style="display:none;margin-top:8px;">
+      <input type="text" id="mediaCaption" placeholder="أضف تعليقاً (اختياري)..."
+        style="width:100%;background:#2a3942;border:none;border-radius:8px;padding:9px 12px;
+               color:#e9edef;font-size:0.88rem;outline:none;direction:rtl;font-family:inherit;">
+    </div>
     <div class="send-progress" id="sendProgress">
       <span id="progressText">جاري الإرسال...</span>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
     </div>
-
-    <div class="modal-actions" style="margin-top:14px;">
-      <button class="btn" style="background:#eee;color:#333" onclick="closeMediaModal()">إلغاء</button>
-      <button class="btn btn-green" id="mediaSendBtn" onclick="sendMedia()">إرسال ✉️ (<span id="fileCount">0</span>)</button>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn btn-cancel" onclick="closeMediaModal()">إلغاء</button>
+      <button class="btn btn-green"  id="mediaSendBtn" onclick="sendMedia()">
+        إرسال ✉️ (<span id="fileCount">0</span>)
+      </button>
     </div>
   </div>
 </div>
 
+<!-- ══ Quick Response Modal ══ -->
+<div class="qr-overlay" id="qrOverlay">
+  <div class="qr-modal">
+    <h3>➕ إضافة رد مبرمج</h3>
+    <div class="qr-field">
+      <label>الكلمات المفتاحية (افصل بفاصلة)</label>
+      <input type="text" id="qrKeywords" placeholder="سلام, hello, مرحبا">
+    </div>
+    <div class="qr-field">
+      <label>نص الرد *</label>
+      <textarea id="qrReply" placeholder="اكتب الرد هنا..."></textarea>
+    </div>
+    <div class="qr-actions">
+      <button class="qr-btn-cancel" onclick="closeResponseModal()">إلغاء</button>
+      <button class="qr-btn-save"   onclick="saveQuickResponse()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Lightbox -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
 <div id="toast"></div>
 
-<script>
-  let selectedPhone = "";
-  let selectedName  = "";
-  let allContacts   = [];
-  let voiceData     = null;
-  let voiceMime     = null;
-  let mediaRecorder = null;
-  let recordChunks  = [];
-  let recordInterval = null;
-  let recordSeconds  = 0;
-  let lastMessageId    = 0;
-  let lastDateRendered = "";
-
-  // ── Contacts ────────────────────────────────────────────────────────────
-  async function loadContacts() {
-    try {
-      const res  = await fetch("/api/contacts");
-      allContacts = await res.json();
-      document.getElementById("contactCount").textContent = allContacts.length;
-      renderContacts(allContacts);
-    } catch { /* silent */ }
-  }
-
-  function renderContacts(list) {
-    const el = document.getElementById("contactsList");
-    if (!list.length) {
-      el.innerHTML = `<div class="empty-contacts">لا توجد محادثات بعد</div>`;
-      return;
-    }
-    el.innerHTML = list.map(c => {
-      const initial  = (c.name || c.phone)[0].toUpperCase();
-      const time     = formatTime(c.lastSeen);
-      const preview  = (c.lastMessage || "").substring(0, 40);
-      const isUnread = c.lastDirection === "in";
-      const active   = c.phone === selectedPhone ? "active" : "";
-      const cls      = [active, isUnread ? "unread" : ""].filter(Boolean).join(" ");
-      const dot      = isUnread ? `<div class="unread-dot"></div>` : "";
-      return `
-        <div class="contact-item ${cls}" data-phone="${escHtml(c.phone)}" data-name="${escHtml(c.name)}" onclick="selectContact(this)">
-          <div class="contact-avatar">${initial}</div>
-          <div class="contact-details">
-            <div class="contact-name">${escHtml(c.name)}</div>
-            <div class="contact-preview">${escHtml(preview)}</div>
-          </div>
-          <div class="contact-time">${time}</div>
-          ${dot}
-        </div>`;
-    }).join("");
-  }
-
-  document.getElementById("searchContact").addEventListener("input", function() {
-    const q = this.value.trim().toLowerCase();
-    if (!q) return renderContacts(allContacts);
-    renderContacts(allContacts.filter(c =>
-      c.name.toLowerCase().includes(q) || c.phone.includes(q)
-    ));
-  });
-
-  // ── Select Contact ───────────────────────────────────────────────────────
-  function selectContact(el) {
-    const phone = el.dataset.phone;
-    const name  = el.dataset.name;
-    selectedPhone = phone;
-    selectedName  = name;
-    lastMessageId    = 0;
-    lastDateRendered = "";
-
-    document.getElementById("noSelection").style.display = "none";
-    const cv = document.getElementById("chatView");
-    cv.style.display = "flex";
-
-    document.getElementById("chatAvatar").textContent = (name || phone)[0].toUpperCase();
-    document.getElementById("chatName").textContent   = name;
-    document.getElementById("chatPhone").textContent  = `+${phone}`;
-
-    // highlight active contact
-    document.querySelectorAll(".contact-item").forEach(i => i.classList.remove("active"));
-    el.classList.add("active");
-
-    loadMessages(true);
-  }
-
-  // ── Messages ─────────────────────────────────────────────────────────────
-  async function loadMessages(scrollToBottom = false) {
-    if (!selectedPhone) return;
-    try {
-      const res  = await fetch(`/api/messages?phone=${selectedPhone}&limit=200`);
-      if (!res.ok) { console.error("فشل جلب الرسائل:", res.status); return; }
-      const msgs = (await res.json()).reverse(); // DESC → ASC
-      const wrap = document.getElementById("messagesWrap");
-
-      if (!msgs.length) {
-        if (lastMessageId === 0) wrap.innerHTML = `<div style="text-align:center;color:#aaa;padding:30px">لا توجد رسائل بعد</div>`;
-        return;
-      }
-
-      const newLastId = msgs[msgs.length - 1].id;
-
-      // First load or explicit full refresh
-      if (lastMessageId === 0 || scrollToBottom) {
-        lastDateRendered = "";
-        wrap.innerHTML = renderMessages(msgs);
-        wrap.scrollTop = wrap.scrollHeight;
-        lastMessageId = newLastId;
-        return;
-      }
-
-      // No new messages — keep DOM intact (video/audio keeps playing)
-      if (newLastId === lastMessageId) return;
-
-      // Append only new messages without touching existing DOM
-      const lastIdx = msgs.findIndex(m => m.id === lastMessageId);
-      const newMsgs = lastIdx === -1 ? msgs : msgs.slice(lastIdx + 1);
-      if (newMsgs.length > 0) {
-        const wasAtBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 80;
-        newMsgs.forEach(m => wrap.insertAdjacentHTML("beforeend", renderSingleMessage(m)));
-        if (wasAtBottom) wrap.scrollTop = wrap.scrollHeight;
-      }
-      lastMessageId = newLastId;
-    } catch(err) { console.error("خطأ في loadMessages:", err); }
-  }
-
-  function renderSingleMessage(m) {
-    let html = "";
-    const date = new Date(m.created_at).toLocaleDateString("ar-MA");
-    if (date !== lastDateRendered) {
-      html += `<div class="msg-date-sep">${date}</div>`;
-      lastDateRendered = date;
-    }
-    const dir  = m.direction === "out" ? "out" : "in";
-    const time = new Date(m.created_at).toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" });
-    const src  = m.source && m.source !== "user" ? `<span class="source-badge">${srcLabel(m.source)}</span>` : "";
-    const body = m.body || "";
-    let content = "";
-    if (body.startsWith("/uploads/images/")) {
-      content = `<img src="${body}" loading="lazy" onclick="window.open('${body}')">`;
-    } else if (body.startsWith("/uploads/videos/")) {
-      content = `<video src="${body}" controls preload="metadata"></video>`;
-    } else if (body.startsWith("/uploads/voices/")) {
-      content = `<audio src="${body}" controls preload="metadata"></audio>`;
-    } else {
-      content = escHtml(body);
-    }
-    html += `
-      <div class="msg-bubble ${dir}">
-        ${content}
-        <div class="msg-meta">${src} ${time}</div>
-      </div>`;
-    return html;
-  }
-
-  function renderMessages(msgs) {
-    if (!msgs.length) return `<div style="text-align:center;color:#aaa;padding:30px">لا توجد رسائل بعد</div>`;
-    lastDateRendered = "";
-    return msgs.map(m => renderSingleMessage(m)).join("");
-  }
-
-  function srcLabel(s) {
-    return s === "ai" ? "ذكاء" : s === "custom" ? "مبرمج" : s === "default" ? "افتراضي" : s;
-  }
-
-  // ── Send Text ─────────────────────────────────────────────────────────────
-  async function sendText() {
-    const text = document.getElementById("msgInput").value.trim();
-    if (!text || !selectedPhone) return;
-    document.getElementById("msgInput").value = "";
-    autoResize(document.getElementById("msgInput"));
-    try {
-      const res  = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: selectedPhone, message: text })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        showToast("✅ تم الإرسال");
-        setTimeout(() => loadMessages(true), 500);
-      } else showToast("❌ " + (data.error || "فشل الإرسال"));
-    } catch { showToast("❌ خطأ في الاتصال"); }
-  }
-
-  function handleKey(e) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(); }
-  }
-  function autoResize(el) {
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 100) + "px";
-  }
-
-  // ── Media Modal (multi-file) ──────────────────────────────────────────────
-  let selectedFiles = []; // { file, dataUrl, data(base64), name, mime, ext }
-
-  function openMediaModal() {
-    if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
-    selectedFiles = [];
-    document.getElementById("mediaTo").textContent = `إلى: ${selectedName} (+${selectedPhone})`;
-    document.getElementById("mediaFileInput").value = "";
-    document.getElementById("fileGrid").style.display = "none";
-    document.getElementById("fileGrid").innerHTML = "";
-    document.getElementById("sendProgress").style.display = "none";
-    document.getElementById("fileCount").textContent = "0";
-    document.getElementById("dropZone").style.display = "";
-    document.getElementById("mediaOverlay").classList.add("open");
-  }
-
-  function closeMediaModal() {
-    document.getElementById("mediaOverlay").classList.remove("open");
-  }
-
-  document.getElementById("mediaOverlay").addEventListener("click", e => {
-    if (e.target === document.getElementById("mediaOverlay")) closeMediaModal();
-  });
-
-  // Drag & drop
-  const dropZone = document.getElementById("dropZone");
-  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
-  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
-  dropZone.addEventListener("drop", e => {
-    e.preventDefault(); dropZone.classList.remove("drag-over");
-    addFiles(Array.from(e.dataTransfer.files));
-  });
-
-  document.getElementById("mediaFileInput").addEventListener("change", function() {
-    addFiles(Array.from(this.files));
-    this.value = "";
-  });
-
-  function fileIcon(mime) {
-    if (mime.startsWith("image/"))       return "🖼️";
-    if (mime.startsWith("video/"))       return "🎬";
-    if (mime.startsWith("audio/"))       return "🎵";
-    if (mime.includes("pdf"))            return "📄";
-    if (mime.includes("word") || mime.includes("document")) return "📝";
-    if (mime.includes("excel") || mime.includes("spreadsheet")) return "📊";
-    if (mime.includes("zip") || mime.includes("rar")) return "🗜️";
-    return "📎";
-  }
-
-  function addFiles(files) {
-    files.forEach(file => {
-      const entry = { file, name: file.name, mime: file.type || "application/octet-stream", ext: file.name.split(".").pop(), data: null, dataUrl: null };
-      selectedFiles.push(entry);
-      const idx = selectedFiles.length - 1;
-      const reader = new FileReader();
-      reader.onload = e => {
-        entry.dataUrl = e.target.result;
-        entry.data    = e.target.result.split(",")[1];
-        renderFileGrid();
-      };
-      reader.readAsDataURL(file);
-    });
-    document.getElementById("fileCount").textContent = selectedFiles.length;
-    if (selectedFiles.length) document.getElementById("dropZone").style.display = "none";
-    renderFileGrid();
-  }
-
-  function removeFile(idx) {
-    selectedFiles.splice(idx, 1);
-    document.getElementById("fileCount").textContent = selectedFiles.length;
-    if (!selectedFiles.length) document.getElementById("dropZone").style.display = "";
-    renderFileGrid();
-  }
-
-  function renderFileGrid() {
-    const grid = document.getElementById("fileGrid");
-    if (!selectedFiles.length) { grid.style.display = "none"; grid.innerHTML = ""; return; }
-    grid.style.display = "grid";
-    grid.innerHTML = selectedFiles.map((f, i) => {
-      const isImg = f.mime.startsWith("image/");
-      const isVid = f.mime.startsWith("video/");
-      const preview = isImg && f.dataUrl
-        ? `<img src="${f.dataUrl}">`
-        : isVid && f.dataUrl
-        ? `<div class="file-overlay">${fileIcon(f.mime)}</div>`
-        : "";
-      const shortName = f.name.length > 16 ? f.name.substring(0, 14) + "…" : f.name;
-      return `
-        <div class="file-thumb">
-          ${preview}
-          ${!isImg ? `<div class="file-icon">${fileIcon(f.mime)}</div><div class="file-name">${shortName}</div>` : ""}
-          <button class="rm-btn" onclick="removeFile(${i})" title="حذف">✕</button>
-        </div>`;
-    }).join("");
-  }
-
-  async function sendMedia() {
-    if (!selectedFiles.length) return showToast("⚠️ اختر ملفاً أولاً");
-    if (selectedFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل تحميل الملفات");
-
-    const progress  = document.getElementById("sendProgress");
-    const bar       = document.getElementById("progressBar");
-    const txt       = document.getElementById("progressText");
-    const sendBtn   = document.getElementById("mediaSendBtn");
-    progress.style.display = "block";
-    sendBtn.disabled = true;
-
-    let sent = 0, failed = 0;
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const f = selectedFiles[i];
-      txt.textContent = `جاري إرسال ${i + 1} من ${selectedFiles.length}: ${f.name}`;
-      bar.style.width  = `${Math.round((i / selectedFiles.length) * 100)}%`;
-      try {
-        const res  = await fetch("/api/send-media", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: selectedPhone, data: f.data, mimetype: f.mime, ext: f.ext, filename: f.name })
-        });
-        const d = await res.json();
-        if (d.ok) sent++; else failed++;
-      } catch { failed++; }
-    }
-
-    bar.style.width = "100%";
-    txt.textContent = `✅ تم إرسال ${sent}${failed ? ` · ❌ فشل ${failed}` : ""}`;
-    sendBtn.disabled = false;
-    setTimeout(() => { closeMediaModal(); loadMessages(true); }, 1200);
-  }
-
-  // ── Voice Modal ───────────────────────────────────────────────────────────
-  function openVoiceModal() {
-    if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
-    voiceData = null; voiceMime = null;
-    document.getElementById("voiceTo").textContent = `إلى: ${selectedName} (+${selectedPhone})`;
-    document.getElementById("vFileInput").value    = "";
-    document.getElementById("vPreview").style.display = "none";
-    document.getElementById("vName").textContent   = "";
-    document.getElementById("voiceOverlay").classList.add("open");
-    if (!window.isSecureContext || !navigator.mediaDevices) {
-      document.getElementById("recordBtn").textContent = "🔒 يتطلب localhost أو HTTPS";
-      document.getElementById("recordBtn").disabled = true;
-      document.getElementById("recordBtn").style.opacity = "0.5";
-    } else {
-      document.getElementById("recordBtn").textContent = "🎙️ ابدأ التسجيل";
-      document.getElementById("recordBtn").disabled = false;
-      document.getElementById("recordBtn").style.opacity = "";
-    }
-  }
-  function closeVoiceModal() {
-    stopRecording();
-    document.getElementById("voiceOverlay").classList.remove("open");
-  }
-
-  document.getElementById("voiceOverlay").addEventListener("click", e => {
-    if (e.target === document.getElementById("voiceOverlay")) closeVoiceModal();
-  });
-
-  // Recording
-  async function toggleRecord() {
-    mediaRecorder && mediaRecorder.state === "recording" ? stopRecording() : startRecording();
-  }
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // اكتشاف النوع الصحيح الذي يدعمه المتصفح
-      const detected = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/ogg","audio/mp4"]
-        .find(t => { try { return MediaRecorder.isTypeSupported(t); } catch { return false; } }) || "";
-
-      mediaRecorder = new MediaRecorder(stream, detected ? { mimeType: detected } : {});
-      recordChunks  = [];
-      mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordChunks.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const actualMime = mediaRecorder.mimeType || detected || "audio/webm";
-        const blob = new Blob(recordChunks, { type: actualMime });
-        voiceMime = actualMime.split(";")[0];
-        if (blob.size === 0) { showToast("❌ التسجيل فارغ، حاول مجدداً"); return; }
-        const reader = new FileReader();
-        reader.onload = ev => {
-          voiceData = ev.target.result.split(",")[1];
-          const p = document.getElementById("vPreview");
-          p.src = ev.target.result; p.style.display = "block";
-        };
-        reader.onerror = () => showToast("❌ خطأ في قراءة التسجيل");
-        reader.readAsDataURL(blob);
-        document.getElementById("vName").textContent = `🎙️ تسجيل — ${recordSeconds}ث`;
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mediaRecorder.onerror = e => showToast("❌ خطأ في التسجيل: " + e.error?.name);
-      mediaRecorder.start(100); // timeslice 100ms لضمان جمع البيانات
-      recordSeconds = 0;
-      document.getElementById("recordBtn").textContent = "⏹️ إيقاف";
-      document.getElementById("recordBtn").classList.add("recording");
-      document.getElementById("recordTimer").style.display = "block";
-      recordInterval = setInterval(() => {
-        recordSeconds++;
-        const m = Math.floor(recordSeconds / 60), s = recordSeconds % 60;
-        document.getElementById("timerDisplay").textContent = `${m}:${s.toString().padStart(2,"0")}`;
-      }, 1000);
-    } catch(err) {
-      const msgs = {
-        NotAllowedError:  "❌ تم رفض الإذن للميكروفون — اسمح من إعدادات المتصفح",
-        NotFoundError:    "❌ لم يُعثر على ميكروفون",
-        NotReadableError: "❌ الميكروفون مستخدم من تطبيق آخر",
-      };
-      showToast(msgs[err.name] || `❌ خطأ: ${err.message}`);
-    }
-  }
-  function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
-    clearInterval(recordInterval);
-    const btn = document.getElementById("recordBtn");
-    if (btn) { btn.textContent = "🎙️ ابدأ التسجيل"; btn.classList.remove("recording"); }
-    const t = document.getElementById("recordTimer");
-    if (t) t.style.display = "none";
-  }
-
-  document.getElementById("vFileInput").addEventListener("change", function() {
-    const file = this.files[0]; if (!file) return;
-    voiceMime = file.type || "audio/ogg";
-    document.getElementById("vName").textContent = `🎵 ${file.name}`;
-    const reader = new FileReader();
-    reader.onload = e => {
-      voiceData = e.target.result.split(",")[1];
-      const p = document.getElementById("vPreview");
-      p.src = e.target.result; p.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  });
-
-  async function sendVoice() {
-    if (!voiceData) {
-      // إذا كان التسجيل توقف لكن FileReader لم ينته بعد
-      if (mediaRecorder && mediaRecorder.state === "inactive" && recordChunks.length > 0) {
-        return showToast("⏳ انتظر لحظة، يتم معالجة التسجيل...");
-      }
-      return showToast("⚠️ سجّل أو اختر ملف صوتي أولاً");
-    }
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      return showToast("⚠️ أوقف التسجيل أولاً ثم أرسل");
-    }
-    const btn = document.querySelector("#voiceOverlay .btn-green");
-    btn.disabled = true; btn.textContent = "جاري الإرسال...";
-    try {
-      const res  = await fetch("/api/send-voice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: selectedPhone, data: voiceData, mimetype: voiceMime })
-      });
-      const data = await res.json();
-      if (data.ok) { showToast("✅ تم إرسال الصوت"); closeVoiceModal(); loadMessages(true); }
-      else showToast("❌ " + (data.error || "فشل الإرسال"));
-    } catch { showToast("❌ خطأ في الاتصال"); }
-    btn.disabled = false; btn.textContent = "إرسال ✉️";
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function formatTime(dateStr) {
-    const d    = new Date(dateStr);
-    const now  = new Date();
-    const diff = (now - d) / 1000;
-    if (diff < 60)     return "الآن";
-    if (diff < 3600)   return `${Math.floor(diff/60)}د`;
-    if (diff < 86400)  return d.toLocaleTimeString("ar-MA", { hour:"2-digit", minute:"2-digit" });
-    return d.toLocaleDateString("ar-MA", { day:"numeric", month:"short" });
-  }
-
-  function escHtml(str) {
-    if (!str) return "";
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg; t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3000);
-  }
-
-  // ── Logout ───────────────────────────────────────────────────────────────
-  async function logout() {
-    await fetch("/api/logout", { method: "POST" });
-    window.location.href = "/login.html";
-  }
-
-  // ── Init ──────────────────────────────────────────────────────────────────
-  loadContacts();
-  setInterval(() => {
-    loadContacts();
-    loadMessages();
-  }, 3000);
-</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/contacts.js"></script>
+<script src="/js/messages.js"></script>
+<script src="/js/media.js"></script>
+<script src="/js/voice.js"></script>
+<script src="/js/chat.js"></script>
 </body>
 </html>

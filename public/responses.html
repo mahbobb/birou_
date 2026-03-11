@@ -107,11 +107,25 @@
     <a href="/">🏠 الرئيسية</a>
     <a href="/messages.html">💬 الرسائل</a>
     <a href="/responses.html" class="active">📋 الردود</a>
+    <a href="/qr.html">📲 QR Code</a>
+    <a href="/sync.html">🔄 المزامنة</a>
     <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
   </nav>
 </header>
 
 <div class="container">
+
+  <!-- الرد الافتراضي -->
+  <div class="card">
+    <h2>💬 الرد الافتراضي (عند عدم وجود كلمة مفتاحية)</h2>
+    <div class="form-group">
+      <textarea id="fDefaultReply" placeholder="اكتب الرد الافتراضي هنا..." style="min-height:70px"></textarea>
+      <div class="form-hint">يُرسل هذا الرد عندما لا تطابق أي رسالة الكلمات المفتاحية</div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-green" onclick="saveDefaultReply()">💾 حفظ الرد الافتراضي</button>
+    </div>
+  </div>
 
   <!-- فورم الإضافة -->
   <div class="card">
@@ -160,8 +174,11 @@
   async function loadResponses() {
     try {
       const res  = await fetch("/api/responses");
-      allResponses = await res.json();
+      const data = await res.json();
+      allResponses = Array.isArray(data) ? data : (data.responses || []);
+      const defaultReply = data.defaultReply || "";
       document.getElementById("countBadge").textContent = allResponses.length;
+      if (defaultReply) document.getElementById("fDefaultReply").value = defaultReply;
       renderList();
     } catch { showToast("❌ خطأ في تحميل الردود"); }
   }
@@ -173,12 +190,13 @@
       return;
     }
     container.innerHTML = allResponses.map((r, i) => {
+      const replyText = Array.isArray(r.reply) ? r.reply.join(" / ") : (r.reply || "");
       const kws = r.keywords.map(k => `<span class="kw-tag">${k}</span>`).join("");
       const voice = r.voice ? `<span class="voice-tag">🎤 ${r.voice}</span>` : "";
       return `
         <div class="response-item">
           <div class="response-body">
-            <div class="response-reply">${r.reply}</div>
+            <div class="response-reply">${replyText}</div>
             <div class="response-keywords">${kws} ${voice}</div>
           </div>
           <div class="response-actions">
@@ -186,6 +204,21 @@
           </div>
         </div>`;
     }).join("");
+  }
+
+  async function saveDefaultReply() {
+    const defaultReply = document.getElementById("fDefaultReply").value.trim();
+    if (!defaultReply) return showToast("⚠️ اكتب الرد الافتراضي أولاً");
+    try {
+      const res  = await fetch("/api/responses/default", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ defaultReply }),
+      });
+      const data = await res.json();
+      if (data.ok) showToast("✅ تم حفظ الرد الافتراضي");
+      else showToast("❌ " + (data.error || "خطأ"));
+    } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
   }
 
   async function addResponse() {

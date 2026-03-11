@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code — واتساب بوت</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      direction: rtl;
+    }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.3rem; }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      padding: 6px 13px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      color: #075e54;
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .qr-box {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      min-height: 220px;
+      align-items: center;
+    }
+
+    .qr-box canvas, .qr-box img {
+      border: 6px solid #f0f2f5;
+      border-radius: 12px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .status.connected { background: #d4f5e1; color: #075e54; }
+    .status.waiting   { background: #fff3cd; color: #856404; }
+    .status.loading   { background: #e8e8e8; color: #555; }
+
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-label {
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+
+    .refresh-note {
+      margin-top: 16px;
+      font-size: 0.78rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📱 سكان QR Code</h1>
+  <nav class="nav-links">
+    <a href="/">🏠 الرئيسية</a>
+    <a href="/messages.html">💬 الرسائل</a>
+    <a href="/responses.html">📋 الردود</a>
+    <a href="/images.html">📸 الصور</a>
+    <a href="/voices.html">🎤 الصوتيات</a>
+    <a href="/videos.html">🎬 الفيديوهات</a>
+    <a href="/chat.html">💬 الشات</a>
+    <a href="/qr.html" class="active">📲 QR Code</a>
+    <a href="/sync.html">🔄 المزامنة</a>
+    <a href="#" onclick="logout()" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="cards-grid" id="cardsGrid">
+    <!-- cards injected by JS -->
+  </div>
+  <div class="refresh-note" style="text-align:center;margin-top:20px;">يتجدد تلقائياً كل 5 ثواني</div>
+</div>
+
+<script>
+  const BOT_LABELS = { bot1: "البوت 1", bot2: "البوت 2", bot3: "البوت 3" };
+  const BOT_IDS    = ["bot1", "bot2", "bot3"];
+
+  // per-bot state
+  const state = {};
+  BOT_IDS.forEach(id => { state[id] = { lastQr: null }; });
+
+  function logout() {
+    fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/login.html');
+  }
+
+  function buildCards() {
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = BOT_IDS.map(id => `
+      <div class="card">
+        <h2>${BOT_LABELS[id]}</h2>
+        <p>افتح واتساب ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز ← اسكن الكود</p>
+        <div class="qr-box" id="qr-box-${id}">
+          <span class="status loading"><span class="dot"></span> جاري التحميل...</span>
+        </div>
+        <div class="status-label" id="status-${id}"></div>
+      </div>
+    `).join('');
+  }
+
+  function updateCard(id, data) {
+    const box   = document.getElementById(`qr-box-${id}`);
+    const label = document.getElementById(`status-${id}`);
+    if (!box || !label) return;
+
+    if (data.connected) {
+      box.innerHTML = '<span class="status connected"><span class="dot"></span> متصل ✅</span>';
+      label.innerHTML = data.phone
+        ? `<p style="color:#075e54;font-weight:600;">البوت متصل ويعمل بشكل طبيعي</p>
+           <p style="color:#555;font-size:0.95rem;margin-top:6px;">📞 <strong dir="ltr">+${data.phone}</strong></p>`
+        : '<p style="color:#075e54;font-weight:600;">البوت متصل ويعمل بشكل طبيعي</p>';
+      state[id].lastQr = null;
+
+    } else if (data.qr) {
+      label.innerHTML = '';
+      if (data.qr !== state[id].lastQr) {
+        state[id].lastQr = data.qr;
+        box.innerHTML = `<div id="qr-render-${id}"></div>`;
+        new QRCode(document.getElementById(`qr-render-${id}`), {
+          text: data.qr,
+          width: 220,
+          height: 220,
+          colorDark: '#075e54',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+
+    } else {
+      box.innerHTML = '<span class="status waiting"><span class="dot"></span> في انتظار QR...</span>';
+      label.innerHTML = '<p style="color:#666;font-size:0.82rem;margin-top:6px;">تأكد أن البوت شغال</p>';
+      state[id].lastQr = null;
+    }
+  }
+
+  async function refresh() {
+    try {
+      const res  = await fetch('/api/qr');
+      const data = await res.json();
+      // data = { bot1: {qr, connected, phone}, bot2: {...}, bot3: {...} }
+      for (const id of BOT_IDS) {
+        if (data[id]) updateCard(id, data[id]);
+      }
+    } catch {
+      // silent fail
+    }
+  }
+
+  buildCards();
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+</body>
+</html>

@@ -5,295 +5,539 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة التحكم — واتساب بوت</title>
   <style>
+    :root {
+      --green:  #25d366;
+      --teal:   #128c7e;
+      --dark:   #075e54;
+      --red:    #e53935;
+      --orange: #ff9800;
+      --blue:   #1976d2;
+      --purple: #8e44ad;
+      --bg:     #f0f2f5;
+      --card:   #ffffff;
+      --border: #e8edf2;
+      --text:   #1a1a2e;
+      --muted:  #8696a0;
+      --sidebar-w: 230px;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; display: flex; min-height: 100vh; }
 
-    body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      direction: rtl;
+    /* ════════ SIDEBAR ════════ */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh;
+      background: linear-gradient(180deg, var(--dark) 0%, #063d36 100%);
+      display: flex; flex-direction: column;
+      position: fixed; right: 0; top: 0; bottom: 0; z-index: 40;
+      box-shadow: -3px 0 16px rgba(0,0,0,0.18);
+    }
+    .sb-brand {
+      padding: 22px 18px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sb-brand .brand-row { display: flex; align-items: center; gap: 10px; }
+    .sb-brand .brand-icon {
+      width: 40px; height: 40px; background: var(--green);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; box-shadow: 0 3px 10px rgba(37,211,102,0.4);
+    }
+    .sb-brand h2 { color: white; font-size: 1rem; font-weight: 700; }
+    .sb-brand small { color: rgba(255,255,255,0.5); font-size: 0.72rem; display: block; margin-top: 1px; }
+    .sb-status {
+      margin-top: 12px; display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: rgba(255,255,255,0.08); border-radius: 10px;
+    }
+    .sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .sb-dot.on  { background: var(--green); box-shadow: 0 0 6px rgba(37,211,102,0.8); animation: dotPulse 2s infinite; }
+    .sb-dot.off { background: var(--red); }
+    @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .sb-status span { color: rgba(255,255,255,0.8); font-size: 0.78rem; }
+
+    .sb-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .sb-section { font-size: 0.68rem; color: rgba(255,255,255,0.35); font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px 4px; }
+    .sb-link {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: 10px; text-decoration: none; color: rgba(255,255,255,0.7);
+      font-size: 0.88rem; transition: all 0.18s; cursor: pointer; border: none;
+      background: none; width: 100%; text-align: right; margin-bottom: 2px;
+    }
+    .sb-link:hover { background: rgba(255,255,255,0.1); color: white; }
+    .sb-link.active { background: rgba(37,211,102,0.2); color: var(--green); font-weight: 600; }
+    .sb-link .ico { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .sb-link .badge {
+      margin-right: auto; background: var(--red); color: white;
+      border-radius: 20px; padding: 1px 7px; font-size: 0.68rem; font-weight: 700;
     }
 
-    /* ── Header ── */
-    header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white;
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    .sb-bottom {
+      padding: 12px 10px;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
-    header h1 { font-size: 1.3rem; }
-    header span { font-size: 0.85rem; opacity: 0.85; }
+    .sb-user {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border-radius: 10px; margin-bottom: 6px;
+    }
+    .sb-avatar {
+      width: 34px; height: 34px; border-radius: 50%; background: var(--teal);
+      display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+      color: white; font-weight: 700; flex-shrink: 0;
+    }
+    .sb-user-info .name { color: white; font-size: 0.82rem; font-weight: 600; }
+    .sb-user-info .role { color: rgba(255,255,255,0.45); font-size: 0.72rem; }
+    .sb-logout {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-radius: 10px; background: rgba(229,57,53,0.15); color: #ef9a9a;
+      text-decoration: none; font-size: 0.83rem; transition: all 0.18s; cursor: pointer;
+      border: none; width: 100%; text-align: right;
+    }
+    .sb-logout:hover { background: rgba(229,57,53,0.3); color: #ffcdd2; }
 
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-    .status-badge.on  { background: #25d366; color: #fff; }
-    .status-badge.off { background: #e74c3c; color: #fff; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    /* ════════ MAIN ════════ */
+    .main { margin-right: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* ── Controls ── */
-    .controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    .topbar {
+      background: white; border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 30;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.05);
     }
-    .btn {
-      padding: 7px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      transition: opacity 0.2s;
+    .topbar-title { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .tbar-btn {
+      padding: 6px 14px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; transition: all 0.18s;
+      display: inline-flex; align-items: center; gap: 5px;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-pause  { background: #f39c12; color: white; }
-    .btn-resume { background: #25d366; color: white; }
-    .btn-send   { background: #075e54; color: white; }
-    .btn-cancel { background: #aaa; color: white; }
+    .tbar-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .tbar-btn.pause  { background: #fff3e0; color: #e65100; }
+    .tbar-btn.resume { background: #e8f5e9; color: #2e7d32; }
+    .tbar-btn.ar-on  { background: #f3e5f5; color: #6a1b9a; }
+    .tbar-btn.ar-off { background: #ffebee; color: var(--red); }
 
-    /* ── Stats ── */
-    .stats {
-      display: flex;
-      gap: 16px;
-      padding: 20px 24px;
-      flex-wrap: wrap;
-    }
+    /* ════════ PAGES ════════ */
+    .page { display: none; padding: 24px 28px; flex: 1; }
+    .page.active { display: block; }
+
+    /* ════════ STATS GRID ════════ */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 16px; margin-bottom: 24px; }
     .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 18px 24px;
-      flex: 1;
-      min-width: 140px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      text-align: center;
+      background: var(--card); border-radius: 14px; padding: 18px 20px;
+      border: 1px solid var(--border); box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+      display: flex; align-items: center; gap: 14px; transition: transform 0.15s;
     }
-    .stat-card .num {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #075e54;
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .si-green  { background: #e8f5e9; }
+    .si-teal   { background: #e0f2f1; }
+    .si-blue   { background: #e3f2fd; }
+    .si-orange { background: #fff3e0; }
+    .si-purple { background: #f3e5f5; }
+    .si-red    { background: #ffebee; }
+    .stat-body .num   { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--dark); }
+    .stat-body .lbl   { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+    /* ════════ BOT STATUS CARDS ════════ */
+    .bots-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+    .bot-card {
+      background: var(--card); border-radius: 14px; padding: 16px 18px;
+      border: 1px solid var(--border); box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+      display: flex; flex-direction: column; gap: 8px;
     }
-    .stat-card .label {
-      font-size: 0.82rem;
-      color: #666;
+    .bot-card .bot-head { display: flex; align-items: center; gap: 10px; }
+    .bot-card .bot-num {
+      font-weight: 700; font-size: 0.9rem;
+      background: #e8f5e9; color: var(--dark);
+      padding: 3px 10px; border-radius: 8px; font-family: monospace;
+    }
+    .bot-card .bot-phone { font-family: monospace; font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+    .bot-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .bot-status.on  { background: #e8f5e9; color: #2e7d32; }
+    .bot-status.off { background: #ffebee; color: var(--red); }
+    .bot-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .bot-qr-btn {
+      margin-top: 4px; padding: 5px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; background: none; cursor: pointer; font-size: 0.78rem;
+      color: var(--teal); font-weight: 600; transition: all 0.18s;
+    }
+    .bot-qr-btn:hover { background: #e0f2f1; border-color: var(--teal); }
+
+    /* ════════ QUICK ACTIONS ════════ */
+    .section-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content:""; flex:1; height:1px; background:var(--border); }
+    .quick-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 12px; margin-bottom: 28px; }
+    .quick-card {
+      background: var(--card); border-radius: 12px; padding: 18px 14px;
+      text-align: center; text-decoration: none; color: var(--text);
+      border: 1.5px solid var(--border); transition: all 0.18s;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .quick-card:hover { border-color: var(--teal); box-shadow: 0 4px 16px rgba(18,140,126,0.15); transform: translateY(-2px); }
+    .quick-card .qico { font-size: 1.8rem; }
+    .quick-card .qtxt { font-size: 0.8rem; font-weight: 600; color: var(--teal); }
+
+    /* ════════ TABLE ════════ */
+    .table-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .t-search {
+      flex: 1; min-width: 200px; padding: 9px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.88rem; outline: none; direction: rtl;
+      background: var(--card); transition: border-color 0.2s;
+    }
+    .t-search:focus { border-color: var(--teal); }
+    .t-btn {
+      padding: 8px 14px; border: none; border-radius: 10px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; transition: all 0.18s;
+    }
+    .t-btn:hover { filter: brightness(1.08); }
+    .t-btn-teal { background: var(--teal); color: white; }
+
+    .table-wrap { background: var(--card); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 1px 8px rgba(0,0,0,0.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: linear-gradient(135deg,var(--dark),var(--teal)); }
+    th { padding: 13px 14px; text-align: right; font-size: 0.82rem; font-weight: 600; color: white; white-space: nowrap; }
+    td { padding: 12px 14px; text-align: right; font-size: 0.85rem; border-bottom: 1px solid #f4f6f8; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafffe; }
+
+    .contact-cell { display: flex; align-items: center; gap: 10px; }
+    .c-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      color: white; font-weight: 700; font-size: 0.88rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .c-name { font-weight: 600; font-size: 0.88rem; }
+    .phone-tag { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; font-family: monospace; }
+    .msg-badge { background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; }
+    .last-msg { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 0.8rem; }
+
+    .action-btn {
+      padding: 5px 11px; border: none; border-radius: 7px; cursor: pointer;
+      font-size: 0.76rem; font-weight: 600; transition: all 0.18s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .action-btn:hover { filter: brightness(1.1); }
+    .ab-chat  { background: #e8f5e9; color: var(--dark); }
+    .ab-send  { background: #e3f2fd; color: var(--blue); }
+    .ab-msg   { background: #f3e5f5; color: var(--purple); }
+    .actions-cell { display: flex; gap: 5px; flex-wrap: nowrap; }
+
+    .empty-row td { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 0.9rem; }
+
+    /* ════════ ADMIN PAGE ════════ */
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(320px,1fr)); gap: 20px; }
+    .admin-card {
+      background: var(--card); border-radius: 14px; padding: 24px;
+      border: 1px solid var(--border); box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+    .admin-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-row { margin-bottom: 12px; }
+    .form-row label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+    .form-input {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: 9px; font-size: 0.88rem; outline: none; direction: rtl;
+      font-family: inherit; background: #fafafa; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--teal); background: white; }
+    .form-btn {
+      width: 100%; padding: 10px; border: none; border-radius: 9px;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
       margin-top: 4px;
     }
+    .fb-green  { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
+    .fb-green:hover  { box-shadow: 0 4px 14px rgba(37,211,102,0.4); }
+    .fb-red    { background: var(--red);   color: white; }
+    .fb-teal   { background: var(--teal);  color: white; }
 
-    /* ── Search ── */
-    .toolbar {
-      padding: 0 24px 12px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .search-input {
-      flex: 1;
-      padding: 9px 14px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      outline: none;
-      direction: rtl;
-    }
-    .search-input:focus { border-color: #128c7e; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f4f6f8; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .info-key { font-size: 0.82rem; color: var(--muted); }
+    .info-row .info-val { font-size: 0.85rem; font-weight: 600; color: var(--text); font-family: monospace; }
 
-    /* ── Table ── */
-    .table-wrap {
-      padding: 0 24px 24px;
-      overflow-x: auto;
+    .admin-users-list { display: flex; flex-direction: column; gap: 8px; }
+    .au-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: #f8f9fa; border-radius: 10px; border: 1px solid var(--border);
     }
-    table {
-      width: 100%;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      border-collapse: collapse;
+    .au-avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--teal);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 0.88rem; flex-shrink: 0;
     }
-    thead { background: #075e54; color: white; }
-    th, td {
-      padding: 12px 14px;
-      text-align: right;
-      font-size: 0.88rem;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9fffe; }
+    .au-name { font-weight: 600; font-size: 0.85rem; flex: 1; }
+    .au-role { font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+    .role-admin { background: #f3e5f5; color: var(--purple); }
+    .role-user  { background: #e3f2fd; color: var(--blue);   }
 
-    .phone-tag {
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-family: monospace;
-    }
-    .msg-count {
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-    }
-    .last-msg {
-      max-width: 220px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #555;
-    }
-
-    /* ── Modal ── */
-    .modal-bg {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-bg.open { display: flex; }
+    /* ════════ MODAL ════════ */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+    .overlay.open { display: flex; }
     .modal {
-      background: white;
-      border-radius: 14px;
-      padding: 28px;
-      width: 420px;
-      max-width: 95vw;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      background: white; border-radius: 18px; padding: 28px;
+      width: 92%; max-width: 460px; box-shadow: 0 16px 48px rgba(0,0,0,0.22);
+      animation: modalIn 0.22s ease;
     }
-    .modal h3 { margin-bottom: 16px; color: #075e54; }
-    .modal-to {
-      font-size: 0.85rem;
-      color: #555;
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      background: #f5f5f5;
-      border-radius: 8px;
-    }
-    .modal textarea {
-      width: 100%;
-      min-height: 110px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      resize: vertical;
-      outline: none;
-      direction: rtl;
-      font-family: inherit;
-    }
-    .modal textarea:focus { border-color: #128c7e; }
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 14px;
-      justify-content: flex-end;
-    }
+    @keyframes modalIn { from{transform:scale(.95) translateY(12px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+    .modal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-hdr h3 { font-size: 1rem; color: var(--dark); font-weight: 700; }
+    .modal-close { background: #f0f2f5; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    .modal-close:hover { background: #e0e0e0; }
+    .modal-to { background: #f0f2f5; border-radius: 10px; padding: 9px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #555; border-right: 3px solid var(--teal); }
+    .modal textarea { width: 100%; min-height: 110px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; resize: vertical; outline: none; direction: rtl; font-family: inherit; transition: border-color 0.2s; }
+    .modal textarea:focus { border-color: var(--teal); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+    .mbtn { padding: 9px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.18s; }
+    .mbtn-cancel { background: #f0f2f5; color: #555; }
+    .mbtn-green  { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
 
-    /* ── Toast ── */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1a1a2e;
-      color: white;
-      padding: 10px 22px;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-      z-index: 200;
-    }
-    #toast.show { opacity: 1; }
+    /* ════════ TOAST ════════ */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; backdrop-filter: blur(8px); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .empty { text-align: center; padding: 40px; color: #aaa; }
+    /* ════════ RESPONSIVE ════════ */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .sb-brand h2, .sb-brand small, .sb-link span, .sb-status span, .sb-user-info, .sb-section { display: none; }
+      .sb-link { justify-content: center; padding: 10px; }
+      .sb-link .ico { width: auto; }
+      .main { margin-right: 60px; }
+      .bots-row { grid-template-columns: 1fr; }
+      .page { padding: 14px; }
+      .topbar { padding: 0 14px; }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1>🤖 لوحة التحكم — واتساب بوت</h1>
-    <span>abrajeimmo.com · مراكش</span>
+<!-- ════════ SIDEBAR ════════ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="brand-icon">🤖</div>
+      <div>
+        <h2>واتساب بوت</h2>
+        <small id="sbBrandPhone">غير متصل</small>
+      </div>
+    </div>
+    <div class="sb-status">
+      <span class="sb-dot" id="sbDot"></span>
+      <span id="sbStatus">جاري التحقق...</span>
+    </div>
   </div>
-  <div class="controls">
-    <a href="/messages.html"  style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">💬 الرسائل</a>
-    <a href="/responses.html" style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">📋 الردود</a>
-    <a href="/images.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">📸 الصور</a>
-    <a href="/voices.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">🎤 الصوتيات</a>
-    <a href="/videos.html"    style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">🎬 الفيديوهات</a>
-    <a href="/chat.html"      style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:0.85rem;">💬 الشات</a>
-    <span id="statusBadge" class="status-badge on"><span class="dot"></span> شغال</span>
-    <button class="btn btn-pause"  onclick="pauseBot()">⏸ إيقاف</button>
-    <button class="btn btn-resume" onclick="resumeBot()">▶ استئناف</button>
-    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="color:white;text-decoration:none;padding:7px 14px;background:rgba(255,80,80,0.35);border-radius:8px;font-size:0.85rem;">🚪 خروج</a>
-  </div>
-</header>
 
-<!-- Stats -->
-<div class="stats">
-  <div class="stat-card">
-    <div class="num" id="statTotal">—</div>
-    <div class="label">إجمالي الزبائن</div>
-  </div>
-  <div class="stat-card">
-    <div class="num" id="statToday">—</div>
-    <div class="label">رسائل اليوم</div>
-  </div>
-  <div class="stat-card">
-    <div class="num" id="statStatus">—</div>
-    <div class="label">حالة البوت</div>
-  </div>
-</div>
+  <nav class="sb-nav">
+    <div class="sb-section">الرئيسية</div>
+    <button class="sb-link active" onclick="showPage('overview')" id="nav-overview">
+      <span class="ico">📊</span><span>لوحة التحكم</span>
+    </button>
+    <button class="sb-link" onclick="showPage('contacts')" id="nav-contacts">
+      <span class="ico">👥</span><span>الزبائن</span>
+      <span class="badge" id="contactsBadge" style="display:none">0</span>
+    </button>
 
-<!-- Toolbar -->
-<div class="toolbar">
-  <input class="search-input" type="text" id="searchInput" placeholder="🔍 ابحث باسم أو رقم..." oninput="filterContacts()">
-  <button class="btn btn-resume" onclick="loadData()">🔄 تحديث</button>
-</div>
+    <div class="sb-section">التواصل</div>
+    <a class="sb-link" href="/chat.html"><span class="ico">💬</span><span>الشات</span></a>
+    <a class="sb-link" href="/messages.html"><span class="ico">📨</span><span>الرسائل</span></a>
+    <a class="sb-link" href="/responses.html"><span class="ico">📋</span><span>الردود</span></a>
 
-<!-- Table -->
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>الاسم</th>
-        <th>الهاتف</th>
-        <th>الرسائل</th>
-        <th>آخر رسالة</th>
-        <th>آخر ظهور</th>
-        <th>إرسال</th>
-        <th>الرسائل</th>
-      </tr>
-    </thead>
-    <tbody id="contactsBody">
-      <tr><td colspan="7" class="empty">جاري التحميل...</td></tr>
-    </tbody>
-  </table>
-</div>
+    <div class="sb-section">الوسائط</div>
+    <a class="sb-link" href="/images.html"><span class="ico">📸</span><span>الصور</span></a>
+    <a class="sb-link" href="/voices.html"><span class="ico">🎤</span><span>الصوتيات</span></a>
+    <a class="sb-link" href="/videos.html"><span class="ico">🎬</span><span>الفيديوهات</span></a>
+
+    <div class="sb-section">الإعدادات</div>
+    <a class="sb-link" href="/qr.html"><span class="ico">📲</span><span>QR Code</span></a>
+    <a class="sb-link" href="/sync.html"><span class="ico">🔄</span><span>المزامنة</span></a>
+    <button class="sb-link" onclick="showPage('admin')" id="nav-admin">
+      <span class="ico">⚙️</span><span>الإدارة</span>
+    </button>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar">أ</div>
+      <div class="sb-user-info">
+        <div class="name">المدير</div>
+        <div class="role">Admin</div>
+      </div>
+    </div>
+    <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">
+      <span>🚪</span><span>خروج</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ════════ MAIN ════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
+    <div class="topbar-actions">
+      <button class="tbar-btn pause"  onclick="pauseBot()">⏸ إيقاف</button>
+      <button class="tbar-btn resume" onclick="resumeBot()">▶ استئناف</button>
+      <button id="btnAutoReply" class="tbar-btn ar-on" onclick="toggleAutoReply()">🤖 الردود: شغالة</button>
+      <button class="tbar-btn resume" onclick="loadData()">🔄</button>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: OVERVIEW ════ -->
+  <div class="page active" id="page-overview">
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon si-green">👥</div>
+        <div class="stat-body"><div class="num" id="statTotal">—</div><div class="lbl">إجمالي الزبائن</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-blue">💬</div>
+        <div class="stat-body"><div class="num" id="statToday">—</div><div class="lbl">رسائل اليوم</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-teal">📸</div>
+        <div class="stat-body"><div class="num" id="statImages">—</div><div class="lbl">الصور</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-orange">🎤</div>
+        <div class="stat-body"><div class="num" id="statVoices">—</div><div class="lbl">الصوتيات</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-purple">🎬</div>
+        <div class="stat-body"><div class="num" id="statVideos">—</div><div class="lbl">الفيديوهات</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-red">🤖</div>
+        <div class="stat-body"><div class="num" id="statAR" style="font-size:1.2rem">—</div><div class="lbl">الردود التلقائية</div></div>
+      </div>
+    </div>
+
+    <!-- Bots Status -->
+    <div class="section-title">🤖 حالة الأرقام</div>
+    <div class="bots-row" id="botsRow">
+      <div class="bot-card"><div class="bot-head"><span class="bot-num">Bot 1</span><span class="bot-status off"><span class="bot-dot"></span>غير متصل</span></div><div class="bot-phone">—</div><button class="bot-qr-btn" onclick="location.href='/qr.html'">📲 ربط QR</button></div>
+      <div class="bot-card"><div class="bot-head"><span class="bot-num">Bot 2</span><span class="bot-status off"><span class="bot-dot"></span>غير متصل</span></div><div class="bot-phone">—</div><button class="bot-qr-btn" onclick="location.href='/qr.html'">📲 ربط QR</button></div>
+      <div class="bot-card"><div class="bot-head"><span class="bot-num">Bot 3</span><span class="bot-status off"><span class="bot-dot"></span>غير متصل</span></div><div class="bot-phone">—</div><button class="bot-qr-btn" onclick="location.href='/qr.html'">📲 ربط QR</button></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-title">⚡ وصول سريع</div>
+    <div class="quick-grid">
+      <a class="quick-card" href="/chat.html">        <div class="qico">💬</div><div class="qtxt">الشات</div></a>
+      <a class="quick-card" href="/messages.html">    <div class="qico">📨</div><div class="qtxt">الرسائل</div></a>
+      <a class="quick-card" href="/responses.html">   <div class="qico">📋</div><div class="qtxt">الردود</div></a>
+      <a class="quick-card" href="/images.html">      <div class="qico">📸</div><div class="qtxt">الصور</div></a>
+      <a class="quick-card" href="/voices.html">      <div class="qico">🎤</div><div class="qtxt">الصوتيات</div></a>
+      <a class="quick-card" href="/videos.html">      <div class="qico">🎬</div><div class="qtxt">الفيديوهات</div></a>
+      <a class="quick-card" href="/qr.html">          <div class="qico">📲</div><div class="qtxt">QR Code</div></a>
+      <a class="quick-card" href="/sync.html">        <div class="qico">🔄</div><div class="qtxt">المزامنة</div></a>
+    </div>
+
+    <!-- Recent contacts -->
+    <div class="section-title">🕐 آخر الزبائن</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>الزبون</th><th>الهاتف</th><th>الرسائل</th><th>آخر رسالة</th><th>آخر ظهور</th><th>إجراء</th></tr></thead>
+        <tbody id="recentBody"><tr class="empty-row"><td colspan="6">جاري التحميل...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: CONTACTS ════ -->
+  <div class="page" id="page-contacts">
+    <div class="table-toolbar">
+      <input class="t-search" id="contactSearch" type="text" placeholder="🔍 ابحث باسم أو رقم هاتف..." oninput="filterContacts()">
+      <button class="t-btn t-btn-teal" onclick="loadData()">🔄 تحديث</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>الزبون</th><th>الهاتف</th><th>الرسائل</th><th>آخر رسالة</th><th>آخر ظهور</th><th>إجراءات</th></tr></thead>
+        <tbody id="contactsBody"><tr class="empty-row"><td colspan="7">جاري التحميل...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ PAGE: ADMIN ════ -->
+  <div class="page" id="page-admin">
+    <div class="admin-grid">
+
+      <!-- System Info -->
+      <div class="admin-card">
+        <h4>📡 معلومات النظام</h4>
+        <div class="info-row"><span class="info-key">حالة البوت</span><span class="info-val" id="adBotStatus">—</span></div>
+        <div class="info-row"><span class="info-key">الردود التلقائية</span><span class="info-val" id="adAutoReply">—</span></div>
+        <div class="info-row"><span class="info-key">الأرقام المتصلة</span><span class="info-val" id="adBots">—</span></div>
+        <div class="info-row"><span class="info-key">إجمالي الزبائن</span><span class="info-val" id="adTotal">—</span></div>
+        <div class="info-row"><span class="info-key">رسائل اليوم</span><span class="info-val" id="adToday">—</span></div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="admin-card">
+        <h4>🔐 تغيير كلمة المرور</h4>
+        <div class="form-row">
+          <label>كلمة المرور الحالية</label>
+          <input class="form-input" type="password" id="curPass" placeholder="••••••••">
+        </div>
+        <div class="form-row">
+          <label>كلمة المرور الجديدة</label>
+          <input class="form-input" type="password" id="newPass" placeholder="6 أحرف على الأقل">
+        </div>
+        <div class="form-row">
+          <label>تأكيد كلمة المرور</label>
+          <input class="form-input" type="password" id="confPass" placeholder="كرر كلمة المرور الجديدة">
+        </div>
+        <button class="form-btn fb-teal" onclick="changePassword()">🔒 تحديث كلمة المرور</button>
+      </div>
+
+      <!-- Bot Controls -->
+      <div class="admin-card">
+        <h4>🎮 التحكم بالبوت</h4>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="form-btn" style="background:#fff3e0;color:#e65100" onclick="pauseBot()">⏸ إيقاف البوت مؤقتاً</button>
+          <button class="form-btn" style="background:#e8f5e9;color:#2e7d32" onclick="resumeBot()">▶ استئناف البوت</button>
+          <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">🤖 تبديل الردود التلقائية</button>
+          <a href="/qr.html" class="form-btn fb-teal" style="text-align:center;text-decoration:none;display:block">📲 ربط رقم جديد (QR)</a>
+          <a href="/sync.html" class="form-btn" style="background:#e3f2fd;color:var(--blue);text-align:center;text-decoration:none;display:block">🔄 مزامنة الرسائل القديمة</a>
+        </div>
+      </div>
+
+      <!-- Admin Users -->
+      <div class="admin-card">
+        <h4>👤 المديرون</h4>
+        <div class="admin-users-list">
+          <div class="au-item">
+            <div class="au-avatar">أ</div>
+            <div class="au-name">المدير الرئيسي</div>
+            <span class="au-role role-admin">Admin</span>
+          </div>
+        </div>
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+          <p style="font-size:0.78rem; color:var(--muted); line-height:1.5;">
+            📌 حالياً يدعم النظام مدير واحد بكلمة مرور واحدة.<br>
+            يمكنك تغيير كلمة المرور من البطاقة المجاورة.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /main -->
 
 <!-- Send Modal -->
-<div class="modal-bg" id="modalBg">
+<div class="overlay" id="sendOverlay">
   <div class="modal">
-    <h3>📤 إرسال رسالة</h3>
+    <div class="modal-hdr">
+      <h3>📤 إرسال رسالة</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
     <div class="modal-to" id="modalTo"></div>
     <textarea id="modalMsg" placeholder="اكتب رسالتك هنا..."></textarea>
     <div class="modal-actions">
-      <button class="btn btn-cancel" onclick="closeModal()">إلغاء</button>
-      <button class="btn btn-send"   onclick="sendMsg()">إرسال ✅</button>
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="mbtn mbtn-green"  onclick="sendMsg()">إرسال ✅</button>
     </div>
   </div>
 </div>
@@ -301,121 +545,271 @@
 <div id="toast"></div>
 
 <script>
-  let allContacts = [];
+  let allContacts   = [];
   let selectedPhone = "";
 
+  /* ── Page navigation ── */
+  const pages = { overview:"لوحة التحكم", contacts:"الزبائن", admin:"الإدارة" };
+  function showPage(id) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".sb-link[id^='nav-']").forEach(l => l.classList.remove("active"));
+    document.getElementById("page-" + id).classList.add("active");
+    const nav = document.getElementById("nav-" + id);
+    if (nav) nav.classList.add("active");
+    document.getElementById("topbarTitle").textContent = pages[id] || id;
+  }
+
+  /* ── Data ── */
   async function loadData() {
     try {
-      const [statsRes, contactsRes] = await Promise.all([
+      const [statsR, contactsR, qrR, imgR, voiceR, vidR] = await Promise.all([
         fetch("/api/stats"),
         fetch("/api/contacts"),
+        fetch("/api/qr"),
+        fetch("/api/images/stats"),
+        fetch("/api/voices/stats"),
+        fetch("/api/videos/stats"),
       ]);
-      const stats    = await statsRes.json();
-      allContacts    = await contactsRes.json();
+      const stats    = await statsR.json();
+      allContacts    = await contactsR.json();
+      const qr       = await qrR.json();
+      const imgs     = await imgR.json();
+      const voices   = await voiceR.json();
+      const videos   = await vidR.json();
 
+      /* Stats */
       document.getElementById("statTotal").textContent  = stats.total;
       document.getElementById("statToday").textContent  = stats.today;
-      document.getElementById("statStatus").textContent = stats.botPaused ? "⏸ موقوف" : "🟢 شغال";
+      document.getElementById("statImages").textContent = imgs.total;
+      document.getElementById("statVoices").textContent = voices.total;
+      document.getElementById("statVideos").textContent = videos.total;
 
-      const badge = document.getElementById("statusBadge");
-      badge.className = "status-badge " + (stats.botPaused ? "off" : "on");
-      badge.innerHTML = `<span class="dot"></span> ${stats.botPaused ? "موقوف" : "شغال"}`;
+      const arOn = stats.autoReplyEnabled !== false;
+      document.getElementById("statAR").textContent = arOn ? "✅ شغالة" : "❌ مطفأة";
 
+      /* Sidebar status */
+      const connected = stats.botConnected;
+      const sbDot = document.getElementById("sbDot");
+      sbDot.className = "sb-dot " + (connected ? "on" : "off");
+      document.getElementById("sbStatus").textContent = stats.botPaused ? "موقوف مؤقتاً" : (connected ? "متصل" : "غير متصل");
+
+      /* Phone — show first connected bot's phone */
+      const firstConnected = Object.values(qr).find(b => b.connected && b.phone);
+      const phone = firstConnected ? `+${firstConnected.phone}` : "غير متصل";
+      document.getElementById("sbBrandPhone").textContent = phone;
+
+      /* Topbar auto-reply btn */
+      const arBtn = document.getElementById("btnAutoReply");
+      arBtn.textContent  = arOn ? "🤖 الردود: شغالة" : "🔕 الردود: مطفأة";
+      arBtn.className = "tbar-btn " + (arOn ? "ar-on" : "ar-off");
+
+      /* Admin page info */
+      document.getElementById("adBotStatus").textContent  = stats.botPaused ? "⏸ موقوف" : "🟢 شغال";
+      document.getElementById("adAutoReply").textContent  = arOn ? "✅ مفعّلة" : "❌ معطّلة";
+      document.getElementById("adTotal").textContent      = stats.total;
+      document.getElementById("adToday").textContent      = stats.today;
+      const adBtn = document.getElementById("adBtnAR");
+      adBtn.style.background = arOn ? "#e8f5e9" : "#ffebee";
+      adBtn.style.color      = arOn ? "#2e7d32" : "#c62828";
+      adBtn.textContent      = arOn ? "🔕 تعطيل الردود التلقائية" : "🤖 تفعيل الردود التلقائية";
+
+      /* Bots status cards */
+      updateBotsRow(qr);
+
+      /* contacts badge */
+      const badge = document.getElementById("contactsBadge");
+      badge.style.display = allContacts.length ? "inline-block" : "none";
+      badge.textContent   = allContacts.length;
+
+      /* Admin bots info */
+      const connectedCount = Object.values(qr).filter(b => b.connected).length;
+      document.getElementById("adBots").textContent = `${connectedCount} / 3 متصل`;
+
+      renderRecent(allContacts.slice(0,8));
       filterContacts();
     } catch (e) {
       showToast("❌ خطأ في الاتصال بالسيرفر");
     }
   }
 
-  function filterContacts() {
-    const q = document.getElementById("searchInput").value.toLowerCase();
-    const filtered = allContacts.filter(c =>
-      c.name.toLowerCase().includes(q) || c.phone.includes(q)
-    );
-    renderTable(filtered);
+  function updateBotsRow(qr) {
+    const row = document.getElementById("botsRow");
+    const botIds = ["bot1","bot2","bot3"];
+    row.innerHTML = botIds.map((id, i) => {
+      const phone  = qr[id]?.phone ? `+${qr[id].phone}` : "—";
+      const isOn   = qr[id]?.connected;
+      return `
+        <div class="bot-card">
+          <div class="bot-head">
+            <span class="bot-num">Bot ${i+1}</span>
+            <span class="bot-status ${isOn?"on":"off"}">
+              <span class="bot-dot"></span>${isOn?"متصل":"غير متصل"}
+            </span>
+          </div>
+          <div class="bot-phone">${phone}</div>
+          <button class="bot-qr-btn" onclick="location.href='/qr.html'">📲 ${isOn?"إدارة":"ربط QR"}</button>
+        </div>`;
+    }).join("");
   }
 
-  function renderTable(list) {
-    const body = document.getElementById("contactsBody");
-    if (list.length === 0) {
-      body.innerHTML = `<tr><td colspan="7" class="empty">لا يوجد نتائج</td></tr>`;
+  /* ── Avatars ── */
+  const grads = [
+    ["#128c7e","#075e54"],["#1976d2","#0d47a1"],["#7b1fa2","#4a148c"],
+    ["#e53935","#b71c1c"],["#f57c00","#e65100"],["#388e3c","#1b5e20"],
+    ["#0288d1","#01579b"],["#00897b","#004d40"]
+  ];
+  function avatarGrad(name) {
+    let h = 0;
+    for (let i=0; i<(name||"").length; i++) h=(h*31+name.charCodeAt(i))&0xffff;
+    const [a,b]=grads[h%grads.length];
+    return `linear-gradient(135deg,${a},${b})`;
+  }
+  function initials(name) {
+    if (!name) return "?";
+    const p = name.trim().split(" ");
+    return p.length>=2 ? p[0][0]+p[1][0] : p[0].substring(0,2);
+  }
+  function escHtml(s) {
+    if(!s)return"";
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  /* ── Render recent ── */
+  function renderRecent(list) {
+    const body = document.getElementById("recentBody");
+    if (!list.length) {
+      body.innerHTML = `<tr class="empty-row"><td colspan="6">لا يوجد زبائن بعد</td></tr>`;
       return;
     }
-    body.innerHTML = list.map((c, i) => {
+    body.innerHTML = list.map(c => {
       const date = new Date(c.lastSeen).toLocaleDateString("ar-MA");
-      const msg  = (c.lastMessage || "").substring(0, 40);
+      const msg  = escHtml((c.lastMessage||"").substring(0,35));
+      const grad = avatarGrad(c.name);
+      const init = escHtml(initials(c.name));
       return `
         <tr>
-          <td>${i + 1}</td>
-          <td><b>${c.name}</b></td>
+          <td><div class="contact-cell">
+            <div class="c-avatar" style="background:${grad}">${init}</div>
+            <div class="c-name">${escHtml(c.name)}</div>
+          </div></td>
           <td><span class="phone-tag">+${c.phone}</span></td>
-          <td><span class="msg-count">${c.totalMessages}</span></td>
-          <td class="last-msg" title="${c.lastMessage || ""}">${msg}</td>
-          <td>${date}</td>
-          <td><button class="btn btn-send" onclick="openModal('${c.phone}','${c.name}')">📤</button></td>
-          <td><a href="/messages.html?phone=${c.phone}" class="btn" style="background:#128c7e;color:white;text-decoration:none;">💬 قراءة</a></td>
+          <td><span class="msg-badge">${c.totalMessages}</span></td>
+          <td><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
+          <td style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td><div class="actions-cell">
+            <a href="/chat.html?phone=${c.phone}" class="action-btn ab-chat">💬 شات</a>
+            <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
+          </div></td>
         </tr>`;
     }).join("");
   }
 
-  function openModal(phone, name) {
-    selectedPhone = phone;
-    document.getElementById("modalTo").textContent = `إلى: ${name} (+${phone})`;
-    document.getElementById("modalMsg").value = "";
-    document.getElementById("modalBg").classList.add("open");
-    setTimeout(() => document.getElementById("modalMsg").focus(), 100);
+  /* ── Contacts table ── */
+  function filterContacts() {
+    const q = (document.getElementById("contactSearch")?.value||"").toLowerCase();
+    const filtered = allContacts.filter(c =>
+      c.name.toLowerCase().includes(q) || c.phone.includes(q)
+    );
+    renderContacts(filtered);
   }
 
-  function closeModal() {
-    document.getElementById("modalBg").classList.remove("open");
+  function renderContacts(list) {
+    const body = document.getElementById("contactsBody");
+    if (!list.length) {
+      body.innerHTML = `<tr class="empty-row"><td colspan="7">لا يوجد نتائج</td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map((c, i) => {
+      const date = new Date(c.lastSeen).toLocaleDateString("ar-MA");
+      const msg  = escHtml((c.lastMessage||"").substring(0,35));
+      const grad = avatarGrad(c.name);
+      const init = escHtml(initials(c.name));
+      return `
+        <tr>
+          <td style="color:var(--muted);font-size:0.8rem">${i+1}</td>
+          <td><div class="contact-cell">
+            <div class="c-avatar" style="background:${grad}">${init}</div>
+            <div class="c-name">${escHtml(c.name)}</div>
+          </div></td>
+          <td><span class="phone-tag">+${c.phone}</span></td>
+          <td><span class="msg-badge">${c.totalMessages}</span></td>
+          <td><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
+          <td style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td><div class="actions-cell">
+            <a href="/chat.html?phone=${c.phone}" class="action-btn ab-chat">💬 شات</a>
+            <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
+            <a href="/messages.html?phone=${c.phone}" class="action-btn ab-msg">📨 رسائل</a>
+          </div></td>
+        </tr>`;
+    }).join("");
   }
+
+  /* ── Bot controls ── */
+  async function pauseBot()  { await fetch("/api/pause",{method:"POST"}); showToast("⏸ البوت موقوف"); loadData(); }
+  async function resumeBot() { await fetch("/api/resume",{method:"POST"}); showToast("▶ البوت شغال"); loadData(); }
+
+  async function toggleAutoReply() {
+    const arBtn = document.getElementById("btnAutoReply");
+    const isOn  = arBtn.className.includes("ar-on");
+    await fetch(isOn ? "/api/auto-reply/disable" : "/api/auto-reply/enable", { method:"POST" });
+    showToast(isOn ? "🔕 الردود مطفأة" : "🤖 الردود مفعّلة");
+    loadData();
+  }
+
+  /* ── Send modal ── */
+  function openModal(phone, name) {
+    selectedPhone = phone;
+    document.getElementById("modalTo").textContent  = `إلى: ${name} (+${phone})`;
+    document.getElementById("modalMsg").value       = "";
+    document.getElementById("sendOverlay").classList.add("open");
+    setTimeout(() => document.getElementById("modalMsg").focus(), 100);
+  }
+  function closeModal() { document.getElementById("sendOverlay").classList.remove("open"); }
+  document.getElementById("sendOverlay").addEventListener("click", e => { if(e.target===document.getElementById("sendOverlay")) closeModal(); });
 
   async function sendMsg() {
     const message = document.getElementById("modalMsg").value.trim();
     if (!message) return showToast("⚠️ اكتب رسالة أولاً");
     try {
-      const res  = await fetch("/api/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: selectedPhone, message }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        showToast("✅ تم الإرسال بنجاح");
-        closeModal();
-      } else {
-        showToast("❌ " + (data.error || "خطأ في الإرسال"));
-      }
-    } catch {
-      showToast("❌ فشل الاتصال بالسيرفر");
-    }
+      const d = await fetch("/api/send",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ phone:selectedPhone, message })
+      }).then(r=>r.json());
+      if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
+      else showToast("❌ " + (d.error||"خطأ في الإرسال"));
+    } catch { showToast("❌ فشل الاتصال"); }
   }
 
-  async function pauseBot() {
-    await fetch("/api/pause", { method: "POST" });
-    showToast("⏸ البوت موقوف");
-    loadData();
+  /* ── Change password ── */
+  async function changePassword() {
+    const current  = document.getElementById("curPass").value;
+    const newPass  = document.getElementById("newPass").value;
+    const confPass = document.getElementById("confPass").value;
+    if (!current || !newPass) return showToast("⚠️ أدخل كلمة المرور الحالية والجديدة");
+    if (newPass !== confPass)  return showToast("⚠️ كلمتا المرور غير متطابقتين");
+    if (newPass.length < 6)    return showToast("⚠️ كلمة المرور قصيرة جداً");
+    try {
+      const d = await fetch("/api/admin/change-password",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ current, newPass })
+      }).then(r=>r.json());
+      if (d.ok) {
+        showToast("✅ تم تغيير كلمة المرور — سيتم تسجيل الخروج");
+        document.getElementById("curPass").value  = "";
+        document.getElementById("newPass").value  = "";
+        document.getElementById("confPass").value = "";
+        setTimeout(() => location.href="/login.html", 2000);
+      } else showToast("❌ " + (d.error||"فشل التغيير"));
+    } catch { showToast("❌ خطأ في الاتصال"); }
   }
 
-  async function resumeBot() {
-    await fetch("/api/resume", { method: "POST" });
-    showToast("▶ البوت شغال");
-    loadData();
-  }
-
+  /* ── Toast ── */
   function showToast(msg) {
     const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
+    t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3000);
   }
 
-  // إغلاق المودال عند الضغط خارجه
-  document.getElementById("modalBg").addEventListener("click", function(e) {
-    if (e.target === this) closeModal();
-  });
-
-  // تحديث تلقائي كل 30 ثانية
   loadData();
   setInterval(loadData, 30000);
 </script>

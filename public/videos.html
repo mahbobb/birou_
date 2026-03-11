@@ -12,88 +12,108 @@
       background: linear-gradient(135deg, #075e54, #128c7e);
       color: white; padding: 16px 24px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 8px;
     }
     header h1 { font-size: 1.3rem; }
     .nav-links a {
-      color: white; text-decoration: none; margin-right: 12px;
-      font-size: 0.88rem; padding: 6px 12px;
+      color: white; text-decoration: none; margin-right: 10px;
+      font-size: 0.85rem; padding: 5px 10px;
       border-radius: 8px; transition: background 0.2s;
     }
     .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
 
-    .stats { display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap; }
+    /* Stats */
+    .stats { display: flex; gap: 16px; padding: 20px 24px 10px; flex-wrap: wrap; }
     .stat-card {
-      background: white; border-radius: 12px; padding: 16px 22px;
-      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+      background: white; border-radius: 12px; padding: 14px 22px;
+      flex: 1; min-width: 110px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
     }
-    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+    .stat-card .num { font-size: 1.7rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.78rem; color: #666; margin-top: 3px; }
 
+    /* Toolbar */
     .toolbar {
-      padding: 0 24px 16px;
-      display: flex; gap: 10px; align-items: center;
+      padding: 10px 24px 14px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
     .search-input {
-      flex: 1; padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.9rem; outline: none; direction: rtl;
+      flex: 1; min-width: 160px;
+      padding: 8px 14px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 0.88rem; outline: none; direction: rtl; background: white;
     }
     .search-input:focus { border-color: #128c7e; }
     .btn {
-      padding: 8px 16px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: opacity 0.2s;
+      padding: 8px 14px; border: none; border-radius: 8px;
+      cursor: pointer; font-size: 0.82rem; font-weight: 600;
+      transition: opacity 0.2s; white-space: nowrap;
     }
     .btn:hover { opacity: 0.85; }
     .btn-green { background: #25d366; color: white; }
     .btn-blue  { background: #128c7e; color: white; }
     .btn-red   { background: #e53935; color: white; }
+    .btn-gray  { background: #ccc;    color: #333;  }
+    .btn:disabled { opacity: 0.4; cursor: default; }
 
-    /* ── Grid ── */
+    /* Gallery */
     .gallery-wrap { padding: 0 24px 32px; }
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
+      gap: 18px;
     }
+
     .vid-card {
       background: white; border-radius: 14px; overflow: hidden;
       box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      position: relative; transition: box-shadow 0.2s;
     }
-    .vid-card video {
-      width: 100%; max-height: 220px; background: #000; display: block;
+    .vid-card.selected { outline: 3px solid #128c7e; }
+    .vid-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
+
+    /* Checkbox overlay */
+    .card-cb {
+      position: absolute; top: 10px; right: 10px;
+      width: 24px; height: 24px;
+      background: white; border: 2px solid #ccc; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 2; font-size: 0.78rem; color: white;
+      transition: border-color 0.15s, background 0.15s;
     }
+    .vid-card.selected .card-cb { background: #128c7e; border-color: #128c7e; }
+    .vid-card.selected .card-cb::after { content: "✓"; }
+
+    .vid-card video { width: 100%; max-height: 200px; background: #000; display: block; }
+
     .vid-info { padding: 12px 14px; }
-    .vid-info .sender { font-weight: 700; font-size: 0.95rem; }
-    .vid-info .phone-tag {
+    .vid-info .sender { font-weight: 700; font-size: 0.92rem; margin-bottom: 3px; }
+    .phone-tag {
       background: #e8f5e9; color: #2e7d32;
-      padding: 2px 8px; border-radius: 6px;
-      font-family: monospace; font-size: 0.78rem;
-      display: inline-block; margin: 4px 0;
+      padding: 1px 7px; border-radius: 5px;
+      font-family: monospace; font-size: 0.76rem;
+      display: inline-block; margin-bottom: 4px;
     }
-    .vid-info .meta { font-size: 0.78rem; color: #999; margin-bottom: 6px; }
-    .vid-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .vid-note-wrap { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-    .note-input {
-      flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.82rem; direction: rtl; outline: none; font-family: inherit;
-      background: #fafafa; color: #333;
-    }
-    .note-input:focus { border-color: #128c7e; background: white; }
-    .note-save-btn {
-      padding: 5px 12px; background: #128c7e; color: white;
-      border: none; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
-    }
-    .note-save-btn:hover { opacity: 0.85; }
+    .vid-info .meta { font-size: 0.76rem; color: #999; margin-bottom: 8px; }
+    .vid-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .vid-actions .btn { padding: 5px 12px; font-size: 0.78rem; }
     .dl-btn {
       display: inline-flex; align-items: center; gap: 4px;
-      padding: 6px 14px; background: #075e54; color: white;
-      border-radius: 8px; text-decoration: none; font-size: 0.82rem; font-weight: 600;
+      padding: 5px 12px; background: #075e54; color: white;
+      border-radius: 8px; text-decoration: none; font-size: 0.78rem; font-weight: 600;
     }
     .dl-btn:hover { opacity: 0.85; }
+    .note-wrap { display: flex; gap: 6px; align-items: center; }
+    .note-input {
+      flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.8rem; direction: rtl; outline: none; font-family: inherit; background: #fafafa;
+    }
+    .note-input:focus { border-color: #128c7e; background: white; }
+    .note-save { padding: 5px 11px; background: #128c7e; color: white; border: none;
+      border-radius: 8px; font-size: 0.78rem; cursor: pointer; }
+    .note-save:hover { opacity: 0.85; }
 
     .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
 
-    /* ── Modal ── */
+    /* Reply modal */
     .overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,0.5); z-index: 100;
@@ -101,54 +121,77 @@
     }
     .overlay.open { display: flex; }
     .modal {
-      background: white; border-radius: 16px; padding: 28px;
-      width: 90%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      background: white; border-radius: 16px; padding: 26px;
+      width: 90%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     }
-    .modal h3 { margin-bottom: 14px; font-size: 1.1rem; color: #075e54; }
-    .modal .to-info {
-      background: #f5f5f5; border-radius: 8px; padding: 8px 14px;
-      margin-bottom: 14px; font-size: 0.85rem; color: #555;
-    }
-    .tab-bar { display: flex; gap: 8px; margin-bottom: 14px; }
-    .tab-btn {
-      flex: 1; padding: 8px; border: 2px solid #ddd; background: white;
-      border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
-      transition: all 0.2s; color: #666;
-    }
+    .modal h3 { margin-bottom: 12px; font-size: 1.05rem; color: #075e54; }
+    .modal .to-info { background: #f5f5f5; border-radius: 8px; padding: 7px 12px;
+      margin-bottom: 12px; font-size: 0.83rem; color: #555; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tab-btn { flex: 1; padding: 7px; border: 2px solid #ddd; background: white;
+      border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+      transition: all 0.2s; color: #666; }
     .tab-btn.active { border-color: #128c7e; background: #e8f5e9; color: #075e54; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-    .modal textarea {
-      width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd;
-      border-radius: 10px; font-size: 0.9rem; resize: vertical;
-      outline: none; direction: rtl; font-family: inherit;
-    }
+    .modal textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd;
+      border-radius: 10px; font-size: 0.88rem; resize: vertical; outline: none;
+      direction: rtl; font-family: inherit; }
     .modal textarea:focus { border-color: #128c7e; }
-    .voice-upload-area {
-      border: 2px dashed #ddd; border-radius: 12px; padding: 24px;
-      text-align: center; cursor: pointer; transition: border-color 0.2s;
-    }
+    .voice-upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 20px;
+      text-align: center; cursor: pointer; transition: border-color 0.2s; color: #888; }
     .voice-upload-area:hover { border-color: #128c7e; }
-    .voice-upload-area p { color: #888; font-size: 0.88rem; margin-top: 8px; }
-    .voice-upload-area .icon { font-size: 2rem; }
-    #voiceFileInput { display: none; }
-    #voicePreview { margin-top: 12px; width: 100%; display: none; }
-    .voice-name { font-size: 0.8rem; color: #555; margin-top: 6px; text-align: center; }
-    .record-area { text-align: center; margin-bottom: 10px; }
-    .btn-record {
-      background: #128c7e; color: white; padding: 10px 24px;
-      border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s;
-    }
+    .or-sep { text-align: center; color: #bbb; font-size: 0.78rem; margin: 8px 0; }
+    .btn-record { background: #128c7e; color: white; padding: 9px 22px;
+      border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; }
     .btn-record.recording { background: #e53935; }
-    .or-sep { text-align: center; color: #bbb; font-size: 0.8rem; margin: 8px 0; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+    #voiceFileInput { display: none; }
+
+    /* Upload modal */
+    #uploadOverlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); z-index: 300;
+      align-items: center; justify-content: center;
+    }
+    #uploadOverlay.open { display: flex; }
+    .upload-modal {
+      background: white; border-radius: 14px; padding: 26px;
+      width: 90%; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+    .upload-modal h3 { font-size: 1.05rem; color: #075e54; margin-bottom: 14px; }
+    .upload-modal label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 4px; margin-top: 10px; }
+    .upload-modal input[type=text], .upload-modal input[type=tel] {
+      width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.88rem; outline: none; direction: rtl;
+    }
+    .upload-modal input:focus { border-color: #128c7e; }
+    .drop-zone {
+      border: 2px dashed #ccc; border-radius: 10px; padding: 22px;
+      text-align: center; cursor: pointer; margin-top: 12px;
+      color: #888; background: #fafafa; transition: border-color 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #128c7e; color: #128c7e; }
+    .drop-zone .dz-icon { font-size: 2rem; }
+    #uploadFileInput { display: none; }
+    .upload-preview { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
+    .up-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #f5f5f5; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
+    }
+    .up-item .up-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .up-item .up-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .up-item .up-size { color: #aaa; font-size: 0.72rem; flex-shrink: 0; }
+    .up-item .rm { background: none; border: none; color: #e53935; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
+    .up-progress { margin-top: 10px; font-size: 0.8rem; color: #128c7e; display: none; }
+    .upload-modal .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
 
     #toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       background: #1a1a2e; color: white; padding: 10px 22px;
       border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 400;
     }
     #toast.show { opacity: 1; }
   </style>
@@ -156,13 +199,15 @@
 <body>
 
 <header>
-  <h1>🎬 الفيديوهات المستلمة</h1>
+  <h1>🎬 الفيديوهات</h1>
   <nav class="nav-links">
     <a href="/">🏠 الرئيسية</a>
     <a href="/messages.html">💬 الرسائل</a>
     <a href="/images.html">📸 الصور</a>
     <a href="/voices.html">🎤 الصوتيات</a>
     <a href="/videos.html" class="active">🎬 الفيديوهات</a>
+    <a href="/qr.html">📲 QR</a>
+    <a href="/sync.html">🔄 مزامنة</a>
     <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
   </nav>
 </header>
@@ -171,12 +216,16 @@
 <div class="stats">
   <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الفيديوهات</div></div>
   <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">فيديوهات اليوم</div></div>
+  <div class="stat-card"><div class="num" id="sSelected">0</div><div class="label">محددة</div></div>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
   <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف أو تعليق...">
-  <button class="btn btn-green" onclick="load()">🔄 تحديث</button>
+  <button class="btn btn-blue"  onclick="openUploadModal()">📤 رفع فيديو</button>
+  <button class="btn btn-green" onclick="toggleSelectAll()" id="btnSelAll">☑️ تحديد الكل</button>
+  <button class="btn btn-red"   id="btnDelSel" onclick="deleteSelected()" disabled>🗑️ حذف المحددة (<span id="selCount">0</span>)</button>
+  <button class="btn btn-gray"  onclick="load()">🔄 تحديث</button>
 </div>
 
 <!-- Gallery -->
@@ -191,37 +240,53 @@
   <div class="modal">
     <h3>💬 رد على الزبون</h3>
     <div class="to-info" id="replyTo"></div>
-
     <div class="tab-bar">
       <button class="tab-btn active" id="tabText"  onclick="switchTab('text')">📝 نص</button>
       <button class="tab-btn"        id="tabVoice" onclick="switchTab('voice')">🎤 صوت</button>
     </div>
-
     <div class="tab-panel active" id="panelText">
       <textarea id="replyText" placeholder="اكتب ردك هنا..."></textarea>
     </div>
-
     <div class="tab-panel" id="panelVoice">
-      <!-- تسجيل من الميكروفون -->
-      <div class="record-area">
+      <div style="text-align:center;margin-bottom:8px">
         <button id="recordBtn" class="btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
-        <div id="recordTimer" style="display:none; margin-top:8px; text-align:center; color:#e53935; font-weight:700;">
-          ⏺️ <span id="timerDisplay">0:00</span>
-        </div>
+        <div id="recordTimer" style="display:none;margin-top:6px;color:#e53935;font-weight:700">⏺️ <span id="timerDisplay">0:00</span></div>
       </div>
       <div class="or-sep">— أو اختر ملف —</div>
       <div class="voice-upload-area" onclick="document.getElementById('voiceFileInput').click()">
-        <div class="icon">📁</div>
-        <p>mp3 · ogg · wav · m4a · opus</p>
+        <div style="font-size:1.8rem">🎵</div>
+        <p style="font-size:0.83rem;margin-top:4px">mp3 · ogg · wav · m4a</p>
       </div>
       <input type="file" id="voiceFileInput" accept="audio/*">
-      <audio id="voicePreview" controls style="display:none; margin-top:12px; width:100%;"></audio>
-      <div class="voice-name" id="voiceName"></div>
+      <audio id="voicePreview" controls style="display:none;margin-top:10px;width:100%;"></audio>
+      <div id="voiceName" style="font-size:0.78rem;color:#555;margin-top:4px;text-align:center;"></div>
     </div>
-
     <div class="modal-actions">
-      <button class="btn" style="background:#eee;color:#333" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-gray" onclick="closeModal()">إلغاء</button>
       <button class="btn btn-green" onclick="sendReply()">إرسال ✉️</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadOverlay">
+  <div class="upload-modal">
+    <h3>📤 رفع فيديو يدوياً</h3>
+    <label>رقم الهاتف (اختياري)</label>
+    <input type="tel" id="upPhone" placeholder="212600123456" dir="ltr">
+    <label>اسم (اختياري)</label>
+    <input type="text" id="upName" placeholder="يدوي">
+    <div class="drop-zone" id="upDropZone" onclick="document.getElementById('uploadFileInput').click()">
+      <div class="dz-icon">🎬</div>
+      <p style="font-size:0.83rem;margin-top:5px">اسحب الفيديوهات هنا أو اضغط للاختيار</p>
+      <small style="color:#aaa">mp4 · webm · mov · avi · mkv</small>
+    </div>
+    <input type="file" id="uploadFileInput" accept="video/*" multiple>
+    <div class="upload-preview" id="upPreview"></div>
+    <div class="up-progress" id="upProgress">⏳ جاري الرفع...</div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeUploadModal()">إلغاء</button>
+      <button class="btn btn-blue" id="upSendBtn" onclick="doUpload()">📤 رفع (<span id="upCount">0</span>)</button>
     </div>
   </div>
 </div>
@@ -229,152 +294,44 @@
 <div id="toast"></div>
 
 <script>
-  let replyPhone = "";
-  let activeTab  = "text";
-  let voiceData  = null;
-  let voiceMime  = null;
-  let mediaRecorder = null;
-  let recordChunks  = [];
-  let recordInterval = null;
-  let recordSeconds  = 0;
+  let allVideos   = [];
+  let selectedIds = new Set();
+  let upFiles     = [];
+  let replyPhone  = "";
+  let activeTab   = "text";
+  let voiceData   = null, voiceMime = null;
+  let mediaRecorder = null, recordChunks = [], recordInterval = null, recordSeconds = 0;
 
-  function switchTab(tab) {
-    activeTab = tab;
-    document.getElementById("panelText").classList.toggle("active", tab === "text");
-    document.getElementById("panelVoice").classList.toggle("active", tab === "voice");
-    document.getElementById("tabText").classList.toggle("active", tab === "text");
-    document.getElementById("tabVoice").classList.toggle("active", tab === "voice");
-  }
-
-  // إخفاء زر التسجيل إذا الميكروفون غير متاح (HTTP من جهاز آخر)
-  if (!navigator.mediaDevices || !window.isSecureContext) {
-    document.getElementById("recordBtn").style.display = "none";
-    document.getElementById("recordTimer").style.display = "none";
-    document.querySelector(".or-sep").textContent = "اختر ملف صوتي";
-  }
-
-  // ── تسجيل الصوت ──────────────────────────────────────────────────────────
-  async function toggleRecord() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  }
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      recordChunks  = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordChunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordChunks, { type: "audio/ogg; codecs=opus" });
-        voiceMime = "audio/ogg";
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          voiceData = e.target.result.split(",")[1];
-          const preview = document.getElementById("voicePreview");
-          preview.src = e.target.result;
-          preview.style.display = "block";
-        };
-        reader.readAsDataURL(blob);
-        document.getElementById("voiceName").textContent = `🎙️ تسجيل — ${recordSeconds} ثانية`;
-        stream.getTracks().forEach(t => t.stop());
-      };
-
-      mediaRecorder.start();
-      recordSeconds = 0;
-      document.getElementById("recordBtn").textContent = "⏹️ إيقاف التسجيل";
-      document.getElementById("recordBtn").classList.add("recording");
-      document.getElementById("recordTimer").style.display = "block";
-      recordInterval = setInterval(() => {
-        recordSeconds++;
-        const m = Math.floor(recordSeconds / 60);
-        const s = recordSeconds % 60;
-        document.getElementById("timerDisplay").textContent = `${m}:${s.toString().padStart(2, "0")}`;
-      }, 1000);
-    } catch (err) {
-      showToast("❌ تعذر الوصول للميكروفون");
-    }
-  }
-
-  function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-    }
-    clearInterval(recordInterval);
-    document.getElementById("recordBtn").textContent = "🎙️ ابدأ التسجيل";
-    document.getElementById("recordBtn").classList.remove("recording");
-    document.getElementById("recordTimer").style.display = "none";
-  }
-
-  // ── رفع ملف ──────────────────────────────────────────────────────────────
-  document.getElementById("voiceFileInput").addEventListener("change", function() {
-    const file = this.files[0];
-    if (!file) return;
-    voiceMime = file.type || "audio/ogg";
-    document.getElementById("voiceName").textContent = `🎵 ${file.name}`;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      voiceData = e.target.result.split(",")[1];
-      const preview = document.getElementById("voicePreview");
-      preview.src = e.target.result;
-      preview.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  });
-
+  // ── Stats ─────────────────────────────────────────────────────────────────
   async function loadStats() {
     try {
-      const res   = await fetch("/api/videos/stats");
-      const stats = await res.json();
+      const stats = await fetch("/api/videos/stats").then(r => r.json());
       document.getElementById("sTotal").textContent = stats.total;
       document.getElementById("sToday").textContent = stats.today;
-    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+    } catch {}
   }
 
+  // ── Load ──────────────────────────────────────────────────────────────────
   async function load() {
     const q = document.getElementById("searchPhone").value.trim();
-    let url = "/api/videos?limit=50";
+    let url = "/api/videos?limit=100";
     if (q) {
       if (/^\d+$/.test(q)) url += `&phone=${encodeURIComponent(q)}`;
       else url += `&search=${encodeURIComponent(q)}`;
     }
     try {
-      const res  = await fetch(url);
-      const list = await res.json();
-      renderGallery(list);
+      allVideos = await fetch(url).then(r => r.json());
+      selectedIds.clear();
+      updateSelUI();
+      renderGallery(allVideos);
     } catch { showToast("❌ خطأ في تحميل الفيديوهات"); }
   }
 
-  async function saveNote(id) {
-    const note = document.getElementById(`note-${id}`).value.trim();
-    try {
-      const res = await fetch(`/api/videos/${id}/note`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note })
-      });
-      const data = await res.json();
-      if (data.ok) showToast("✅ تم حفظ التعليق");
-      else showToast("❌ فشل الحفظ");
-    } catch { showToast("❌ خطأ في الاتصال"); }
-  }
-
-  function escHtml(str) {
-    if (!str) return "";
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-
+  // ── Render ────────────────────────────────────────────────────────────────
   function renderGallery(list) {
     const g = document.getElementById("gallery");
     if (!list.length) {
-      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد فيديوهات مستلمة بعد 🎬</div>`;
+      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد فيديوهات 🎬</div>`;
       return;
     }
     g.innerHTML = list.map(v => {
@@ -382,8 +339,10 @@
       const time = new Date(v.created_at).toLocaleString("ar-MA");
       const mb   = (v.filesize / (1024 * 1024)).toFixed(2);
       const note = v.note ? escHtml(v.note) : "";
+      const sel  = selectedIds.has(v.id) ? " selected" : "";
       return `
-        <div class="vid-card" id="vc-${v.id}">
+        <div class="vid-card${sel}" id="vc-${v.id}">
+          <div class="card-cb" onclick="toggleCard(${v.id})"></div>
           <video src="${src}" controls preload="metadata"></video>
           <div class="vid-info">
             <div class="sender">${escHtml(v.name)}</div>
@@ -391,22 +350,97 @@
             <div class="meta">${time} · ${mb} MB</div>
             <div class="vid-actions">
               <a href="${src}" download="${v.filename}" class="dl-btn">⬇️ تحميل</a>
-              <button class="btn btn-blue" onclick="openReply('${v.phone}', '${escHtml(v.name)}')">↩️ رد</button>
-              <button class="btn btn-red"  onclick="deleteItem(${v.id})">🗑️ حذف</button>
+              <button class="btn btn-blue" onclick="openReply('${v.phone}','${escHtml(v.name)}')">↩️ رد</button>
+              <button class="btn btn-red"  onclick="deleteSingle(${v.id})">🗑️ حذف</button>
             </div>
-            <div class="vid-note-wrap">
-              <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق للبحث لاحقاً..." value="${note}"
+            <div class="note-wrap">
+              <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق..." value="${note}"
                      onkeydown="if(event.key==='Enter') saveNote(${v.id})">
-              <button class="note-save-btn" onclick="saveNote(${v.id})">حفظ</button>
+              <button class="note-save" onclick="saveNote(${v.id})">حفظ</button>
             </div>
           </div>
         </div>`;
     }).join("");
   }
 
+  // ── Selection ─────────────────────────────────────────────────────────────
+  function toggleCard(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    updateSelUI();
+    document.getElementById(`vc-${id}`)?.classList.toggle("selected", selectedIds.has(id));
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === allVideos.length) {
+      selectedIds.clear();
+    } else {
+      allVideos.forEach(v => selectedIds.add(v.id));
+    }
+    updateSelUI();
+    document.querySelectorAll(".vid-card").forEach(card => {
+      const id = parseInt(card.id.replace("vc-", ""));
+      card.classList.toggle("selected", selectedIds.has(id));
+    });
+  }
+
+  function updateSelUI() {
+    const n = selectedIds.size;
+    document.getElementById("sSelected").textContent = n;
+    document.getElementById("selCount").textContent  = n;
+    document.getElementById("btnDelSel").disabled    = n === 0;
+    document.getElementById("btnSelAll").textContent =
+      (n === allVideos.length && n > 0) ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  async function deleteSingle(id) {
+    if (!confirm("حذف هذا الفيديو نهائياً؟")) return;
+    if (await doDelete(id)) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
+  }
+
+  async function deleteSelected() {
+    if (!selectedIds.size) return;
+    if (!confirm(`حذف ${selectedIds.size} فيديو نهائياً؟`)) return;
+    let done = 0;
+    for (const id of [...selectedIds]) {
+      if (await doDelete(id)) done++;
+    }
+    showToast(`✅ تم حذف ${done} فيديو`);
+    await load(); await loadStats();
+  }
+
+  async function doDelete(id) {
+    try {
+      const r = await fetch(`/api/videos/${id}`, { method: "DELETE" });
+      return (await r.json()).ok;
+    } catch { return false; }
+  }
+
+  // ── Note ──────────────────────────────────────────────────────────────────
+  async function saveNote(id) {
+    const note = document.getElementById(`note-${id}`)?.value.trim();
+    try {
+      const r = await fetch(`/api/videos/${id}/note`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      if ((await r.json()).ok) showToast("✅ تم حفظ التعليق");
+    } catch {}
+  }
+
+  // ── Reply Modal ───────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    activeTab = tab;
+    ["text","voice"].forEach(t => {
+      document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle("active", t === tab);
+      document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle("active", t === tab);
+    });
+  }
+
   function openReply(phone, name) {
-    replyPhone = phone;
-    voiceData  = null; voiceMime = null;
+    replyPhone = phone; voiceData = null; voiceMime = null;
     document.getElementById("replyTo").textContent = `إلى: ${name} (+${phone})`;
     document.getElementById("replyText").value = "";
     document.getElementById("voiceFileInput").value = "";
@@ -414,7 +448,7 @@
     document.getElementById("voiceName").textContent = "";
     switchTab("text");
     document.getElementById("replyOverlay").classList.add("open");
-    document.getElementById("replyText").focus();
+    setTimeout(() => document.getElementById("replyText").focus(), 50);
   }
 
   function closeModal() {
@@ -424,60 +458,201 @@
 
   async function sendReply() {
     if (activeTab === "voice") {
-      if (!voiceData) return showToast("⚠️ اختر ملف صوتي أولاً");
+      if (!voiceData) return showToast("⚠️ اختر ملف صوتي");
       try {
-        const res = await fetch("/api/send-voice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: replyPhone, data: voiceData, mimetype: voiceMime })
+        const r = await fetch("/api/send-voice", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: replyPhone, data: voiceData, mimetype: voiceMime }),
         });
-        const data = await res.json();
-        if (data.ok) { showToast("✅ تم إرسال الصوت"); closeModal(); }
-        else showToast("❌ فشل الإرسال: " + (data.error || ""));
+        const d = await r.json();
+        if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
+        else showToast("❌ " + (d.error || "فشل"));
       } catch { showToast("❌ خطأ في الاتصال"); }
     } else {
       const text = document.getElementById("replyText").value.trim();
-      if (!text) return showToast("⚠️ اكتب رسالة أولاً");
+      if (!text) return showToast("⚠️ اكتب رسالة");
       try {
-        const res = await fetch("/api/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: replyPhone, message: text })
+        const r = await fetch("/api/send", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: replyPhone, message: text }),
         });
-        const data = await res.json();
-        if (data.ok) { showToast("✅ تم إرسال الرد"); closeModal(); }
-        else showToast("❌ فشل الإرسال: " + (data.error || ""));
+        const d = await r.json();
+        if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
+        else showToast("❌ " + (d.error || "فشل"));
       } catch { showToast("❌ خطأ في الاتصال"); }
     }
   }
 
-  async function deleteItem(id) {
-    if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
-    try {
-      const res = await fetch(`/api/videos/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.ok) {
-        document.getElementById(`vc-${id}`)?.remove();
-        showToast("🗑️ تم الحذف");
-        loadStats();
-      } else {
-        showToast("❌ فشل الحذف");
-      }
-    } catch { showToast("❌ خطأ في الاتصال"); }
+  // ── Recording ─────────────────────────────────────────────────────────────
+  if (!navigator.mediaDevices || !window.isSecureContext) {
+    document.getElementById("recordBtn").style.display = "none";
   }
 
-  // إغلاق المودال عند النقر خارجه
-  document.getElementById("replyOverlay").addEventListener("click", function(e) {
-    if (e.target === this) closeModal();
+  async function toggleRecord() {
+    if (mediaRecorder?.state === "recording") stopRecording();
+    else startRecording();
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      recordChunks = [];
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordChunks, { type: "audio/ogg; codecs=opus" });
+        voiceMime = "audio/ogg";
+        const reader = new FileReader();
+        reader.onload = e => {
+          voiceData = e.target.result.split(",")[1];
+          document.getElementById("voicePreview").src = e.target.result;
+          document.getElementById("voicePreview").style.display = "block";
+        };
+        reader.readAsDataURL(blob);
+        document.getElementById("voiceName").textContent = `🎙️ تسجيل — ${recordSeconds}ث`;
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorder.start();
+      recordSeconds = 0;
+      document.getElementById("recordBtn").textContent = "⏹️ إيقاف";
+      document.getElementById("recordBtn").classList.add("recording");
+      document.getElementById("recordTimer").style.display = "block";
+      recordInterval = setInterval(() => {
+        recordSeconds++;
+        const m = Math.floor(recordSeconds / 60), s = recordSeconds % 60;
+        document.getElementById("timerDisplay").textContent = `${m}:${String(s).padStart(2,"0")}`;
+      }, 1000);
+    } catch { showToast("❌ تعذر الوصول للميكروفون"); }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder?.state === "recording") mediaRecorder.stop();
+    clearInterval(recordInterval);
+    document.getElementById("recordBtn").textContent = "🎙️ ابدأ التسجيل";
+    document.getElementById("recordBtn").classList.remove("recording");
+    document.getElementById("recordTimer").style.display = "none";
+  }
+
+  document.getElementById("voiceFileInput").addEventListener("change", function () {
+    const file = this.files[0]; if (!file) return;
+    voiceMime = file.type || "audio/ogg";
+    document.getElementById("voiceName").textContent = `🎵 ${file.name}`;
+    const reader = new FileReader();
+    reader.onload = e => {
+      voiceData = e.target.result.split(",")[1];
+      document.getElementById("voicePreview").src = e.target.result;
+      document.getElementById("voicePreview").style.display = "block";
+    };
+    reader.readAsDataURL(file);
   });
 
-  document.getElementById("searchPhone").addEventListener("input", load);
+  // ── Upload Modal ──────────────────────────────────────────────────────────
+  function openUploadModal() {
+    upFiles = [];
+    document.getElementById("upPhone").value = "";
+    document.getElementById("upName").value  = "";
+    document.getElementById("upPreview").innerHTML = "";
+    document.getElementById("upProgress").style.display = "none";
+    document.getElementById("upCount").textContent = "0";
+    document.getElementById("uploadFileInput").value = "";
+    document.getElementById("uploadOverlay").classList.add("open");
+  }
+
+  function closeUploadModal() {
+    document.getElementById("uploadOverlay").classList.remove("open");
+  }
+
+  const upDrop = document.getElementById("upDropZone");
+  upDrop.addEventListener("dragover",  e => { e.preventDefault(); upDrop.classList.add("drag-over"); });
+  upDrop.addEventListener("dragleave", () => upDrop.classList.remove("drag-over"));
+  upDrop.addEventListener("drop", e => {
+    e.preventDefault(); upDrop.classList.remove("drag-over");
+    addUpFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("video/")));
+  });
+
+  document.getElementById("uploadFileInput").addEventListener("change", function () {
+    addUpFiles(Array.from(this.files)); this.value = "";
+  });
+
+  function addUpFiles(files) {
+    files.forEach(file => {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      upFiles.push({ file, mime: file.type || "video/mp4", data: null, name: file.name, mb });
+      const reader = new FileReader();
+      const idx = upFiles.length - 1;
+      reader.onload = e => { upFiles[idx].data = e.target.result.split(",")[1]; };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById("upCount").textContent = upFiles.length;
+    renderUpPreview();
+  }
+
+  function removeUpFile(i) {
+    upFiles.splice(i, 1);
+    document.getElementById("upCount").textContent = upFiles.length;
+    renderUpPreview();
+  }
+
+  function renderUpPreview() {
+    document.getElementById("upPreview").innerHTML = upFiles.map((f, i) => `
+      <div class="up-item">
+        <span class="up-icon">🎬</span>
+        <span class="up-name">${escHtml(f.name)}</span>
+        <span class="up-size">${f.mb} MB</span>
+        <button class="rm" onclick="removeUpFile(${i})">✕</button>
+      </div>`).join("");
+  }
+
+  async function doUpload() {
+    if (!upFiles.length) return showToast("⚠️ اختر فيديو أولاً");
+    if (upFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل التحميل");
+    const phone = document.getElementById("upPhone").value.trim() || "000000000";
+    const name  = document.getElementById("upName").value.trim()  || "يدوي";
+    const prog  = document.getElementById("upProgress");
+    const btn   = document.getElementById("upSendBtn");
+    prog.style.display = "block"; btn.disabled = true;
+    let sent = 0, failed = 0;
+    for (const f of upFiles) {
+      try {
+        prog.textContent = `⏳ ${sent + failed + 1} / ${upFiles.length}`;
+        const r = await fetch("/api/videos/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, name, data: f.data, mimetype: f.mime }),
+        });
+        const d = await r.json();
+        if (d.ok) sent++; else failed++;
+      } catch { failed++; }
+    }
+    prog.textContent = `✅ تم رفع ${sent}${failed ? ` · ❌ فشل ${failed}` : ""}`;
+    btn.disabled = false;
+    if (sent > 0) setTimeout(() => { closeUploadModal(); load(); loadStats(); }, 1200);
+  }
+
+  // ── Utils ─────────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
 
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3000);
   }
+
+  // ── Close on backdrop ─────────────────────────────────────────────────────
+  document.getElementById("replyOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("replyOverlay")) closeModal();
+  });
+  document.getElementById("uploadOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("uploadOverlay")) closeUploadModal();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeModal(); closeUploadModal(); }
+  });
+
+  document.getElementById("searchPhone").addEventListener("input", load);
 
   loadStats();
   load();

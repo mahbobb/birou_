@@ -5,255 +5,419 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>سجل الرسائل — واتساب بوت</title>
   <style>
+    :root {
+      --green: #25d366; --teal: #128c7e; --dark: #075e54;
+      --red: #e53935; --orange: #ff9800; --blue: #1976d2;
+      --bg: #f0f2f5; --card: #fff; --border: #e8edf2;
+      --text: #1a1a2e; --muted: #8696a0;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; }
 
     header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
+      background: linear-gradient(135deg, var(--dark), var(--teal));
+      color: white; padding: 0 24px; height: 58px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18); position: sticky; top: 0; z-index: 50;
     }
-    header h1 { font-size: 1.3rem; }
+    .hdr-left { display: flex; align-items: center; gap: 10px; }
+    .hdr-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
     .nav-links a {
-      color: white; text-decoration: none; margin-right: 16px;
-      font-size: 0.9rem; opacity: 0.85; padding: 6px 12px;
-      border-radius: 8px; transition: background 0.2s;
+      color: rgba(255,255,255,.85); text-decoration: none;
+      font-size: 0.82rem; padding: 5px 10px; border-radius: 8px; transition: all .2s;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); opacity: 1; }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,.2); color: white; }
+    .nav-links a.logout { background: rgba(255,60,60,.2); color: #ffcdd2; }
 
-    .stats {
-      display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap;
-    }
+    /* ── Stats ── */
+    .stats { display: flex; gap: 14px; padding: 18px 24px 0; flex-wrap: wrap; }
     .stat-card {
-      background: white; border-radius: 12px; padding: 16px 22px;
-      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+      background: var(--card); border-radius: 13px; padding: 16px 20px;
+      flex: 1; min-width: 120px; box-shadow: 0 1px 6px rgba(0,0,0,.07);
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--border); transition: transform .15s;
     }
-    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .sc-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .sc-icon.green  { background: #e8f5e9; }
+    .sc-icon.blue   { background: #e3f2fd; }
+    .sc-icon.orange { background: #fff3e0; }
+    .sc-icon.red    { background: #ffebee; }
+    .sc-body .num  { font-size: 1.6rem; font-weight: 800; color: var(--dark); line-height: 1; }
+    .sc-body .lbl  { font-size: .74rem; color: var(--muted); margin-top: 2px; }
+    #scUnanswered .sc-body .num { color: var(--red); }
 
-    .toolbar {
-      padding: 0 24px 12px;
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 6px; padding: 16px 24px 0; }
+    .tab {
+      padding: 8px 18px; border: none; border-radius: 10px; cursor: pointer;
+      font-size: .85rem; font-weight: 600; transition: all .18s;
+      background: var(--card); color: var(--muted); border: 1.5px solid var(--border);
     }
-    .search-input, select {
-      padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.9rem; outline: none; direction: rtl;
-    }
-    .search-input { flex: 1; min-width: 180px; }
-    .search-input:focus, select:focus { border-color: #128c7e; }
+    .tab:hover { border-color: var(--teal); color: var(--teal); }
+    .tab.active { background: var(--teal); color: white; border-color: var(--teal); box-shadow: 0 2px 8px rgba(18,140,126,.3); }
+    .tab.tab-alert { border-color: var(--red); color: var(--red); }
+    .tab.tab-alert.active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 2px 8px rgba(229,57,53,.3); }
+    .tab .cnt { background: var(--red); color: white; border-radius: 20px; padding: 1px 7px; font-size: .7rem; margin-right: 4px; }
+    .tab.active .cnt { background: rgba(255,255,255,.3); }
 
-    .btn {
-      padding: 8px 16px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.85rem; font-weight: 600;
-      transition: opacity 0.2s; white-space: nowrap;
+    /* ── Toolbar ── */
+    .toolbar { padding: 14px 24px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { flex: 1; min-width: 180px; position: relative; }
+    .search-ico { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    .search-input {
+      width: 100%; padding: 8px 32px 8px 12px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: .88rem; outline: none; direction: rtl;
+      background: var(--card); transition: border-color .2s;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-green  { background: #25d366; color: white; }
-    .btn-gray   { background: #aaa; color: white; }
+    .search-input:focus { border-color: var(--teal); }
+    select {
+      padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: .85rem; outline: none; background: var(--card); color: var(--text);
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--teal); }
+    .tbtn {
+      padding: 8px 14px; border: none; border-radius: 10px; cursor: pointer;
+      font-size: .82rem; font-weight: 600; transition: all .18s; white-space: nowrap;
+    }
+    .tbtn:hover { filter: brightness(1.08); }
+    .tbtn-green { background: var(--green); color: white; }
+    .tbtn-teal  { background: var(--teal);  color: white; }
 
-    .table-wrap { padding: 0 24px 24px; overflow-x: auto; }
-    table {
-      width: 100%; background: white; border-radius: 12px;
-      overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      border-collapse: collapse;
+    /* ── Table ── */
+    .table-wrap { padding: 10px 24px 24px; overflow-x: auto; }
+    .table-box {
+      background: var(--card); border-radius: 14px; overflow: hidden;
+      box-shadow: 0 1px 8px rgba(0,0,0,.06); border: 1px solid var(--border);
     }
-    thead { background: #075e54; color: white; }
-    th, td { padding: 11px 14px; text-align: right; font-size: 0.87rem; border-bottom: 1px solid #f0f0f0; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: linear-gradient(135deg, var(--dark), var(--teal)); }
+    th { padding: 12px 14px; text-align: right; font-size: .81rem; font-weight: 600; color: white; white-space: nowrap; }
+    td { padding: 11px 14px; text-align: right; font-size: .85rem; border-bottom: 1px solid #f4f6f8; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9fffe; }
+    tr:hover td { background: #fafffe; }
 
-    .badge {
-      display: inline-block; padding: 2px 10px; border-radius: 20px;
-      font-size: 0.78rem; font-weight: 600;
-    }
-    .badge-in  { background: #e3f2fd; color: #1565c0; }
-    .badge-out { background: #e8f5e9; color: #2e7d32; }
-    .badge-ai     { background: #f3e5f5; color: #6a1b9a; }
-    .badge-custom { background: #fff3e0; color: #e65100; }
-    .badge-user   { background: #e3f2fd; color: #1565c0; }
-    .badge-manual { background: #fce4ec; color: #880e4f; }
+    /* Unanswered row highlight */
+    tr.unanswered-row td { background: #fff8e1 !important; }
+    tr.unanswered-row:hover td { background: #fff3cd !important; }
+    tr.unanswered-row td:first-child { border-right: 3px solid var(--orange); }
 
-    .phone-tag {
-      background: #e8f5e9; color: #2e7d32;
-      padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-family: monospace;
-    }
-    .msg-body { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .time { color: #888; font-size: 0.8rem; white-space: nowrap; }
+    .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px; border-radius: 20px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+    .badge-in       { background: #e3f2fd; color: #1565c0; }
+    .badge-out      { background: #e8f5e9; color: #2e7d32; }
+    .badge-ai       { background: #f3e5f5; color: #6a1b9a; }
+    .badge-custom   { background: #fff3e0; color: #e65100; }
+    .badge-user     { background: #e3f2fd; color: #1565c0; }
+    .badge-manual   { background: #fce4ec; color: #880e4f; }
+    .badge-default  { background: #f0f4f8; color: #546e7a; }
+    .badge-no-reply { background: #ffebee; color: var(--red); font-weight: 700; }
 
-    .empty { text-align: center; padding: 40px; color: #aaa; }
+    .phone-tag { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 6px; font-size: .78rem; font-family: monospace; }
+    .msg-body  { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: .82rem; }
+    .time      { color: var(--muted); font-size: .78rem; white-space: nowrap; }
 
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    .chat-btn {
+      padding: 4px 10px; border: none; border-radius: 7px; cursor: pointer;
+      font-size: .76rem; font-weight: 600; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 3px;
+      background: #e8f5e9; color: var(--dark); transition: all .18s;
     }
-    #toast.show { opacity: 1; }
+    .chat-btn:hover { background: #c8e6c9; }
 
-    .pagination {
-      display: flex; justify-content: center; gap: 8px;
-      padding: 16px 24px;
+    .empty-row td { text-align: center; padding: 50px 20px; color: var(--muted); font-size: .9rem; }
+
+    /* ── Unanswered section header ── */
+    .unans-header {
+      padding: 14px 20px 8px; font-size: .82rem; font-weight: 700;
+      color: var(--red); display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #ffebee;
     }
-    .page-btn {
-      padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px;
-      background: white; cursor: pointer; font-size: 0.85rem;
-    }
-    .page-btn.active { background: #075e54; color: white; border-color: #075e54; }
-    .page-btn:hover:not(.active) { background: #f0f0f0; }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; justify-content: center; gap: 6px; padding: 12px 24px 20px; }
+    .page-btn { padding: 6px 13px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; font-size: .83rem; transition: all .18s; }
+    .page-btn.active { background: var(--teal); color: white; border-color: var(--teal); }
+    .page-btn:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: .88rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>💬 سجل الرسائل</h1>
+  <div class="hdr-left">
+    <div class="hdr-icon">💬</div>
+    <h1>سجل الرسائل</h1>
+  </div>
   <nav class="nav-links">
-    <a href="/">🏠 الرئيسية</a>
+    <a href="/">🏠</a>
     <a href="/messages.html" class="active">💬 الرسائل</a>
-    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+    <a href="/chat.html">🗨️ الشات</a>
+    <a href="/images.html">📸 الصور</a>
+    <a href="/voices.html">🎤 الصوتيات</a>
+    <a href="/videos.html">🎬 الفيديوهات</a>
+    <a href="/qr.html">📲 QR</a>
+    <a href="/sync.html">🔄 مزامنة</a>
+    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">🚪 خروج</a>
   </nav>
 </header>
 
 <!-- Stats -->
 <div class="stats">
-  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الرسائل</div></div>
-  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">رسائل اليوم</div></div>
-  <div class="stat-card"><div class="num" id="sIn">—</div><div class="label">📥 واردة</div></div>
-  <div class="stat-card"><div class="num" id="sOut">—</div><div class="label">📤 صادرة</div></div>
+  <div class="stat-card"><div class="sc-icon green">💬</div><div class="sc-body"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي الرسائل</div></div></div>
+  <div class="stat-card"><div class="sc-icon blue">📅</div><div class="sc-body"><div class="num" id="sToday">—</div><div class="lbl">اليوم</div></div></div>
+  <div class="stat-card"><div class="sc-icon blue">📥</div><div class="sc-body"><div class="num" id="sIn">—</div><div class="lbl">واردة</div></div></div>
+  <div class="stat-card"><div class="sc-icon green">📤</div><div class="sc-body"><div class="num" id="sOut">—</div><div class="lbl">صادرة</div></div></div>
+  <div class="stat-card" id="scUnanswered"><div class="sc-icon red">⚠️</div><div class="sc-body"><div class="num" id="sUnanswered">—</div><div class="lbl">لم يُرد بعد</div></div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" id="tab-all"        onclick="switchTab('all')">📋 كل الرسائل</button>
+  <button class="tab tab-alert" id="tab-unanswered" onclick="switchTab('unanswered')">
+    ⚠️ لم يُرد بعد <span class="cnt" id="unansCnt">0</span>
+  </button>
+  <button class="tab" id="tab-in"  onclick="switchTab('in')">📥 واردة</button>
+  <button class="tab" id="tab-out" onclick="switchTab('out')">📤 صادرة</button>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
-  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف...">
-  <select id="filterDir">
-    <option value="">كل الرسائل</option>
-    <option value="in">📥 واردة</option>
-    <option value="out">📤 صادرة</option>
-  </select>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث برقم الهاتف...">
+  </div>
   <select id="filterSource">
     <option value="">كل المصادر</option>
     <option value="user">👤 مستخدم</option>
-    <option value="ai">🤖 ذكاء اصطناعي</option>
-    <option value="custom">📋 مبرمج</option>
     <option value="manual">✍️ يدوي</option>
+    <option value="custom">📋 مبرمج</option>
+    <option value="default">↩️ افتراضي</option>
+    <option value="ai">🤖 ذكاء</option>
   </select>
-  <button class="btn btn-green" onclick="loadMessages()">🔄 تحديث</button>
+  <button class="tbtn tbtn-green" onclick="refresh()">🔄 تحديث</button>
+  <button class="tbtn tbtn-teal"  onclick="exportCSV()">⬇️ تصدير</button>
 </div>
 
 <!-- Table -->
 <div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>الاسم</th>
-        <th>الهاتف</th>
-        <th>الاتجاه</th>
-        <th>الرسالة</th>
-        <th>المصدر</th>
-        <th>الوقت</th>
-      </tr>
-    </thead>
-    <tbody id="msgBody">
-      <tr><td colspan="7" class="empty">جاري التحميل...</td></tr>
-    </tbody>
-  </table>
+  <div class="table-box" id="tableBox">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الاسم</th>
+          <th>الهاتف</th>
+          <th>الاتجاه</th>
+          <th>الرسالة</th>
+          <th>المصدر</th>
+          <th>الوقت</th>
+          <th>شات</th>
+        </tr>
+      </thead>
+      <tbody id="msgBody">
+        <tr><td colspan="8" class="empty-row" style="text-align:center;padding:50px;color:var(--muted)">جاري التحميل...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="pagination" id="pagination"></div>
 <div id="toast"></div>
 
 <script>
-  let currentOffset = 0;
-  const LIMIT = 50;
-  let totalMsgs = 0;
+  /* ── State ── */
+  let currentOffset  = 0;
+  const LIMIT        = 50;
+  let totalMsgs      = 0;
+  let allMessages    = [];
+  let unansweredList = [];
+  let activeTab      = "all";
 
-  // قراءة الرقم من URL تلقائياً
-  const urlPhone = new URLSearchParams(window.location.search).get("phone");
-  if (urlPhone) {
-    document.addEventListener("DOMContentLoaded", () => {
-      const input = document.getElementById("searchPhone");
-      if (input) { input.value = urlPhone; }
+  const urlPhone = new URLSearchParams(window.location.search).get("phone") || "";
+  if (urlPhone) document.getElementById("searchPhone").value = urlPhone;
+
+  /* ── Tabs ── */
+  function switchTab(tab) {
+    activeTab = tab;
+    ["all","unanswered","in","out"].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle("active", t === tab);
     });
+    currentOffset = 0;
+    if (tab === "unanswered") renderUnanswered();
+    else                      renderTable(filterList());
+    renderPagination();
+  }
+
+  function filterList() {
+    let list = [...allMessages];
+    const q      = document.getElementById("searchPhone").value.trim().toLowerCase();
+    const source = document.getElementById("filterSource").value;
+    if (q)      list = list.filter(m => m.phone?.includes(q) || (m.name||"").toLowerCase().includes(q));
+    if (source) list = list.filter(m => m.source === source);
+    if (activeTab === "in")  list = list.filter(m => m.direction === "in");
+    if (activeTab === "out") list = list.filter(m => m.direction === "out");
+    return list;
+  }
+
+  /* ── Load ── */
+  async function refresh() {
+    await Promise.all([loadStats(), loadMessages(0), loadUnanswered()]);
   }
 
   async function loadStats() {
     try {
-      const res   = await fetch("/api/messages/stats");
-      const stats = await res.json();
-      document.getElementById("sTotal").textContent = stats.total;
-      document.getElementById("sToday").textContent = stats.today;
-      document.getElementById("sIn").textContent    = stats.incoming;
-      document.getElementById("sOut").textContent   = stats.outgoing;
-      totalMsgs = stats.total;
+      const s = await fetch("/api/messages/stats", { cache:"no-store" }).then(r=>r.json());
+      document.getElementById("sTotal").textContent = s.total;
+      document.getElementById("sToday").textContent = s.today;
+      document.getElementById("sIn").textContent    = s.incoming;
+      document.getElementById("sOut").textContent   = s.outgoing;
+      totalMsgs = s.total;
     } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+  }
+
+  async function loadUnanswered() {
+    try {
+      unansweredList = await fetch("/api/messages/unanswered", { cache:"no-store" }).then(r=>r.json());
+      const n = unansweredList.length;
+      document.getElementById("sUnanswered").textContent = n;
+      document.getElementById("unansCnt").textContent    = n;
+      // Flash the tab if there are unanswered
+      const tabBtn = document.getElementById("tab-unanswered");
+      tabBtn.style.animation = n > 0 ? "none" : "";
+      if (activeTab === "unanswered") renderUnanswered();
+    } catch {}
   }
 
   async function loadMessages(offset = 0) {
     currentOffset = offset;
-    const phone  = document.getElementById("searchPhone").value.trim();
-    const dir    = document.getElementById("filterDir").value;
-    const source = document.getElementById("filterSource").value;
-
+    const phone = document.getElementById("searchPhone").value.trim();
     let url = `/api/messages?limit=${LIMIT}&offset=${offset}`;
-    if (phone)  url += `&phone=${encodeURIComponent(phone)}`;
-
+    if (phone) url += `&phone=${encodeURIComponent(phone)}`;
     try {
-      const res  = await fetch(url);
-      let   list = await res.json();
-
-      if (dir)    list = list.filter(m => m.direction === dir);
-      if (source) list = list.filter(m => m.source    === source);
-
-      renderTable(list);
+      allMessages = await fetch(url, { cache:"no-store" }).then(r=>r.json());
+      if (activeTab !== "unanswered") renderTable(filterList());
       renderPagination();
     } catch { showToast("❌ خطأ في تحميل الرسائل"); }
   }
 
+  /* ── Render table ── */
   function renderTable(list) {
     const body = document.getElementById("msgBody");
+    // Build a set of unanswered phones for fast lookup
+    const unansPhones = new Set(unansweredList.map(u => u.phone));
+
     if (!list.length) {
-      body.innerHTML = `<tr><td colspan="7" class="empty">لا توجد رسائل</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">لا توجد رسائل</td></tr>`;
       return;
     }
     body.innerHTML = list.map((m, i) => {
-      const time = new Date(m.created_at).toLocaleString("ar-MA");
-      const dirBadge    = m.direction === "in"
+      const time  = new Date(m.created_at).toLocaleString("ar-MA");
+      const isUnanswered = unansPhones.has(m.phone) && m.direction === "in";
+      const rowClass = isUnanswered ? " class=\"unanswered-row\"" : "";
+
+      const dirBadge = m.direction === "in"
         ? `<span class="badge badge-in">📥 واردة</span>`
         : `<span class="badge badge-out">📤 صادرة</span>`;
-      const srcBadge = {
-        ai:     `<span class="badge badge-ai">🤖 IA</span>`,
-        custom: `<span class="badge badge-custom">📋 مبرمج</span>`,
-        user:   `<span class="badge badge-user">👤 مستخدم</span>`,
-        manual: `<span class="badge badge-manual">✍️ يدوي</span>`,
-      }[m.source] || `<span class="badge badge-gray">${m.source}</span>`;
 
-      return `<tr>
-        <td>${currentOffset + i + 1}</td>
-        <td><b>${m.name}</b></td>
+      const srcBadge = {
+        ai:      `<span class="badge badge-ai">🤖 ذكاء</span>`,
+        custom:  `<span class="badge badge-custom">📋 مبرمج</span>`,
+        user:    `<span class="badge badge-user">👤 مستخدم</span>`,
+        manual:  `<span class="badge badge-manual">✍️ يدوي</span>`,
+        default: `<span class="badge badge-default">↩️ افتراضي</span>`,
+      }[m.source] || `<span class="badge badge-default">${escHtml(m.source||"—")}</span>`;
+
+      const noReplyBadge = isUnanswered
+        ? `<span class="badge badge-no-reply" style="margin-top:3px;display:inline-flex">⚠️ لم يُرد</span>`
+        : "";
+
+      return `<tr${rowClass}>
+        <td style="color:var(--muted);font-size:.78rem">${currentOffset + i + 1}</td>
+        <td><b>${escHtml(m.name || m.phone || "—")}</b>${noReplyBadge ? "<br>" + noReplyBadge : ""}</td>
         <td><span class="phone-tag">+${m.phone}</span></td>
         <td>${dirBadge}</td>
-        <td class="msg-body" title="${m.body.replace(/"/g,'&quot;')}">${m.body}</td>
+        <td class="msg-body" title="${escHtml(m.body||"")}">${escHtml((m.body||"").substring(0,50))}</td>
         <td>${srcBadge}</td>
         <td class="time">${time}</td>
+        <td><a href="/chat.html?phone=${m.phone}" class="chat-btn">💬 شات</a></td>
       </tr>`;
     }).join("");
   }
 
+  /* ── Render unanswered tab ── */
+  function renderUnanswered() {
+    const body = document.getElementById("msgBody");
+    if (!unansweredList.length) {
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">✅ كل الرسائل تم الرد عليها</td></tr>`;
+      return;
+    }
+    body.innerHTML = unansweredList.map((u, i) => {
+      const time = new Date(u.lastAt).toLocaleString("ar-MA");
+      const ago  = timeAgo(u.lastAt);
+      return `<tr class="unanswered-row">
+        <td style="color:var(--muted);font-size:.78rem">${i+1}</td>
+        <td><b>${escHtml(u.name || u.phone)}</b></td>
+        <td><span class="phone-tag">+${u.phone}</span></td>
+        <td><span class="badge badge-in">📥 واردة</span></td>
+        <td class="msg-body" title="${escHtml(u.lastBody||"")}">${escHtml((u.lastBody||"").substring(0,50))}</td>
+        <td><span class="badge badge-no-reply">⚠️ بدون رد</span></td>
+        <td class="time" title="${time}">${ago}</td>
+        <td><a href="/chat.html?phone=${u.phone}" class="chat-btn">💬 رد</a></td>
+      </tr>`;
+    }).join("");
+  }
+
+  /* ── Pagination ── */
   function renderPagination() {
-    const total = totalMsgs;
-    const pages = Math.ceil(total / LIMIT);
+    if (activeTab === "unanswered") { document.getElementById("pagination").innerHTML = ""; return; }
+    const pages = Math.ceil(totalMsgs / LIMIT);
     const cur   = Math.floor(currentOffset / LIMIT);
     const pg    = document.getElementById("pagination");
     if (pages <= 1) { pg.innerHTML = ""; return; }
-
     let html = "";
     if (cur > 0) html += `<button class="page-btn" onclick="loadMessages(${(cur-1)*LIMIT})">◀ السابق</button>`;
-    for (let p = Math.max(0, cur-2); p <= Math.min(pages-1, cur+2); p++) {
-      html += `<button class="page-btn ${p===cur?'active':''}" onclick="loadMessages(${p*LIMIT})">${p+1}</button>`;
+    for (let p = Math.max(0,cur-2); p<=Math.min(pages-1,cur+2); p++) {
+      html += `<button class="page-btn ${p===cur?"active":""}" onclick="loadMessages(${p*LIMIT})">${p+1}</button>`;
     }
-    if (cur < pages-1) html += `<button class="page-btn" onclick="loadMessages(${(cur+1)*LIMIT})">التالي ▶</button>`;
+    if (cur<pages-1) html += `<button class="page-btn" onclick="loadMessages(${(cur+1)*LIMIT})">التالي ▶</button>`;
     pg.innerHTML = html;
+  }
+
+  /* ── Export CSV ── */
+  function exportCSV() {
+    const list = activeTab === "unanswered" ? unansweredList.map(u => ({
+      phone: u.phone, name: u.name, direction: "in",
+      body: u.lastBody, source: "user", created_at: u.lastAt
+    })) : filterList();
+    if (!list.length) return showToast("لا توجد بيانات للتصدير");
+    const rows = [["الهاتف","الاسم","الاتجاه","الرسالة","المصدر","الوقت"]];
+    list.forEach(m => rows.push([m.phone,m.name||"",m.direction,m.body||"",m.source||"",m.created_at]));
+    const csv = rows.map(r => r.map(c => `"${String(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(csv);
+    a.download = `messages_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  /* ── Helpers ── */
+  function escHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)   return "الآن";
+    if (m < 60)  return `منذ ${m} دقيقة`;
+    const h = Math.floor(m / 60);
+    if (h < 24)  return `منذ ${h} ساعة`;
+    const d = Math.floor(h / 24);
+    return `منذ ${d} يوم`;
   }
 
   function showToast(msg) {
@@ -262,19 +426,19 @@
     setTimeout(() => t.classList.remove("show"), 3000);
   }
 
-  // فلترة فورية عند الكتابة
-  document.getElementById("searchPhone").addEventListener("input", () => loadMessages(0));
-  document.getElementById("filterDir").addEventListener("change",    () => loadMessages(0));
-  document.getElementById("filterSource").addEventListener("change", () => loadMessages(0));
+  /* ── Events ── */
+  document.getElementById("searchPhone").addEventListener("input", () => {
+    currentOffset = 0;
+    if (activeTab !== "unanswered") renderTable(filterList());
+  });
+  document.getElementById("filterSource").addEventListener("change", () => {
+    currentOffset = 0;
+    if (activeTab !== "unanswered") renderTable(filterList());
+  });
 
-  // إذا جاء رقم من URL — ضعه في الخانة وفلتر مباشرة
-  if (urlPhone) {
-    document.getElementById("searchPhone").value = urlPhone;
-  }
-
-  loadStats();
-  loadMessages();
-  setInterval(() => { loadStats(); loadMessages(currentOffset); }, 30000);
+  /* ── Init & auto-refresh every 10s ── */
+  refresh();
+  setInterval(refresh, 10000);
 </script>
 </body>
 </html>

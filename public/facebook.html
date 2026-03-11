@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facebook Messenger — واتساب بوت</title>
+  <style>
+    :root {
+      --fb:     #1877f2;
+      --fb-dk:  #166fe5;
+      --green:  #25d366;
+      --teal:   #128c7e;
+      --dark:   #075e54;
+      --red:    #e53935;
+      --orange: #ff9800;
+      --bg:     #f0f2f5;
+      --card:   #fff;
+      --border: #e8edf2;
+      --text:   #1a1a2e;
+      --muted:  #8696a0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; }
+
+    header {
+      background: linear-gradient(135deg, var(--fb-dk), var(--fb));
+      color: white; padding: 0 24px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(24,119,242,.3); position: sticky; top: 0; z-index: 50;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 10px; }
+    .hdr-icon { width: 36px; height: 36px; background: rgba(255,255,255,.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    .nav-links a {
+      color: rgba(255,255,255,.85); text-decoration: none;
+      font-size: .82rem; padding: 5px 10px; border-radius: 8px; transition: all .2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,.2); color: white; }
+    .nav-links a.logout { background: rgba(255,60,60,.2); color: #ffcdd2; }
+
+    .page-wrap { max-width: 1000px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── Status Card ── */
+    .status-card {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .status-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 14px; }
+    .status-item {
+      background: #f8f9fa; border-radius: 12px; padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .status-item .si-label { font-size: .74rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+    .status-item .si-val   { font-size: .9rem; font-weight: 700; font-family: monospace; word-break: break-all; }
+    .si-val.ok  { color: #2e7d32; }
+    .si-val.err { color: var(--red); }
+    .si-val.warn { color: var(--orange); }
+
+    .page-info {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      background: #e8f0fe; border-radius: 12px; border: 1px solid #c2d3f7; margin-top: 14px;
+    }
+    .pi-icon { font-size: 2.2rem; }
+    .pi-name { font-size: 1.05rem; font-weight: 700; color: var(--fb-dk); }
+    .pi-link a { font-size: .8rem; color: var(--fb); text-decoration: none; }
+    .pi-link a:hover { text-decoration: underline; }
+    .pi-err { background: #ffebee; border-color: #ffcdd2; }
+    .pi-err .pi-name { color: var(--red); font-size: .88rem; }
+
+    /* ── Setup Steps ── */
+    .steps-card {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .steps-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .step {
+      display: flex; gap: 14px; padding: 14px 0;
+      border-bottom: 1px solid #f4f6f8;
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: var(--fb); color: white; font-weight: 700; font-size: .88rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-num.done { background: #2e7d32; }
+    .step-body h4 { font-size: .9rem; font-weight: 700; margin-bottom: 4px; }
+    .step-body p  { font-size: .83rem; color: var(--muted); line-height: 1.6; }
+    .step-body code {
+      background: #f0f2f5; padding: 2px 8px; border-radius: 6px;
+      font-family: monospace; font-size: .82rem; color: var(--fb-dk);
+      word-break: break-all;
+    }
+    .copy-btn {
+      margin-top: 8px; padding: 5px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; background: var(--card); cursor: pointer;
+      font-size: .78rem; font-weight: 600; color: var(--fb); transition: all .18s;
+    }
+    .copy-btn:hover { background: #e8f0fe; border-color: var(--fb); }
+
+    /* ── Test Chat ── */
+    .test-card {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .test-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .chat-sim {
+      background: #f0f2f5; border-radius: 14px; padding: 16px;
+      min-height: 200px; max-height: 340px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;
+    }
+    .chat-msg {
+      max-width: 75%; padding: 10px 14px; border-radius: 14px;
+      font-size: .88rem; line-height: 1.5; word-break: break-word;
+    }
+    .chat-msg.user { background: var(--fb); color: white; align-self: flex-end; border-radius: 14px 14px 4px 14px; }
+    .chat-msg.bot  { background: white; color: var(--text); align-self: flex-start; border-radius: 14px 14px 14px 4px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .chat-msg .src-badge { font-size: .7rem; opacity: .7; margin-top: 4px; }
+    .chat-empty { text-align: center; color: var(--muted); padding: 30px; font-size: .88rem; }
+
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-input {
+      flex: 1; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: .9rem; outline: none; direction: rtl;
+      transition: border-color .2s;
+    }
+    .chat-input:focus { border-color: var(--fb); }
+    .send-btn {
+      padding: 10px 20px; background: var(--fb); color: white;
+      border: none; border-radius: 12px; cursor: pointer; font-size: .88rem;
+      font-weight: 700; transition: all .18s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .send-btn:hover { background: var(--fb-dk); }
+    .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .quick-tests { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .qt-btn {
+      padding: 5px 12px; border: 1.5px solid var(--border); background: var(--card);
+      border-radius: 20px; cursor: pointer; font-size: .78rem; font-weight: 600;
+      color: var(--fb); transition: all .18s;
+    }
+    .qt-btn:hover { background: #e8f0fe; border-color: var(--fb); }
+
+    /* ── Webhook Info ── */
+    .webhook-card {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .webhook-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .webhook-row {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      background: #f8f9fa; border-radius: 10px; margin-bottom: 10px;
+    }
+    .webhook-row .wlabel { font-size: .78rem; color: var(--muted); font-weight: 600; min-width: 100px; }
+    .webhook-row .wval   { flex: 1; font-family: monospace; font-size: .83rem; word-break: break-all; }
+    .webhook-row .wcopy  { flex-shrink: 0; padding: 4px 10px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--card); cursor: pointer; font-size: .74rem; font-weight: 600; color: var(--fb); transition: all .18s; }
+    .webhook-row .wcopy:hover { background: #e8f0fe; }
+
+    .alert-box {
+      padding: 14px 16px; border-radius: 10px; margin-top: 14px;
+      font-size: .84rem; line-height: 1.6; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .alert-box.warn  { background: #fff3e0; border: 1px solid #ffe0b2; color: #e65100; }
+    .alert-box.info  { background: #e8f0fe; border: 1px solid #c2d3f7; color: #1565c0; }
+    .alert-box.ok    { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: .88rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 640px) {
+      header { padding: 0 12px; }
+      .page-wrap { padding: 12px; }
+      .nav-links a { font-size: .75rem; padding: 4px 7px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="hdr-icon">📘</div>
+    <h1>Facebook Messenger</h1>
+  </div>
+  <nav class="nav-links">
+    <a href="/">🏠</a>
+    <a href="/messages.html">💬 الرسائل</a>
+    <a href="/chat.html">🗨️ الشات</a>
+    <a href="/qr.html">📲 QR</a>
+    <a href="/facebook.html" class="active">📘 Facebook</a>
+    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">🚪 خروج</a>
+  </nav>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Status -->
+  <div class="status-card">
+    <h3>📊 حالة الاتصال بـ Facebook</h3>
+    <div class="status-grid">
+      <div class="status-item">
+        <div class="si-label">Page Access Token</div>
+        <div class="si-val" id="siToken">جاري التحقق...</div>
+      </div>
+      <div class="status-item">
+        <div class="si-label">Verify Token</div>
+        <div class="si-val" id="siVerify">—</div>
+      </div>
+      <div class="status-item">
+        <div class="si-label">Page ID</div>
+        <div class="si-val" id="siPageId">—</div>
+      </div>
+      <div class="status-item">
+        <div class="si-label">Webhook</div>
+        <div class="si-val" id="siWebhook">—</div>
+      </div>
+    </div>
+    <div id="pageInfoBox"></div>
+  </div>
+
+  <!-- Webhook URLs -->
+  <div class="webhook-card">
+    <h3>🔗 إعداد Webhook على Meta Developer</h3>
+    <div class="webhook-row">
+      <span class="wlabel">Callback URL</span>
+      <span class="wval" id="webhookUrl">—</span>
+      <button class="wcopy" onclick="copyText(document.getElementById('webhookUrl').textContent)">نسخ</button>
+    </div>
+    <div class="webhook-row">
+      <span class="wlabel">Verify Token</span>
+      <span class="wval" id="webhookVerify">—</span>
+      <button class="wcopy" onclick="copyText(document.getElementById('webhookVerify').textContent)">نسخ</button>
+    </div>
+    <div class="alert-box info">
+      <span>ℹ️</span>
+      <div>
+        افتح <strong>Meta for Developers → تطبيقك → Messenger → Settings → Webhooks</strong><br>
+        أدخل الـ Callback URL والـ Verify Token المذكورَين أعلاه<br>
+        اشترك في الأحداث: <code>messages</code>, <code>messaging_postbacks</code>, <code>feed</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Chat -->
+  <div class="test-card">
+    <h3>🧪 اختبار الرد التلقائي (محاكاة Messenger)</h3>
+    <div class="quick-tests">
+      <button class="qt-btn" onclick="sendTest('سلام')">👋 سلام</button>
+      <button class="qt-btn" onclick="sendTest('شحال التمن')">💰 السعر</button>
+      <button class="qt-btn" onclick="sendTest('واش كاين ديسبو')">🏠 التوفر</button>
+      <button class="qt-btn" onclick="sendTest('فين كاين الشقق')">📍 العنوان</button>
+      <button class="qt-btn" onclick="sendTest('بغيت نحجز ليلة')">📅 الحجز</button>
+      <button class="qt-btn" onclick="sendTest('رقم التواصل')">📞 الرقم</button>
+      <button class="qt-btn" onclick="sendTest('شكرا')">🙏 شكرا</button>
+    </div>
+    <div class="chat-sim" id="chatSim">
+      <div class="chat-empty">ابعث رسالة لاختبار الرد التلقائي</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="اكتب رسالة كأنك زبون على Messenger..."
+             onkeydown="if(event.key==='Enter') sendTest()">
+      <button class="send-btn" id="sendBtn" onclick="sendTest()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+        إرسال
+      </button>
+    </div>
+  </div>
+
+  <!-- Setup Steps -->
+  <div class="steps-card">
+    <h3>⚙️ خطوات الإعداد الكاملة</h3>
+
+    <div class="step">
+      <div class="step-num done">1</div>
+      <div class="step-body">
+        <h4>إنشاء تطبيق Meta</h4>
+        <p>انتقل إلى <strong>developers.facebook.com</strong> → إنشاء تطبيق → Business → أضف منتج Messenger</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num done">2</div>
+      <div class="step-body">
+        <h4>الحصول على Page Access Token</h4>
+        <p>من Messenger Settings → Generate Token → اختر صفحتك → انسخ التوكن وضعه في <code>.env</code></p>
+        <p style="margin-top:6px">الـ Token الحالي: <code id="tokenPreview">—</code></p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" id="step3Num">3</div>
+      <div class="step-body">
+        <h4>ربط Webhook</h4>
+        <p>Messenger Settings → Webhooks → Edit → أدخل:</p>
+        <p style="margin-top:6px">
+          Callback URL: <code id="cbUrl">—</code><br>
+          Verify Token: <code id="vToken">—</code>
+        </p>
+        <button class="copy-btn" onclick="copyText(document.getElementById('cbUrl').textContent)">📋 نسخ Callback URL</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>الاشتراك في أحداث الصفحة</h4>
+        <p>من Webhooks → Add Subscriptions → اختر:<br>
+        <code>messages</code> · <code>messaging_postbacks</code> · <code>feed</code> (للتعليقات)</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>اختبار الرد</h4>
+        <p>أرسل رسالة لصفحتك على Facebook → يجب أن يرد البوت تلقائياً.<br>
+        يمكنك أيضاً استخدام قسم "اختبار الرد" أعلاه لمحاكاة الردود بدون إرسال حقيقي.</p>
+      </div>
+    </div>
+
+    <div class="alert-box warn" style="margin-top:6px">
+      <span>⚠️</span>
+      <div>
+        <strong>ملاحظة:</strong> Webhook يحتاج URL عام (HTTPS). إذا كنت على localhost استخدم
+        <strong>ngrok</strong>: <code>ngrok http 3000</code> ثم استخدم الـ URL الناتج.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let isSending = false;
+
+  async function loadStatus() {
+    try {
+      const d = await fetch("/api/facebook/status", { cache:"no-store" }).then(r=>r.json());
+
+      // Token
+      const tokenEl = document.getElementById("siToken");
+      if (d.configured) {
+        tokenEl.textContent = d.token;
+        tokenEl.className   = "si-val ok";
+      } else {
+        tokenEl.textContent = "غير مُعَد";
+        tokenEl.className   = "si-val err";
+      }
+
+      // Verify token
+      const vEl = document.getElementById("siVerify");
+      vEl.textContent = d.verifyToken || "—";
+      vEl.className   = d.verifyToken ? "si-val ok" : "si-val err";
+
+      // Page ID
+      document.getElementById("siPageId").textContent = d.pageId || "—";
+      document.getElementById("siPageId").className = d.pageId ? "si-val ok" : "si-val warn";
+
+      // Webhook
+      const whEl = document.getElementById("siWebhook");
+      whEl.textContent = d.configured ? "✅ مُعَد" : "❌ غير مُعَد";
+      whEl.className   = d.configured ? "si-val ok" : "si-val err";
+
+      // Page info box
+      const box = document.getElementById("pageInfoBox");
+      if (d.pageInfo && !d.pageInfo.error) {
+        box.innerHTML = `
+          <div class="page-info">
+            <div class="pi-icon">📘</div>
+            <div>
+              <div class="pi-name">${escHtml(d.pageInfo.name || "")}</div>
+              <div class="pi-link"><a href="${escHtml(d.pageInfo.link||"#")}" target="_blank">facebook.com/...</a></div>
+            </div>
+          </div>`;
+        document.getElementById("step3Num").classList.add("done");
+      } else if (d.pageInfo?.error) {
+        box.innerHTML = `
+          <div class="page-info pi-err">
+            <div class="pi-icon">❌</div>
+            <div class="pi-name">${escHtml(d.pageInfo.error)}</div>
+          </div>`;
+      }
+
+      // Webhook URLs
+      const host = window.location.origin;
+      const cbUrl = `${host}/webhook`;
+      document.getElementById("webhookUrl").textContent   = cbUrl;
+      document.getElementById("webhookVerify").textContent = d.verifyToken || "—";
+      document.getElementById("cbUrl").textContent        = cbUrl;
+      document.getElementById("vToken").textContent       = d.verifyToken || "—";
+      document.getElementById("tokenPreview").textContent = d.token || "—";
+
+    } catch(e) {
+      showToast("❌ خطأ في تحميل حالة Facebook");
+    }
+  }
+
+  async function sendTest(preset) {
+    const input = document.getElementById("chatInput");
+    const msg   = preset || input.value.trim();
+    if (!msg) return;
+    if (isSending) return;
+
+    isSending = true;
+    const sendBtn = document.getElementById("sendBtn");
+    sendBtn.disabled = true;
+
+    const sim = document.getElementById("chatSim");
+    // remove empty placeholder
+    const empty = sim.querySelector(".chat-empty");
+    if (empty) empty.remove();
+
+    // Add user message
+    sim.insertAdjacentHTML("beforeend", `
+      <div class="chat-msg user">${escHtml(msg)}</div>
+    `);
+    if (!preset) input.value = "";
+    sim.scrollTop = sim.scrollHeight;
+
+    // Add typing indicator
+    const typingId = "typing_" + Date.now();
+    sim.insertAdjacentHTML("beforeend", `
+      <div class="chat-msg bot" id="${typingId}" style="opacity:.6">
+        <span>⏳ جاري الرد...</span>
+      </div>
+    `);
+    sim.scrollTop = sim.scrollHeight;
+
+    try {
+      const d = await fetch("/api/facebook/test-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
+      }).then(r => r.json());
+
+      document.getElementById(typingId)?.remove();
+
+      const srcLabel = {
+        ai:      "🤖 ذكاء اصطناعي",
+        custom:  "📋 مبرمج",
+        default: "↩️ افتراضي",
+      }[d.source] || d.source;
+
+      if (d.ok) {
+        sim.insertAdjacentHTML("beforeend", `
+          <div class="chat-msg bot">
+            ${escHtml(d.reply)}
+            <div class="src-badge">${srcLabel}</div>
+          </div>
+        `);
+      } else {
+        sim.insertAdjacentHTML("beforeend", `
+          <div class="chat-msg bot" style="color:var(--red)">❌ ${escHtml(d.error||"خطأ")}</div>
+        `);
+      }
+    } catch(e) {
+      document.getElementById(typingId)?.remove();
+      sim.insertAdjacentHTML("beforeend", `
+        <div class="chat-msg bot" style="color:var(--red)">❌ خطأ في الاتصال</div>
+      `);
+    }
+
+    sim.scrollTop = sim.scrollHeight;
+    isSending = false;
+    sendBtn.disabled = false;
+    if (!preset) input.focus();
+  }
+
+  function copyText(text) {
+    if (!text || text === "—") return;
+    navigator.clipboard.writeText(text).then(() => showToast("✅ تم النسخ"))
+      .catch(() => showToast("❌ فشل النسخ"));
+  }
+
+  function escHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadStatus();
+</script>
+</body>
+</html>

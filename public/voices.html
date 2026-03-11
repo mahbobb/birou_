@@ -5,230 +5,492 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>رسائل صوتية — واتساب بوت</title>
   <style>
+    :root {
+      --green:    #25d366;
+      --teal:     #128c7e;
+      --dark:     #075e54;
+      --red:      #e53935;
+      --orange:   #ff9800;
+      --blue:     #1976d2;
+      --bg:       #f0f2f5;
+      --card:     #ffffff;
+      --border:   #e8edf2;
+      --text:     #1a1a2e;
+      --muted:    #8696a0;
+      --radius:   14px;
+      --shadow:   0 2px 12px rgba(0,0,0,0.07);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; min-height: 100vh; }
 
+    /* ── Header ── */
     header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
+      background: linear-gradient(135deg, var(--dark) 0%, var(--teal) 100%);
+      color: white; padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.18); position: sticky; top: 0; z-index: 50; height: 60px;
     }
-    header h1 { font-size: 1.3rem; }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon {
+      width: 38px; height: 38px; background: rgba(255,255,255,0.15);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px; }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
     .nav-links a {
-      color: white; text-decoration: none; margin-right: 12px;
-      font-size: 0.88rem; padding: 6px 12px;
-      border-radius: 8px; transition: background 0.2s;
+      color: rgba(255,255,255,0.85); text-decoration: none;
+      font-size: 0.82rem; padding: 5px 10px;
+      border-radius: 8px; transition: all 0.2s; white-space: nowrap;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .nav-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .nav-links a.active { background: rgba(255,255,255,0.22); color: white; font-weight: 600; }
+    .nav-links a.logout { background: rgba(255,60,60,0.2); color: #ffcdd2; }
+    .nav-links a.logout:hover { background: rgba(255,60,60,0.35); }
 
-    .stats { display: flex; gap: 16px; padding: 20px 24px; flex-wrap: wrap; }
+    /* ── Stats ── */
+    .stats-row { display: flex; gap: 14px; padding: 20px 24px 0; flex-wrap: wrap; }
     .stat-card {
-      background: white; border-radius: 12px; padding: 16px 22px;
-      flex: 1; min-width: 120px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+      background: var(--card); border-radius: var(--radius); padding: 18px 20px;
+      flex: 1; min-width: 130px; box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 14px;
+      border: 1px solid var(--border); transition: transform 0.15s;
     }
-    .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .stat-icon.green  { background: #e8f5e9; }
+    .stat-icon.teal   { background: #e0f2f1; }
+    .stat-icon.red    { background: #ffebee; }
+    .stat-body .num   { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--dark); }
+    .stat-body .lbl   { font-size: 0.76rem; color: var(--muted); margin-top: 3px; }
+    #selCard          { display: none; }
+    #selCard .stat-body .num { color: var(--red); }
 
+    /* ── Toolbar ── */
     .toolbar {
-      padding: 0 24px 16px;
-      display: flex; gap: 10px; align-items: center;
+      padding: 16px 24px 14px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap .search-ico {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 0.95rem; pointer-events: none;
     }
     .search-input {
-      flex: 1; padding: 9px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.9rem; outline: none; direction: rtl;
+      width: 100%; padding: 9px 36px 9px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.9rem; outline: none; direction: rtl;
+      background: var(--card); transition: border-color 0.2s;
+      color: var(--text);
     }
-    .search-input:focus { border-color: #128c7e; }
-    .btn {
-      padding: 8px 16px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: opacity 0.2s;
+    .search-input:focus { border-color: var(--teal); }
+
+    .tbtn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: none; border-radius: 10px;
+      cursor: pointer; font-size: 0.83rem; font-weight: 600;
+      transition: all 0.18s; white-space: nowrap;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-green  { background: #25d366; color: white; }
-    .btn-blue   { background: #128c7e; color: white; }
-    .btn-red    { background: #e53935; color: white; }
+    .tbtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .tbtn:active { transform: translateY(0); }
+    .tbtn-teal   { background: var(--teal);   color: white; }
+    .tbtn-orange { background: var(--orange);  color: white; }
+    .tbtn-green  { background: var(--green);   color: white; }
+    .tbtn-red    { background: var(--red);      color: white; }
+    #bulkDelBtn  { display: none; }
 
-    .list-wrap { padding: 0 24px 32px; }
+    /* ── List ── */
+    .list-wrap { padding: 8px 24px 40px; display: flex; flex-direction: column; gap: 10px; }
 
+    /* ── Voice Card ── */
     .voice-card {
-      background: white; border-radius: 12px; padding: 16px 20px;
-      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      background: var(--card); border-radius: var(--radius);
+      border: 1.5px solid var(--border); box-shadow: var(--shadow);
+      overflow: hidden; transition: box-shadow 0.2s, border-color 0.2s;
     }
-    .voice-icon {
-      font-size: 2rem; width: 50px; height: 50px;
-      background: #e8f5e9; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .voice-info { flex: 1; min-width: 140px; }
-    .voice-info .sender { font-weight: 700; font-size: 0.95rem; }
-    .voice-info .phone-tag {
-      background: #e8f5e9; color: #2e7d32;
-      padding: 2px 8px; border-radius: 6px;
-      font-family: monospace; font-size: 0.78rem;
-      display: inline-block; margin: 4px 0;
-    }
-    .voice-info .meta { font-size: 0.78rem; color: #999; }
-    .voice-note-wrap { width: 100%; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
-    .note-input {
-      flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.82rem; direction: rtl; outline: none; font-family: inherit;
-      background: #fafafa; color: #333;
-    }
-    .note-input:focus { border-color: #128c7e; background: white; }
-    .note-save-btn {
-      padding: 5px 12px; background: #128c7e; color: white;
-      border: none; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
-    }
-    .note-save-btn:hover { opacity: 0.85; }
-    .voice-player { flex: 1; min-width: 200px; }
-    .voice-player audio { width: 100%; height: 36px; }
+    .voice-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .voice-card.selected { border-color: var(--red); box-shadow: 0 0 0 3px rgba(229,57,53,0.12); }
 
-    .actions { display: flex; gap: 8px; flex-shrink: 0; }
-    .dl-btn {
-      padding: 6px 14px; background: #075e54; color: white;
-      border: none; border-radius: 8px; cursor: pointer;
-      font-size: 0.82rem; text-decoration: none;
+    .vc-top {
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    }
+
+    .vc-check {
+      width: 18px; height: 18px; cursor: pointer; accent-color: var(--red);
+      flex-shrink: 0; border-radius: 4px;
+    }
+
+    /* Avatar with initials */
+    .vc-avatar {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--teal), var(--dark));
+      color: white; font-weight: 700; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(7,94,84,0.3);
+    }
+
+    .vc-info { flex: 1; min-width: 0; }
+    .vc-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vc-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+    .vc-phone {
+      background: #e8f5e9; color: #2e7d32; padding: 2px 8px;
+      border-radius: 6px; font-family: monospace; font-size: 0.75rem;
+    }
+    .vc-time { font-size: 0.75rem; color: var(--muted); }
+    .vc-size { font-size: 0.73rem; color: #bbb; }
+
+    /* Waveform decoration */
+    .vc-wave {
+      flex-shrink: 0; display: flex; align-items: center; gap: 2px; height: 28px;
+    }
+    .vc-wave span {
+      display: inline-block; width: 3px; border-radius: 3px;
+      background: linear-gradient(180deg, var(--green), var(--teal));
+      animation: wavePulse 1.2s ease-in-out infinite;
+    }
+    .vc-wave span:nth-child(1)  { height: 8px;  animation-delay: 0s; }
+    .vc-wave span:nth-child(2)  { height: 18px; animation-delay: 0.1s; }
+    .vc-wave span:nth-child(3)  { height: 24px; animation-delay: 0.2s; }
+    .vc-wave span:nth-child(4)  { height: 14px; animation-delay: 0.3s; }
+    .vc-wave span:nth-child(5)  { height: 20px; animation-delay: 0.15s; }
+    .vc-wave span:nth-child(6)  { height: 10px; animation-delay: 0.25s; }
+    .vc-wave span:nth-child(7)  { height: 16px; animation-delay: 0.05s; }
+    @keyframes wavePulse {
+      0%,100% { opacity: 0.4; transform: scaleY(0.7); }
+      50%      { opacity: 1;   transform: scaleY(1);   }
+    }
+
+    .vc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .vc-btn {
+      padding: 6px 12px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; transition: all 0.18s;
       display: inline-flex; align-items: center; gap: 4px;
     }
-    .dl-btn:hover { opacity: 0.85; }
+    .vc-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .vc-btn.dl   { background: #e0f2f1; color: var(--dark); text-decoration: none; }
+    .vc-btn.rep  { background: #e3f2fd; color: var(--blue); }
+    .vc-btn.del  { background: #ffebee; color: var(--red); }
 
-    .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
+    /* Player row */
+    .vc-player {
+      padding: 0 16px 4px; display: flex; align-items: center; gap: 10px;
+    }
+    .vc-player audio {
+      flex: 1; height: 34px; outline: none;
+      filter: invert(0) saturate(1.2);
+    }
 
-    /* ── Modal ── */
+    /* Note row */
+    .vc-note-row {
+      padding: 8px 16px 14px; display: flex; align-items: center; gap: 8px;
+      border-top: 1px solid #f0f2f5; margin-top: 4px;
+    }
+    .note-ico { color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
+    .note-input {
+      flex: 1; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 0.82rem; direction: rtl; outline: none; font-family: inherit;
+      background: #fafafa; color: var(--text); transition: border-color 0.2s;
+    }
+    .note-input:focus { border-color: var(--teal); background: white; }
+    .note-save-btn {
+      padding: 5px 14px; background: var(--teal); color: white;
+      border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s; flex-shrink: 0;
+    }
+    .note-save-btn:hover { opacity: 0.85; }
+
+    .empty {
+      text-align: center; padding: 70px 20px; color: var(--muted);
+      background: var(--card); border-radius: var(--radius);
+      border: 1.5px dashed var(--border);
+    }
+    .empty .empty-icon { font-size: 3rem; opacity: 0.4; margin-bottom: 12px; }
+    .empty p { font-size: 0.95rem; }
+
+    /* ── Overlay / Modal ── */
     .overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5); z-index: 100;
+      background: rgba(0,0,0,0.45); z-index: 200;
       align-items: center; justify-content: center;
+      backdrop-filter: blur(3px);
     }
     .overlay.open { display: flex; }
     .modal {
-      background: white; border-radius: 16px; padding: 28px;
-      width: 90%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      background: white; border-radius: 18px; padding: 28px;
+      width: 92%; max-width: 500px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.22);
+      max-height: 92vh; overflow-y: auto;
+      animation: modalIn 0.22s ease;
     }
-    .modal h3 { margin-bottom: 14px; font-size: 1.1rem; color: #075e54; }
-    .modal .to-info {
-      background: #f5f5f5; border-radius: 8px; padding: 8px 14px;
-      margin-bottom: 14px; font-size: 0.85rem; color: #555;
+    @keyframes modalIn {
+      from { transform: scale(0.95) translateY(16px); opacity: 0; }
+      to   { transform: scale(1)    translateY(0);    opacity: 1; }
     }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .modal-header h3 { font-size: 1.05rem; color: var(--dark); font-weight: 700; }
+    .modal-close {
+      background: #f0f2f5; border: none; border-radius: 50%;
+      width: 30px; height: 30px; cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center; color: var(--muted);
+    }
+    .modal-close:hover { background: #e0e0e0; color: var(--text); }
+    .to-info {
+      background: #f0f2f5; border-radius: 10px; padding: 9px 14px;
+      margin-bottom: 14px; font-size: 0.84rem; color: #555;
+      border-right: 3px solid var(--teal);
+    }
+
     /* Tabs */
-    .tab-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; background: #f0f2f5; border-radius: 10px; padding: 4px; }
     .tab-btn {
-      flex: 1; padding: 8px; border: 2px solid #ddd; background: white;
-      border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
-      transition: all 0.2s; color: #666;
+      flex: 1; padding: 8px; border: none; background: transparent;
+      border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600;
+      transition: all 0.18s; color: var(--muted);
     }
-    .tab-btn.active { border-color: #128c7e; background: #e8f5e9; color: #075e54; }
+    .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
     .modal textarea {
-      width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd;
+      width: 100%; height: 110px; padding: 12px; border: 1.5px solid var(--border);
       border-radius: 10px; font-size: 0.9rem; resize: vertical;
-      outline: none; direction: rtl; font-family: inherit;
+      outline: none; direction: rtl; font-family: inherit; transition: border-color 0.2s;
     }
-    .modal textarea:focus { border-color: #128c7e; }
-    /* Voice upload */
-    .voice-upload-area {
-      border: 2px dashed #ddd; border-radius: 12px; padding: 24px;
-      text-align: center; cursor: pointer; transition: border-color 0.2s;
-    }
-    .voice-upload-area:hover, .voice-upload-area.drag { border-color: #128c7e; }
-    .voice-upload-area p { color: #888; font-size: 0.88rem; margin-top: 8px; }
-    .voice-upload-area .icon { font-size: 2rem; }
-    #voiceFileInput { display: none; }
-    #voicePreview { margin-top: 12px; width: 100%; display: none; }
-    .voice-name { font-size: 0.8rem; color: #555; margin-top: 6px; text-align: center; }
-    .record-area { text-align: center; margin-bottom: 10px; }
-    .btn-record {
-      background: #128c7e; color: white; padding: 10px 24px;
-      border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .btn-record.recording { background: #e53935; }
-    .or-sep { text-align: center; color: #bbb; font-size: 0.8rem; margin: 8px 0; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+    .modal textarea:focus { border-color: var(--teal); }
 
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    /* Record area */
+    .record-area { text-align: center; margin-bottom: 12px; }
+    .btn-record {
+      background: linear-gradient(135deg, var(--teal), var(--dark));
+      color: white; padding: 11px 28px;
+      border: none; border-radius: 50px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(18,140,126,0.3);
     }
-    #toast.show { opacity: 1; }
+    .btn-record:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(18,140,126,0.4); }
+    .btn-record.recording {
+      background: linear-gradient(135deg, #e53935, #c62828);
+      box-shadow: 0 4px 12px rgba(229,57,53,0.3);
+      animation: recPulse 1s ease-in-out infinite;
+    }
+    @keyframes recPulse {
+      0%,100% { box-shadow: 0 4px 12px rgba(229,57,53,0.3); }
+      50%      { box-shadow: 0 4px 24px rgba(229,57,53,0.6); }
+    }
+    .rec-timer {
+      display: none; margin-top: 10px; text-align: center;
+      color: var(--red); font-weight: 700; font-size: 1rem;
+    }
+    .or-sep { text-align: center; color: #ccc; font-size: 0.82rem; margin: 10px 0; position: relative; }
+    .or-sep::before, .or-sep::after {
+      content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: #eee;
+    }
+    .or-sep::before { right: 0; }
+    .or-sep::after  { left: 0; }
+
+    /* Voice file pick */
+    .voice-pick-area {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+    }
+    .voice-pick-area:hover { border-color: var(--teal); background: #f0fdf4; }
+    .voice-pick-area .pick-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .voice-pick-area p { color: var(--muted); font-size: 0.82rem; }
+
+    /* Upload modal */
+    .drop-area {
+      border: 2px dashed var(--border); border-radius: 14px; padding: 36px 20px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+    }
+    .drop-area:hover, .drop-area.drag { border-color: var(--teal); background: #f0fdf4; }
+    .drop-area .drop-icon { font-size: 3rem; margin-bottom: 10px; }
+    .drop-area p { color: var(--muted); font-size: 0.85rem; }
+    .drop-area .fmt { font-size: 0.75rem; color: #ccc; margin-top: 4px; }
+
+    .file-queue { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+    .fq-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #f8f9fa; border-radius: 8px; padding: 8px 12px;
+      border: 1px solid var(--border);
+    }
+    .fq-item .fq-name { flex: 1; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fq-item .fq-size { font-size: 0.74rem; color: var(--muted); flex-shrink: 0; }
+    .fq-item .fq-rm   { background: none; border: none; cursor: pointer; color: var(--red); font-size: 1rem; padding: 0 4px; flex-shrink: 0; }
+
+    .up-fields { display: flex; gap: 8px; margin-top: 12px; }
+    .up-fields input {
+      flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 0.88rem; outline: none; transition: border-color 0.2s; font-family: inherit;
+    }
+    .up-fields input[dir="ltr"] { direction: ltr; }
+    .up-fields input:focus { border-color: var(--teal); }
+
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+    .mbtn {
+      padding: 9px 20px; border: none; border-radius: 10px;
+      cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.18s;
+    }
+    .mbtn:hover { filter: brightness(1.08); }
+    .mbtn-cancel { background: #f0f2f5; color: #555; }
+    .mbtn-green  { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
+    .mbtn-green:hover { box-shadow: 0 4px 14px rgba(37,211,102,0.4); }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: rgba(26,26,46,0.92); color: white; padding: 11px 24px;
+      border-radius: 50px; font-size: 0.88rem; font-weight: 500;
+      opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+      backdrop-filter: blur(8px); white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      header { padding: 0 12px; }
+      .nav-links a { font-size: 0.75rem; padding: 5px 8px; }
+      .stats-row, .toolbar, .list-wrap { padding-left: 12px; padding-right: 12px; }
+      .vc-wave { display: none; }
+      .vc-actions { gap: 4px; }
+      .vc-btn { padding: 5px 8px; font-size: 0.74rem; }
+    }
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
-  <h1>🎤 الرسائل الصوتية</h1>
+  <div class="header-left">
+    <div class="header-icon">🎤</div>
+    <h1>الرسائل الصوتية</h1>
+  </div>
   <nav class="nav-links">
-    <a href="/">🏠 الرئيسية</a>
+    <a href="/">🏠</a>
     <a href="/messages.html">💬 الرسائل</a>
     <a href="/images.html">📸 الصور</a>
     <a href="/voices.html" class="active">🎤 الصوتيات</a>
     <a href="/videos.html">🎬 الفيديوهات</a>
-    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+    <a href="/qr.html">📲 QR</a>
+    <a href="/sync.html">🔄 مزامنة</a>
+    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">🚪 خروج</a>
   </nav>
 </header>
 
 <!-- Stats -->
-<div class="stats">
-  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الصوتيات</div></div>
-  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">صوتيات اليوم</div></div>
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon green">🎙️</div>
+    <div class="stat-body">
+      <div class="num" id="sTotal">—</div>
+      <div class="lbl">إجمالي الصوتيات</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon teal">📅</div>
+    <div class="stat-body">
+      <div class="num" id="sToday">—</div>
+      <div class="lbl">اليوم</div>
+    </div>
+  </div>
+  <div class="stat-card" id="selCard">
+    <div class="stat-icon red">☑️</div>
+    <div class="stat-body">
+      <div class="num" id="sSelected">0</div>
+      <div class="lbl">محدد</div>
+    </div>
+  </div>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
-  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف أو تعليق...">
-  <button class="btn btn-green" onclick="load()">🔄 تحديث</button>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث برقم أو اسم أو تعليق...">
+  </div>
+  <button class="tbtn tbtn-teal"   onclick="toggleSelectAll()">☑️ تحديد الكل</button>
+  <button class="tbtn tbtn-orange" onclick="openUploadModal()">⬆️ رفع</button>
+  <button class="tbtn tbtn-green"  onclick="load()">🔄</button>
+  <button class="tbtn tbtn-red" id="bulkDelBtn" onclick="bulkDelete()">🗑️ حذف المحدد</button>
 </div>
 
 <!-- List -->
 <div class="list-wrap" id="voiceList">
-  <div class="empty">جاري التحميل...</div>
+  <div class="empty">
+    <div class="empty-icon">🎙️</div>
+    <p>جاري التحميل...</p>
+  </div>
 </div>
 
-<!-- Reply Modal -->
+<!-- ── Reply Modal ── -->
 <div class="overlay" id="replyOverlay">
   <div class="modal">
-    <h3>💬 رد على الزبون</h3>
+    <div class="modal-header">
+      <h3>💬 رد على الزبون</h3>
+      <button class="modal-close" onclick="closeReplyModal()">✕</button>
+    </div>
     <div class="to-info" id="replyTo"></div>
 
-    <!-- Tabs -->
     <div class="tab-bar">
-      <button class="tab-btn active" id="tabText" onclick="switchTab('text')">📝 نص</button>
+      <button class="tab-btn active" id="tabText"  onclick="switchTab('text')">📝 نص</button>
       <button class="tab-btn"        id="tabVoice" onclick="switchTab('voice')">🎤 صوت</button>
     </div>
 
-    <!-- Text panel -->
     <div class="tab-panel active" id="panelText">
       <textarea id="replyText" placeholder="اكتب ردك هنا..."></textarea>
     </div>
 
-    <!-- Voice panel -->
     <div class="tab-panel" id="panelVoice">
-      <!-- تسجيل من الميكروفون -->
       <div class="record-area">
-        <button id="recordBtn" class="btn btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
-        <div id="recordTimer" style="display:none; margin-top:8px; text-align:center; color:#e53935; font-weight:700;">
+        <button id="recordBtn" class="btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
+        <div class="rec-timer" id="recordTimer">
           ⏺️ <span id="timerDisplay">0:00</span>
         </div>
       </div>
-      <div class="or-sep">— أو اختر ملف —</div>
-      <!-- رفع ملف -->
-      <div class="voice-upload-area" onclick="document.getElementById('voiceFileInput').click()">
-        <div class="icon">📁</div>
+      <div class="or-sep">أو اختر ملف</div>
+      <div class="voice-pick-area" onclick="document.getElementById('voiceFileInput').click()">
+        <div class="pick-icon">📁</div>
         <p>mp3 · ogg · wav · m4a · opus</p>
       </div>
-      <input type="file" id="voiceFileInput" accept="audio/*">
+      <input type="file" id="voiceFileInput" accept="audio/*" style="display:none">
       <audio id="voicePreview" controls style="display:none; margin-top:12px; width:100%;"></audio>
-      <div class="voice-name" id="voiceName"></div>
+      <div style="font-size:0.78rem; color:var(--muted); margin-top:6px; text-align:center;" id="voiceName"></div>
     </div>
 
     <div class="modal-actions">
-      <button class="btn" style="background:#eee;color:#333" onclick="closeModal()">إلغاء</button>
-      <button class="btn btn-green" onclick="sendReply()">إرسال ✉️</button>
+      <button class="mbtn mbtn-cancel" onclick="closeReplyModal()">إلغاء</button>
+      <button class="mbtn mbtn-green"  onclick="sendReply()">✉️ إرسال</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Upload Modal ── -->
+<div class="overlay" id="uploadOverlay">
+  <div class="modal" id="uploadModal">
+    <div class="modal-header">
+      <h3>⬆️ رفع ملفات صوتية</h3>
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+    </div>
+
+    <div class="drop-area" id="dropArea" onclick="document.getElementById('audioFileInput').click()">
+      <div class="drop-icon">🎵</div>
+      <p>اسحب الملفات هنا أو انقر للاختيار</p>
+      <div class="fmt">mp3 · ogg · wav · m4a · opus · webm</div>
+    </div>
+    <input type="file" id="audioFileInput" accept="audio/*" multiple style="display:none">
+
+    <div class="file-queue" id="fileQueue"></div>
+
+    <div class="up-fields">
+      <input type="text" id="upPhone" placeholder="رقم الهاتف (اختياري)" dir="ltr">
+      <input type="text" id="upName"  placeholder="الاسم (اختياري)">
+    </div>
+
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeUploadModal()">إلغاء</button>
+      <button class="mbtn mbtn-green"  onclick="uploadFiles()">⬆️ رفع</button>
     </div>
   </div>
 </div>
@@ -236,37 +498,36 @@
 <div id="toast"></div>
 
 <script>
-  let replyPhone = "";
-  let activeTab  = "text";
-  let voiceData  = null;
-  let voiceMime  = null;
+  /* ── State ── */
+  let replyPhone    = "";
+  let activeTab     = "text";
+  let voiceData     = null;
+  let voiceMime     = null;
   let mediaRecorder = null;
   let recordChunks  = [];
-  let recordInterval = null;
-  let recordSeconds  = 0;
+  let recordInterval= null;
+  let recordSeconds = 0;
+  let uploadQueue   = [];
+  let selectedIds   = new Set();
 
-  function switchTab(tab) {
-    activeTab = tab;
-    document.getElementById("panelText").classList.toggle("active", tab === "text");
-    document.getElementById("panelVoice").classList.toggle("active", tab === "voice");
-    document.getElementById("tabText").classList.toggle("active", tab === "text");
-    document.getElementById("tabVoice").classList.toggle("active", tab === "voice");
-  }
-
-  // إخفاء زر التسجيل إذا الميكروفون غير متاح (HTTP من جهاز آخر)
+  /* ── Init mic check ── */
   if (!navigator.mediaDevices || !window.isSecureContext) {
     document.getElementById("recordBtn").style.display = "none";
-    document.getElementById("recordTimer").style.display = "none";
-    document.querySelector(".or-sep").textContent = "اختر ملف صوتي";
   }
 
-  // ── تسجيل الصوت ──────────────────────────────────────────────────────────
+  /* ── Tab ── */
+  function switchTab(t) {
+    activeTab = t;
+    ["Text","Voice"].forEach(x => {
+      document.getElementById("panel"+x).classList.toggle("active", x.toLowerCase() === t);
+      document.getElementById("tab"+x).classList.toggle("active",   x.toLowerCase() === t);
+    });
+  }
+
+  /* ── Recording ── */
   async function toggleRecord() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
+    else startRecording();
   }
 
   async function startRecording() {
@@ -274,224 +535,349 @@
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       recordChunks  = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordChunks.push(e.data);
-      };
-
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordChunks, { type: "audio/ogg; codecs=opus" });
-        voiceMime = "audio/ogg";
+        voiceMime  = "audio/ogg";
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = e => {
           voiceData = e.target.result.split(",")[1];
-          const preview = document.getElementById("voicePreview");
-          preview.src = e.target.result;
-          preview.style.display = "block";
+          const p   = document.getElementById("voicePreview");
+          p.src     = e.target.result;
+          p.style.display = "block";
         };
         reader.readAsDataURL(blob);
-        document.getElementById("voiceName").textContent = `🎙️ تسجيل — ${recordSeconds} ثانية`;
+        document.getElementById("voiceName").textContent = `🎙️ تسجيل — ${recordSeconds}ث`;
         stream.getTracks().forEach(t => t.stop());
       };
-
       mediaRecorder.start();
       recordSeconds = 0;
-      document.getElementById("recordBtn").textContent = "⏹️ إيقاف التسجيل";
-      document.getElementById("recordBtn").classList.add("recording");
+      const btn = document.getElementById("recordBtn");
+      btn.textContent = "⏹️ إيقاف التسجيل";
+      btn.classList.add("recording");
       document.getElementById("recordTimer").style.display = "block";
       recordInterval = setInterval(() => {
         recordSeconds++;
-        const m = Math.floor(recordSeconds / 60);
-        const s = recordSeconds % 60;
-        document.getElementById("timerDisplay").textContent = `${m}:${s.toString().padStart(2, "0")}`;
+        const m = Math.floor(recordSeconds/60), s = recordSeconds%60;
+        document.getElementById("timerDisplay").textContent = `${m}:${s.toString().padStart(2,"0")}`;
       }, 1000);
-    } catch (err) {
-      showToast("❌ تعذر الوصول للميكروفون");
-    }
+    } catch { showToast("❌ تعذر الوصول للميكروفون"); }
   }
 
   function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-    }
+    if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
     clearInterval(recordInterval);
-    document.getElementById("recordBtn").textContent = "🎙️ ابدأ التسجيل";
-    document.getElementById("recordBtn").classList.remove("recording");
+    const btn = document.getElementById("recordBtn");
+    btn.textContent = "🎙️ ابدأ التسجيل";
+    btn.classList.remove("recording");
     document.getElementById("recordTimer").style.display = "none";
   }
 
-  // ── رفع ملف ──────────────────────────────────────────────────────────────
   document.getElementById("voiceFileInput").addEventListener("change", function() {
-    const file = this.files[0];
-    if (!file) return;
+    const file = this.files[0]; if (!file) return;
     voiceMime = file.type || "audio/ogg";
     document.getElementById("voiceName").textContent = `🎵 ${file.name}`;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       voiceData = e.target.result.split(",")[1];
-      const preview = document.getElementById("voicePreview");
-      preview.src = e.target.result;
-      preview.style.display = "block";
+      const p   = document.getElementById("voicePreview");
+      p.src     = e.target.result; p.style.display = "block";
     };
     reader.readAsDataURL(file);
   });
 
+  /* ── Stats & Load ── */
   async function loadStats() {
     try {
-      const res   = await fetch("/api/voices/stats");
-      const stats = await res.json();
-      document.getElementById("sTotal").textContent = stats.total;
-      document.getElementById("sToday").textContent = stats.today;
-    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+      const s = await fetch("/api/voices/stats").then(r => r.json());
+      document.getElementById("sTotal").textContent = s.total;
+      document.getElementById("sToday").textContent = s.today;
+    } catch {}
   }
 
   async function load() {
-    const q = document.getElementById("searchPhone").value.trim();
-    let url = "/api/voices?limit=100";
-    // إذا كان رقماً → بحث برقم الهاتف، وإلا → بحث عام (اسم + تعليق)
-    if (q) {
-      if (/^\d+$/.test(q)) url += `&phone=${encodeURIComponent(q)}`;
-      else url += `&search=${encodeURIComponent(q)}`;
-    }
+    const q  = document.getElementById("searchPhone").value.trim();
+    let url   = "/api/voices?limit=200";
+    if (q) url += /^\d+$/.test(q) ? `&phone=${encodeURIComponent(q)}` : `&search=${encodeURIComponent(q)}`;
     try {
-      const res  = await fetch(url);
-      const list = await res.json();
-      renderList(list);
+      const list = await fetch(url).then(r => r.json());
+      selectedIds.clear(); updateSelUI(); renderList(list);
     } catch { showToast("❌ خطأ في تحميل الصوتيات"); }
   }
 
   async function saveNote(id) {
     const note = document.getElementById(`note-${id}`).value.trim();
     try {
-      const res = await fetch(`/api/voices/${id}/note`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note })
-      });
-      const data = await res.json();
-      if (data.ok) showToast("✅ تم حفظ التعليق");
-      else showToast("❌ فشل الحفظ");
+      const d = await fetch(`/api/voices/${id}/note`, {
+        method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({note})
+      }).then(r=>r.json());
+      showToast(d.ok ? "✅ تم حفظ التعليق" : "❌ فشل الحفظ");
     } catch { showToast("❌ خطأ في الاتصال"); }
   }
 
-  function escHtml(str) {
-    if (!str) return "";
-    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  function escHtml(s) {
+    if (!s) return "";
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
+  function getInitials(name) {
+    if (!name) return "؟";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) return parts[0][0] + parts[1][0];
+    return parts[0].substring(0,2);
+  }
+
+  /* Avatar gradient colors based on name */
+  const gradients = [
+    ["#128c7e","#075e54"],["#1976d2","#0d47a1"],["#7b1fa2","#4a148c"],
+    ["#e53935","#b71c1c"],["#f57c00","#e65100"],["#388e3c","#1b5e20"],
+    ["#0288d1","#01579b"],["#00897b","#004d40"]
+  ];
+  function avatarGrad(name) {
+    let h = 0;
+    for (let i = 0; i < (name||"").length; i++) h = (h*31 + name.charCodeAt(i)) & 0xffff;
+    const [a,b] = gradients[h % gradients.length];
+    return `linear-gradient(135deg,${a},${b})`;
+  }
+
+  /* ── Render ── */
   function renderList(list) {
-    const container = document.getElementById("voiceList");
+    const el = document.getElementById("voiceList");
     if (!list.length) {
-      container.innerHTML = `<div class="empty">لا توجد رسائل صوتية مستلمة بعد 🎙️</div>`;
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🎙️</div><p>لا توجد رسائل صوتية مستلمة بعد</p></div>`;
       return;
     }
-    container.innerHTML = list.map(v => {
+    el.innerHTML = list.map(v => {
       const src  = `/uploads/voices/${v.filename}`;
       const time = new Date(v.created_at).toLocaleString("ar-MA");
-      const kb   = (v.filesize / 1024).toFixed(1);
+      const kb   = (v.filesize/1024).toFixed(1);
       const note = v.note ? escHtml(v.note) : "";
+      const init = escHtml(getInitials(v.name));
+      const grad = avatarGrad(v.name);
       return `
-        <div class="voice-card" id="vc-${v.id}">
-          <div class="voice-icon">🎤</div>
-          <div class="voice-info">
-            <div class="sender">${escHtml(v.name)}</div>
-            <span class="phone-tag">+${v.phone}</span>
-            <div class="meta">${time} · ${kb} KB</div>
+      <div class="voice-card" id="vc-${v.id}">
+        <div class="vc-top">
+          <input type="checkbox" class="vc-check" data-id="${v.id}" onchange="toggleSel(${v.id},this)">
+          <div class="vc-avatar" style="background:${grad}">${init}</div>
+          <div class="vc-info">
+            <div class="vc-name">${escHtml(v.name)}</div>
+            <div class="vc-meta">
+              <span class="vc-phone">+${v.phone}</span>
+              <span class="vc-time">${time}</span>
+              <span class="vc-size">${kb} KB</span>
+            </div>
           </div>
-          <div class="voice-player">
-            <audio controls src="${src}" preload="none"></audio>
+          <div class="vc-wave">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span>
           </div>
-          <div class="actions">
-            <a href="${src}" download="${v.filename}" class="dl-btn">⬇️ تحميل</a>
-            <button class="btn btn-blue" onclick="openReply('${v.phone}', '${escHtml(v.name)}')">↩️ رد</button>
-            <button class="btn btn-red"  onclick="deleteItem(${v.id})">🗑️ حذف</button>
+          <div class="vc-actions">
+            <a  href="${src}" download="${v.filename}" class="vc-btn dl">⬇️</a>
+            <button class="vc-btn rep" onclick="openReply('${v.phone}','${escHtml(v.name)}')">↩️ رد</button>
+            <button class="vc-btn del" onclick="deleteItem(${v.id})">🗑️</button>
           </div>
-          <div class="voice-note-wrap">
-            <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق للبحث لاحقاً..." value="${note}"
-                   onkeydown="if(event.key==='Enter') saveNote(${v.id})">
-            <button class="note-save-btn" onclick="saveNote(${v.id})">حفظ</button>
-          </div>
-        </div>`;
+        </div>
+        <div class="vc-player">
+          <audio controls src="${src}" preload="none"></audio>
+        </div>
+        <div class="vc-note-row">
+          <span class="note-ico">📝</span>
+          <input class="note-input" id="note-${v.id}" type="text"
+                 placeholder="تعليق للبحث لاحقاً..." value="${note}"
+                 onkeydown="if(event.key==='Enter') saveNote(${v.id})">
+          <button class="note-save-btn" onclick="saveNote(${v.id})">حفظ</button>
+        </div>
+      </div>`;
     }).join("");
   }
 
-  function openReply(phone, name) {
-    replyPhone = phone;
-    voiceData  = null; voiceMime = null;
-    document.getElementById("replyTo").textContent = `إلى: ${name} (+${phone})`;
-    document.getElementById("replyText").value = "";
-    document.getElementById("voiceFileInput").value = "";
-    document.getElementById("voicePreview").style.display = "none";
-    document.getElementById("voiceName").textContent = "";
-    switchTab("text");
-    document.getElementById("replyOverlay").classList.add("open");
-    document.getElementById("replyText").focus();
+  /* ── Selection ── */
+  function toggleSel(id, cb) {
+    const card = document.getElementById(`vc-${id}`);
+    if (cb.checked) { selectedIds.add(id); card.classList.add("selected"); }
+    else            { selectedIds.delete(id); card.classList.remove("selected"); }
+    updateSelUI();
   }
 
-  function closeModal() {
-    stopRecording();
-    document.getElementById("replyOverlay").classList.remove("open");
+  function updateSelUI() {
+    const n = selectedIds.size;
+    document.getElementById("sSelected").textContent = n;
+    document.getElementById("selCard").style.display    = n ? "flex" : "none";
+    document.getElementById("bulkDelBtn").style.display = n ? "inline-flex" : "none";
   }
 
-  async function sendReply() {
-    if (activeTab === "voice") {
-      if (!voiceData) return showToast("⚠️ اختر ملف صوتي أولاً");
+  function toggleSelectAll() {
+    const checks     = document.querySelectorAll(".vc-check");
+    const allChecked = [...checks].every(c => c.checked);
+    checks.forEach(c => {
+      c.checked = !allChecked;
+      const id  = parseInt(c.dataset.id);
+      const card= document.getElementById(`vc-${id}`);
+      if (!allChecked) { selectedIds.add(id); card.classList.add("selected"); }
+      else             { selectedIds.delete(id); card.classList.remove("selected"); }
+    });
+    updateSelUI();
+  }
+
+  async function bulkDelete() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    if (!confirm(`هل تريد حذف ${ids.length} صوتية؟`)) return;
+    let deleted = 0;
+    for (const id of ids) {
       try {
-        const res = await fetch("/api/send-voice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: replyPhone, data: voiceData, mimetype: voiceMime })
-        });
-        const data = await res.json();
-        if (data.ok) { showToast("✅ تم إرسال الصوت"); closeModal(); }
-        else showToast("❌ فشل الإرسال: " + (data.error || ""));
-      } catch { showToast("❌ خطأ في الاتصال"); }
-    } else {
-      const text = document.getElementById("replyText").value.trim();
-      if (!text) return showToast("⚠️ اكتب رسالة أولاً");
-      try {
-        const res = await fetch("/api/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: replyPhone, message: text })
-        });
-        const data = await res.json();
-        if (data.ok) { showToast("✅ تم إرسال الرد"); closeModal(); }
-        else showToast("❌ فشل الإرسال: " + (data.error || ""));
-      } catch { showToast("❌ خطأ في الاتصال"); }
+        const d = await fetch(`/api/voices/${id}`, { method:"DELETE" }).then(r=>r.json());
+        if (d.ok) { document.getElementById(`vc-${id}`)?.remove(); deleted++; }
+      } catch {}
     }
+    selectedIds.clear(); updateSelUI();
+    showToast(`🗑️ تم حذف ${deleted} صوتية`);
+    loadStats();
   }
 
   async function deleteItem(id) {
     if (!confirm("هل تريد حذف هذه الرسالة الصوتية؟")) return;
     try {
-      const res = await fetch(`/api/voices/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.ok) {
+      const d = await fetch(`/api/voices/${id}`, { method:"DELETE" }).then(r=>r.json());
+      if (d.ok) {
         document.getElementById(`vc-${id}`)?.remove();
-        showToast("🗑️ تم الحذف");
-        loadStats();
-      } else {
-        showToast("❌ فشل الحذف");
-      }
+        selectedIds.delete(id); updateSelUI();
+        showToast("🗑️ تم الحذف"); loadStats();
+      } else showToast("❌ فشل الحذف");
     } catch { showToast("❌ خطأ في الاتصال"); }
   }
 
-  // إغلاق المودال عند النقر خارجه
-  document.getElementById("replyOverlay").addEventListener("click", function(e) {
-    if (e.target === this) closeModal();
+  /* ── Reply Modal ── */
+  function openReply(phone, name) {
+    replyPhone = phone; voiceData = null; voiceMime = null;
+    document.getElementById("replyTo").textContent     = `إلى: ${name} (+${phone})`;
+    document.getElementById("replyText").value         = "";
+    document.getElementById("voiceFileInput").value    = "";
+    document.getElementById("voicePreview").style.display = "none";
+    document.getElementById("voiceName").textContent   = "";
+    switchTab("text");
+    document.getElementById("replyOverlay").classList.add("open");
+    document.getElementById("replyText").focus();
+  }
+
+  function closeReplyModal() {
+    stopRecording();
+    document.getElementById("replyOverlay").classList.remove("open");
+  }
+
+  document.getElementById("replyOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("replyOverlay")) closeReplyModal();
   });
 
+  async function sendReply() {
+    if (activeTab === "voice") {
+      if (!voiceData) return showToast("⚠️ اختر ملف صوتي أولاً");
+      try {
+        const d = await fetch("/api/send-voice",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ phone:replyPhone, data:voiceData, mimetype:voiceMime })
+        }).then(r=>r.json());
+        if (d.ok) { showToast("✅ تم إرسال الصوت"); closeReplyModal(); }
+        else showToast("❌ فشل الإرسال: " + (d.error||""));
+      } catch { showToast("❌ خطأ في الاتصال"); }
+    } else {
+      const text = document.getElementById("replyText").value.trim();
+      if (!text) return showToast("⚠️ اكتب رسالة أولاً");
+      try {
+        const d = await fetch("/api/send",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ phone:replyPhone, message:text })
+        }).then(r=>r.json());
+        if (d.ok) { showToast("✅ تم إرسال الرد"); closeReplyModal(); }
+        else showToast("❌ فشل الإرسال: " + (d.error||""));
+      } catch { showToast("❌ خطأ في الاتصال"); }
+    }
+  }
+
+  /* ── Upload Modal ── */
+  function openUploadModal() {
+    uploadQueue = []; renderQueue();
+    document.getElementById("upPhone").value = "";
+    document.getElementById("upName").value  = "";
+    document.getElementById("audioFileInput").value = "";
+    document.getElementById("uploadOverlay").classList.add("open");
+  }
+
+  function closeUploadModal() {
+    document.getElementById("uploadOverlay").classList.remove("open");
+  }
+
+  document.getElementById("uploadOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("uploadOverlay")) closeUploadModal();
+  });
+
+  const dropArea = document.getElementById("dropArea");
+  dropArea.addEventListener("dragover",  e => { e.preventDefault(); dropArea.classList.add("drag"); });
+  dropArea.addEventListener("dragleave", () => dropArea.classList.remove("drag"));
+  dropArea.addEventListener("drop", e => {
+    e.preventDefault(); dropArea.classList.remove("drag");
+    addFiles([...e.dataTransfer.files]);
+  });
+
+  document.getElementById("audioFileInput").addEventListener("change", function() {
+    addFiles([...this.files]);
+  });
+
+  function addFiles(files) {
+    files.filter(f => f.type.startsWith("audio/")).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        uploadQueue.push({ name:file.name, mime:file.type, size:file.size, data:e.target.result.split(",")[1] });
+        renderQueue();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderQueue() {
+    const el = document.getElementById("fileQueue");
+    if (!uploadQueue.length) { el.innerHTML = ""; return; }
+    el.innerHTML = uploadQueue.map((f,i) => `
+      <div class="fq-item">
+        <span>🎵</span>
+        <span class="fq-name">${escHtml(f.name)}</span>
+        <span class="fq-size">${(f.size/1024).toFixed(1)} KB</span>
+        <button class="fq-rm" onclick="uploadQueue.splice(${i},1);renderQueue()">✕</button>
+      </div>`).join("");
+  }
+
+  async function uploadFiles() {
+    if (!uploadQueue.length) return showToast("⚠️ اختر ملفات صوتية أولاً");
+    const phone = document.getElementById("upPhone").value.trim() || "000000000";
+    const name  = document.getElementById("upName").value.trim()  || "يدوي";
+    let uploaded = 0;
+    for (const f of uploadQueue) {
+      try {
+        const d = await fetch("/api/voices/upload",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ phone, name, data:f.data, mimetype:f.mime })
+        }).then(r=>r.json());
+        if (d.ok) uploaded++;
+        else showToast("❌ فشل رفع: " + f.name);
+      } catch { showToast("❌ خطأ: " + f.name); }
+    }
+    if (uploaded) {
+      showToast(`✅ تم رفع ${uploaded} ملف`);
+      closeUploadModal(); load(); loadStats();
+    }
+  }
+
+  /* ── Search ── */
   document.getElementById("searchPhone").addEventListener("input", load);
 
+  /* ── Toast ── */
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3000);
   }
 
-  loadStats();
-  load();
+  loadStats(); load();
   setInterval(() => { loadStats(); load(); }, 30000);
 </script>
 </body>
