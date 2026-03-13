@@ -62,7 +62,7 @@ async function getAllContacts() {
              c.last_seen      AS lastSeen,
              c.last_message   AS lastMessage,
              c.total_messages AS totalMessages,
-             (SELECT direction FROM messages
+             (SELECT IF(direction='incoming','in','out') FROM messages
                WHERE contact = c.phone
                ORDER BY created_at DESC LIMIT 1) AS lastDirection
         FROM contacts c
