@@ -1,8 +1,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #111b21; height: 100vh;
+  background: #111b21;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height — يحل مشكلة شريط العنوان في الموبايل */
   display: flex; flex-direction: column; overflow: hidden;
+  /* iOS safe area */
+  padding-top:    env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left:   env(safe-area-inset-left);
+  padding-right:  env(safe-area-inset-right);
 }
 
 /* ── Top Nav (compact) ── */
@@ -600,69 +607,109 @@ body {
 }
 .back-btn:hover { color: #e9edef; }
 
-/* Responsive — Tablet */
-@media (max-width: 900px) {
-  .sidebar { width: 280px; }
+/* ══════════ RESPONSIVE ══════════ */
+
+/* Tablet large (≤1024px) */
+@media (max-width: 1024px) {
+  .sidebar { width: 300px; }
+  .header-resp-btn { display: none; } /* يُخفي "رد مبرمج" لتوفير مساحة */
 }
 
-/* Responsive — Mobile */
+/* Tablet small (≤768px) */
+@media (max-width: 768px) {
+  .sidebar { width: 260px; }
+  .msg-bubble { max-width: 75%; }
+  .messages-wrap { padding: 12px 4%; }
+  .chat-input-bar textarea { font-size: 15px; }
+}
+
+/* Mobile (≤640px) — وضع الشاشة الكاملة */
 @media (max-width: 640px) {
   body { overflow: hidden; }
 
-  /* Top nav — scrollable horizontal */
+  /* Top nav — أفقي قابل للتمرير */
   .top-nav {
-    gap: 0; padding: 0 6px;
+    height: 34px; gap: 0; padding: 0 4px;
     overflow-x: auto; flex-shrink: 0;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
   .top-nav::-webkit-scrollbar { display: none; }
-  .top-nav a { font-size: 0.72rem; padding: 3px 7px; white-space: nowrap; }
+  .top-nav a { font-size: 0.7rem; padding: 3px 6px; white-space: nowrap; }
   .top-nav-sep { display: none; }
 
-  /* Layout fills remaining height */
-  .chat-layout {
-    position: relative;
-    flex: 1;
-    height: 0; /* needed for flex children to fill space */
-    overflow: hidden;
-  }
+  /* Layout */
+  .chat-layout { position: relative; flex: 1; height: 0; overflow: hidden; }
 
-  /* Sidebar takes full screen */
+  /* Sidebar — شاشة كاملة */
   .sidebar {
-    width: 100%;
-    position: absolute;
+    width: 100%; position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 10;
-    display: flex;
+    z-index: 10; display: flex;
   }
   .sidebar.hidden { display: none; }
 
-  /* Chat panel takes full screen, hidden until opened */
+  /* Chat panel — شاشة كاملة, مخفي حتى يُفتح */
   .chat-panel {
-    width: 100%;
-    position: absolute;
+    width: 100%; position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 10;
-    display: none;
-    flex-direction: column;
+    z-index: 10; display: none; flex-direction: column;
   }
   .chat-panel.show { display: flex; }
 
-  /* Back button visible */
-  .back-btn { display: block; }
+  /* زر الرجوع */
+  .back-btn { display: flex; }
 
-  /* Message bubbles wider */
-  .msg-bubble { max-width: 85%; }
-  .messages-wrap { padding: 10px 3%; }
+  /* Header الشات */
+  .chat-header { padding: 8px 10px; gap: 8px; }
+  .chat-header .avatar { width: 34px; height: 34px; font-size: 0.85rem; }
+  .chat-header .info .name  { font-size: 0.85rem; }
+  .chat-header .info .phone { font-size: 0.68rem; }
+  .header-resp-btn { display: none; }
+  .header-call-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+  .header-del-btn  { width: 32px; height: 32px; font-size: 0.9rem; }
+  .header-actions  { gap: 4px; }
 
-  /* Input bar smaller */
-  .chat-input-bar { padding: 6px 10px; gap: 5px; }
-  .chat-input-bar textarea { font-size: 0.85rem; }
-  .send-btn { width: 38px; height: 38px; }
-  .bot-select { max-width: 70px; font-size: 0.72rem; }
+  /* تبويبات الشات */
+  .chat-tab-btn { font-size: 0.72rem; padding: 7px 2px; }
 
-  /* Contact list items */
-  .contact-avatar { width: 42px; height: 42px; }
-  .contact-name { font-size: 0.85rem; }
+  /* الرسائل */
+  .msg-bubble { max-width: 88%; font-size: 0.85rem; }
+  .messages-wrap { padding: 8px 2%; }
+
+  /* شريط الإدخال */
+  .chat-input-bar { padding: 6px 8px; gap: 5px; }
+  .chat-input-bar textarea {
+    font-size: 16px; /* iOS: منع التكبير التلقائي */
+    padding: 8px 12px; border-radius: 18px;
+  }
+  .send-btn { width: 36px; height: 36px; font-size: 0.9rem; }
+  .bot-select { max-width: 64px; font-size: 0.7rem; height: 32px; padding: 0 5px; }
+
+  /* قائمة جهات الاتصال */
+  .contact-item { padding: 9px 12px; }
+  .contact-avatar { width: 40px; height: 40px; font-size: 0.95rem; }
+  .contact-name   { font-size: 0.84rem; }
+  .contact-time   { font-size: 0.65rem; }
+  .contact-preview { font-size: 0.74rem; }
+
+  /* Sidebar top */
+  .sidebar-top { padding: 8px 12px 6px; }
+  .tab-btn     { font-size: 0.74rem; padding: 6px 6px; }
+  .search-box  { font-size: 0.82rem; }
+
+  /* Modals */
+  .modal, .qr-modal { padding: 18px 16px; }
+  .modal h3, .qr-modal h3 { font-size: 0.95rem; }
+}
+
+/* Small phones (≤400px) */
+@media (max-width: 400px) {
+  .top-nav a { font-size: 0.65rem; padding: 2px 5px; }
+  .chat-header { padding: 6px 8px; gap: 6px; }
+  .chat-header .avatar { width: 30px; height: 30px; }
+  .msg-bubble { max-width: 92%; font-size: 0.82rem; }
+  .chat-input-bar { padding: 5px 6px; gap: 4px; }
+  .send-btn { width: 34px; height: 34px; }
+  .bot-select { display: none; } /* يُخفي selector الروبوت على الشاشات الصغيرة جداً */
 }
