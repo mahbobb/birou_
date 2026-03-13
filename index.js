@@ -721,28 +721,22 @@ app.post("/api/send", async (req, res) => {
 });
 
 app.post("/api/send-voice", async (req, res) => {
-  const { phone: rawPhone, data, mimetype, botId } = req.body;
-  if (!rawPhone || !data || !mimetype) return res.status(400).json({ error: "phone, data و mimetype مطلوبين" });
+  const { phone: rawPhone, data, botId } = req.body;
+  if (!rawPhone || !data) return res.status(400).json({ error: "phone و data مطلوبين" });
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
   try {
     const outPhone = normalizeOutPhone(cleanPhone(rawPhone));
     const key      = phoneKey(outPhone);
     const jid      = outPhone + "@c.us";
-    const mimeBase = (mimetype || "audio/ogg").split(";")[0].trim();
-    const ext      = mimeBase.split("/")[1] || "ogg";
-    const filename = `${Date.now()}_${key}.${ext}`;
+    const filename = `${Date.now()}_${key}.ogg`;
     const uploadDir = path.join(__dirname, "public", "uploads", "voices");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(data, "base64"));
     const fileUrl = `/uploads/voices/${filename}`;
-    const media   = new MessageMedia(mimeBase, data, filename);
-    // Try as voice note first; fall back to plain audio if format rejected
-    try {
-      await botSend(jid, media, { sendAudioAsVoice: true }, botId);
-    } catch {
-      await botSend(jid, media, {}, botId);
-    }
+    // إجبار audio/ogg لتجاوز متطلبات ffmpeg
+    const media = new MessageMedia("audio/ogg; codecs=opus", data, filename);
+    await botSend(jid, media, { sendAudioAsVoice: true }, botId);
     await saveMessage(key, "أنت", "out", fileUrl, "manual");
     emitMessage(key, { phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true, url: fileUrl });
