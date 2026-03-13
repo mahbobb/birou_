@@ -261,16 +261,18 @@ function setViewTab(tab){
 currentViewTab = tab
 
 document.querySelectorAll(".chat-tab-btn").forEach((btn,i)=>{
-btn.classList.toggle("active",["msgs","imgs","vids"][i]===tab)
+btn.classList.toggle("active",["msgs","imgs","vids","auds"][i]===tab)
 })
 
 document.getElementById("messagesWrap").style.display = tab==="msgs" ? "" : "none"
 document.getElementById("chatInputBar").style.display = tab==="msgs" ? "" : "none"
 document.getElementById("imgsPanel").classList.toggle("show", tab==="imgs")
 document.getElementById("vidsPanel").classList.toggle("show", tab==="vids")
+document.getElementById("audsPanel").classList.toggle("show", tab==="auds")
 
 if(tab==="imgs") loadImagesPanel()
 if(tab==="vids") loadVideosPanel()
+if(tab==="auds") loadVoicesPanel()
 
 }
 
@@ -349,6 +351,34 @@ grid.innerHTML=`<div class="media-empty" style="grid-column:1/-1">❌ خطأ ف�
 
 }
 
+}
+
+// ─────────────────────────────────────────
+// VOICES PANEL
+// ─────────────────────────────────────────
+async function loadVoicesPanel(){
+  if(!selectedPhone) return
+  const grid = document.getElementById("audsGrid")
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`
+  try{
+    const res  = await fetch(`/api/voices?phone=${encodeURIComponent(selectedPhone)}&limit=200`)
+    const list = await res.json()
+    if(!list.length){
+      grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">🎤 لا توجد رسائل صوتية</div>`
+      return
+    }
+    grid.innerHTML = list.map(v => {
+      const src  = `/uploads/voices/${escHtml(v.filename)}`
+      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})
+      const dir  = v.direction === "outgoing" ? "📤" : "📥"
+      return `<div class="voice-item">
+        <div class="voice-item-meta">${dir} ${date}</div>
+        <audio controls src="${src}" preload="none" style="width:100%;max-width:320px;height:36px;"></audio>
+      </div>`
+    }).join("")
+  }catch{
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصوتيات</div>`
+  }
 }
 
 // ─────────────────────────────────────────
