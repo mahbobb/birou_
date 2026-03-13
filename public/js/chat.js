@@ -7,6 +7,39 @@ let selectedColor = "#00a884"
 let currentViewTab = "msgs"
 
 // ─────────────────────────────────────────
+// NOTIFICATION SOUND  (Web Audio API — no file needed)
+// ─────────────────────────────────────────
+function playNotifSound() {
+  try {
+    const AC  = window.AudioContext || (/** @type {any} */(window)).webkitAudioContext
+    const ctx = new AC()
+
+    // نغمتان متتاليتان مثل WhatsApp
+    const notes = [
+      { freq: 880, start: 0,    dur: 0.12 },
+      { freq: 1100, start: 0.13, dur: 0.18 },
+    ]
+
+    notes.forEach(({ freq, start, dur }) => {
+      const osc  = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.type      = "sine"
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start)
+
+      gain.gain.setValueAtTime(0, ctx.currentTime + start)
+      gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur)
+
+      osc.start(ctx.currentTime + start)
+      osc.stop(ctx.currentTime + start + dur + 0.05)
+    })
+  } catch {}
+}
+
+// ─────────────────────────────────────────
 // SOCKET.IO
 // ─────────────────────────────────────────
 const socket = io()
@@ -19,6 +52,10 @@ if (m.direction === "in") {
   const sKey = (selectedPhone || "").replace(/\D/g,"")
   const isCurrentChat = sKey && (mKey.endsWith(sKey.slice(-9)) || sKey.endsWith(mKey.slice(-9)))
   const isHidden = document.hidden || !isCurrentChat
+
+  if (isHidden) {
+    playNotifSound()
+  }
 
   if (isHidden && Notification.permission === "granted") {
     const senderName = m.senderName || m.phone || "رسالة جديدة"
