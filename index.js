@@ -1,5 +1,6 @@
 require("dotenv").config();
-const crypto = require("crypto");
+const crypto     = require("crypto");
+const { exec }   = require("child_process");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const express = require("express");
@@ -720,6 +721,15 @@ app.post("/api/send", async (req, res) => {
   }
 });
 
+// تحويل صوت إلى ogg باستخدام ffmpeg
+function convertToOgg(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    exec(`ffmpeg -y -i "${inputPath}" -c:a libopus -b:a 64k "${outputPath}"`, (err) => {
+      if (err) reject(err); else resolve();
+    });
+  });
+}
+
 app.post("/api/send-voice", async (req, res) => {
   const { phone: rawPhone, data, mimetype, botId } = req.body;
   if (!rawPhone || !data) return res.status(400).json({ error: "phone و data مطلوبين" });
@@ -731,15 +741,33 @@ app.post("/api/send-voice", async (req, res) => {
     const jid       = outPhone + "@c.us";
     const mimeClean = (mimetype || "audio/webm").split(";")[0].trim();
     const isOgg     = mimeClean === "audio/ogg";
-    const ext       = isOgg ? "ogg" : (mimeClean.includes("mp4") ? "mp4" : "webm");
-    const filename  = `${Date.now()}_${key}.${ext}`;
+    const srcExt    = isOgg ? "ogg" : (mimeClean.includes("mp4") ? "mp4" : "webm");
+    const ts        = Date.now();
     const uploadDir = path.join(__dirname, "public", "uploads", "voices");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(data, "base64"));
-    const fileUrl = `/uploads/voices/${filename}`;
-    const media   = new MessageMedia(isOgg ? "audio/ogg; codecs=opus" : mimeClean, data, filename);
-    // ogg → رسالة صوتية، webm/mp4 → ملف صوتي عادي
-    await botSend(jid, media, isOgg ? { sendAudioAsVoice: true } : {}, botId);
+
+    // حفظ الملف الأصلي
+    const srcPath = path.join(uploadDir, `${ts}_${key}.${srcExt}`);
+    fs.writeFileSync(srcPath, Buffer.from(data, "base64"));
+
+    let sendPath = srcPath;
+    let fileUrl  = `/uploads/voices/${ts}_${key}.${srcExt}`;
+
+    // تحويل إلى ogg إذا لم يكن أصلاً ogg وكان ffmpeg متاحاً
+    if (!isOgg) {
+      const oggPath = path.join(uploadDir, `${ts}_${key}.ogg`);
+      try {
+        await convertToOgg(srcPath, oggPath);
+        fs.unlinkSync(srcPath); // حذف الملف الأصلي
+        sendPath = oggPath;
+        fileUrl  = `/uploads/voices/${ts}_${key}.ogg`;
+      } catch {
+        // ffmpeg غير متاح — إرسال الملف كما هو
+      }
+    }
+
+    const media = MessageMedia.fromFilePath(sendPath);
+    await botSend(jid, media, { sendAudioAsVoice: true }, botId);
     await saveMessage(key, "أنت", "out", fileUrl, "manual");
     emitMessage(key, { phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true, url: fileUrl });
