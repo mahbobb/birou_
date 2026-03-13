@@ -721,22 +721,25 @@ app.post("/api/send", async (req, res) => {
 });
 
 app.post("/api/send-voice", async (req, res) => {
-  const { phone: rawPhone, data, botId } = req.body;
+  const { phone: rawPhone, data, mimetype, botId } = req.body;
   if (!rawPhone || !data) return res.status(400).json({ error: "phone و data مطلوبين" });
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
   try {
-    const outPhone = normalizeOutPhone(cleanPhone(rawPhone));
-    const key      = phoneKey(outPhone);
-    const jid      = outPhone + "@c.us";
-    const filename = `${Date.now()}_${key}.ogg`;
+    const outPhone  = normalizeOutPhone(cleanPhone(rawPhone));
+    const key       = phoneKey(outPhone);
+    const jid       = outPhone + "@c.us";
+    const mimeClean = (mimetype || "audio/webm").split(";")[0].trim();
+    const isOgg     = mimeClean === "audio/ogg";
+    const ext       = isOgg ? "ogg" : (mimeClean.includes("mp4") ? "mp4" : "webm");
+    const filename  = `${Date.now()}_${key}.${ext}`;
     const uploadDir = path.join(__dirname, "public", "uploads", "voices");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(data, "base64"));
     const fileUrl = `/uploads/voices/${filename}`;
-    // إجبار audio/ogg لتجاوز متطلبات ffmpeg
-    const media = new MessageMedia("audio/ogg; codecs=opus", data, filename);
-    await botSend(jid, media, { sendAudioAsVoice: true }, botId);
+    const media   = new MessageMedia(isOgg ? "audio/ogg; codecs=opus" : mimeClean, data, filename);
+    // ogg → رسالة صوتية، webm/mp4 → ملف صوتي عادي
+    await botSend(jid, media, isOgg ? { sendAudioAsVoice: true } : {}, botId);
     await saveMessage(key, "أنت", "out", fileUrl, "manual");
     emitMessage(key, { phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true, url: fileUrl });

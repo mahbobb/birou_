@@ -28,11 +28,12 @@ async function startInlineRecord() {
   try {
     inlineStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+    // أولوية لـ ogg (Firefox) ثم webm (Chrome/Edge) ثم mp4 (Safari)
     const types = [
-      "audio/webm;codecs=opus",
-      "audio/webm",
       "audio/ogg;codecs=opus",
       "audio/ogg",
+      "audio/webm;codecs=opus",
+      "audio/webm",
       "audio/mp4",
     ];
     const detected = types.find(t => {
@@ -171,7 +172,7 @@ async function doSendVoice() {
     const res  = await fetch("/api/send-voice", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ phone, data: voiceData, mimetype: voiceMime || "audio/ogg", ...(botId ? { botId } : {}) }),
+      body:    JSON.stringify({ phone, data: voiceData, mimetype: voiceMime || "audio/webm", ...(botId ? { botId } : {}) }),
     });
     const data = await res.json();
     showRecNormal();
