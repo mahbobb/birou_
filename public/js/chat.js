@@ -13,6 +13,28 @@ const socket = io()
 
 socket.on("new_message", (m) => {
 
+// ── Browser notification for incoming messages ────────────────────────────
+if (m.direction === "in") {
+  const mKey = String(m.phone || "").replace(/\D/g,"")
+  const sKey = (selectedPhone || "").replace(/\D/g,"")
+  const isCurrentChat = sKey && (mKey.endsWith(sKey.slice(-9)) || sKey.endsWith(mKey.slice(-9)))
+  const isHidden = document.hidden || !isCurrentChat
+
+  if (isHidden && Notification.permission === "granted") {
+    const senderName = m.senderName || m.phone || "رسالة جديدة"
+    const body = previewText(m.body || "")
+    const notif = new Notification(senderName, {
+      body: body || "رسالة جديدة",
+      icon: "/favicon.ico",
+      tag:  "wa-" + mKey,   // replace older notif from same contact
+    })
+    notif.onclick = () => {
+      window.focus()
+      notif.close()
+    }
+  }
+}
+
 if(!selectedPhone) return
 
 const wrap = document.getElementById("messagesWrap")
@@ -522,6 +544,12 @@ document.getElementById("msgInput").addEventListener("paste", e => {
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
+
+// Request browser notification permission
+if ("Notification" in window && Notification.permission === "default") {
+  Notification.requestPermission()
+}
+
 loadContacts()
 
 setInterval(loadContacts,10000)
