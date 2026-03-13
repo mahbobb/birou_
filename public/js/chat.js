@@ -430,7 +430,7 @@ document.addEventListener("keydown", e=>{
 function logout(){
 
 fetch("/api/logout",{method:"POST"})
-.then(()=>location.href="/login.html")
+.then(()=>location.href="/login")
 
 }
 

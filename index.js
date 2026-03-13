@@ -569,16 +569,16 @@ function parseCookies(header = "") {
 }
 
 function requireAuth(req, res, next) {
-  const pub = ["/login.html", "/api/login", "/webhook"];
+  const pub = ["/login", "/login.html", "/api/login", "/webhook"];
   if (pub.some(p => req.path === p || req.path.startsWith("/webhook"))) return next();
   const cookies = parseCookies(req.headers.cookie);
   if (validTokens.has(cookies.auth_token)) return next();
   if (req.path.startsWith("/api/")) return res.status(401).json({ error: "غير مصرح" });
-  res.redirect("/login.html");
+  res.redirect("/login");
 }
 
 app.use(requireAuth);
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
 app.post("/api/login", (req, res) => {
   const { password } = req.body;

@@ -99,10 +99,10 @@
   <h1>🔄 مزامنة الوسائط</h1>
   <nav class="nav-links">
     <a href="/">🏠 الرئيسية</a>
-    <a href="/images.html">📸 الصور</a>
-    <a href="/videos.html">🎬 الفيديوهات</a>
-    <a href="/chat.html">💬 الشات</a>
-    <a href="/sync.html" class="active">🔄 المزامنة</a>
+    <a href="/images">📸 الصور</a>
+    <a href="/videos">🎬 الفيديوهات</a>
+    <a href="/chat">💬 الشات</a>
+    <a href="/sync" class="active">🔄 المزامنة</a>
     <a href="#" onclick="logout()" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
   </nav>
 </header>
@@ -232,7 +232,7 @@
   }
 
   function logout() {
-    fetch("/api/logout", { method: "POST" }).then(() => location.href = "/login.html");
+    fetch("/api/logout", { method: "POST" }).then(() => location.href = '/login');
   }
 
   loadInitialStatus();

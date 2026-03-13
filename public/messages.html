@@ -182,14 +182,14 @@
   </div>
   <nav class="nav-links">
     <a href="/">🏠</a>
-    <a href="/messages.html" class="active">💬 الرسائل</a>
-    <a href="/chat.html">🗨️ الشات</a>
-    <a href="/images.html">📸 الصور</a>
-    <a href="/voices.html">🎤 الصوتيات</a>
-    <a href="/videos.html">🎬 الفيديوهات</a>
-    <a href="/qr.html">📲 QR</a>
-    <a href="/sync.html">🔄 مزامنة</a>
-    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login.html')">🚪 خروج</a>
+    <a href="/messages" class="active">💬 الرسائل</a>
+    <a href="/chat">🗨️ الشات</a>
+    <a href="/images">📸 الصور</a>
+    <a href="/voices">🎤 الصوتيات</a>
+    <a href="/videos">🎬 الفيديوهات</a>
+    <a href="/qr">📲 QR</a>
+    <a href="/sync">🔄 مزامنة</a>
+    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")">🚪 خروج</a>
   </nav>
 </header>
 
@@ -371,7 +371,7 @@
         <td class="msg-body" title="${escHtml(m.body||"")}">${escHtml((m.body||"").substring(0,50))}</td>
         <td>${srcBadge}</td>
         <td class="time">${time}</td>
-        <td><a href="/chat.html?phone=${m.phone}" class="chat-btn">💬 شات</a></td>
+        <td><a href="/chat?phone=${m.phone}" class="chat-btn">💬 شات</a></td>
       </tr>`;
     }).join("");
   }
@@ -394,7 +394,7 @@
         <td class="msg-body" title="${escHtml(u.lastBody||"")}">${escHtml((u.lastBody||"").substring(0,50))}</td>
         <td><span class="badge badge-no-reply">⚠️ بدون رد</span></td>
         <td class="time" title="${time}">${ago}</td>
-        <td><a href="/chat.html?phone=${u.phone}" class="chat-btn">💬 رد</a></td>
+        <td><a href="/chat?phone=${u.phone}" class="chat-btn">💬 رد</a></td>
       </tr>`;
     }).join("");
   }
