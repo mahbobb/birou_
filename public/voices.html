@@ -349,12 +349,18 @@
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* Responsive */
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; height: auto; }
+      .nav-links { display: flex; flex-wrap: wrap; gap: 4px; }
+      .nav-links a { font-size: 0.78rem; padding: 4px 8px; }
+      .stats-row, .toolbar, .list-wrap { padding-left: 16px; padding-right: 16px; }
+    }
     @media (max-width: 640px) {
-      header { padding: 0 12px; }
-      .nav-links a { font-size: 0.75rem; padding: 5px 8px; }
+      header { padding: 10px 12px; }
+      .nav-links a { font-size: 0.72rem; padding: 3px 6px; }
       .stats-row, .toolbar, .list-wrap { padding-left: 12px; padding-right: 12px; }
       .vc-wave { display: none; }
-      .vc-actions { gap: 4px; }
+      .vc-actions { gap: 4px; flex-wrap: wrap; }
       .vc-btn { padding: 5px 8px; font-size: 0.74rem; }
     }
   </style>

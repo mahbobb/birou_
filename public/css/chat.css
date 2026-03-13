@@ -548,10 +548,29 @@ body {
 }
 .header-resp-btn:hover { background: rgba(0,168,132,0.28); }
 
-/* Responsive */
+/* ── Back button (mobile only) ── */
+.back-btn {
+  display: none; background: none; border: none; color: #8696a0;
+  font-size: 1.3rem; cursor: pointer; padding: 4px 8px; flex-shrink: 0;
+  transition: color 0.15s;
+}
+.back-btn:hover { color: #e9edef; }
+
+/* Responsive — Tablet */
+@media (max-width: 900px) {
+  .sidebar { width: 280px; }
+}
+
+/* Responsive — Mobile */
 @media (max-width: 640px) {
-  .sidebar { width: 100%; display: none; }
-  .sidebar.show { display: flex; }
-  .chat-panel { display: none; }
-  .chat-panel.show { display: flex; flex-direction: column; }
+  .chat-layout { position: relative; }
+  .sidebar { width: 100%; position: absolute; inset: 0; z-index: 10; display: flex; }
+  .sidebar.hidden { display: none; }
+  .chat-panel { width: 100%; position: absolute; inset: 0; z-index: 10; display: none; flex-direction: column; }
+  .chat-panel.show { display: flex; }
+  .back-btn { display: block; }
+  .msg-bubble { max-width: 82%; }
+  .messages-wrap { padding: 10px 3%; }
+  .top-nav { gap: 0; padding: 0 8px; }
+  .top-nav a { font-size: 0.68rem; padding: 2px 6px; }
 }

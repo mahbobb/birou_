@@ -1,5 +1,5 @@
 {
-  "autoReplyEnabled": true,
+  "autoReplyEnabled": false,
   "responses": [
     {
       "shortOnly": true,

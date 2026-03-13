@@ -297,23 +297,88 @@
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; backdrop-filter: blur(8px); }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ════════ RESPONSIVE ════════ */
+    /* ════════ HAMBURGER BTN ════════ */
+    .menu-btn {
+      display: none; align-items: center; justify-content: center;
+      width: 38px; height: 38px; border: none; border-radius: 10px;
+      background: var(--bg); cursor: pointer; font-size: 1.2rem;
+      color: var(--text); flex-shrink: 0; margin-left: 8px;
+    }
+
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 39;
+    }
+    .sidebar-overlay.open { display: block; }
+
+    /* ════════ RESPONSIVE — TABLET (≤1024px) ════════ */
+    @media (max-width: 1024px) {
+      :root { --sidebar-w: 200px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .quick-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* ════════ RESPONSIVE — SMALL TABLET (≤768px) ════════ */
     @media (max-width: 768px) {
-      .sidebar { width: 60px; }
-      .sb-brand h2, .sb-brand small, .sb-link span, .sb-status span, .sb-user-info, .sb-section { display: none; }
+      :root { --sidebar-w: 60px; }
+      .sb-brand h2, .sb-brand small, .sb-link span,
+      .sb-status span, .sb-user-info, .sb-section { display: none; }
       .sb-link { justify-content: center; padding: 10px; }
       .sb-link .ico { width: auto; }
+      .sb-logout span:last-child { display: none; }
+      .sb-logout { justify-content: center; }
       .main { margin-right: 60px; }
-      .bots-row { grid-template-columns: 1fr; }
+      .bots-row { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .quick-grid { grid-template-columns: repeat(3, 1fr); }
       .page { padding: 14px; }
       .topbar { padding: 0 14px; }
+      .tbar-btn { padding: 6px 10px; font-size: 0.76rem; }
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ════════ RESPONSIVE — MOBILE (≤480px) ════════ */
+    @media (max-width: 480px) {
+      .sidebar {
+        width: var(--sidebar-w) !important;
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        z-index: 40;
+      }
+      :root { --sidebar-w: 230px; }
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .sb-brand h2, .sb-brand small, .sb-link span,
+      .sb-status span, .sb-user-info, .sb-section { display: block; }
+      .sb-link { justify-content: flex-start; padding: 9px 12px; }
+      .sb-logout span:last-child { display: inline; }
+      .sb-logout { justify-content: flex-start; }
+      .main { margin-right: 0; }
+      .menu-btn { display: flex; }
+      .bots-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .quick-grid { grid-template-columns: repeat(2, 1fr); }
+      .page { padding: 10px; }
+      .topbar { padding: 0 10px; gap: 6px; }
+      .topbar-title { font-size: 0.9rem; }
+      .topbar-actions { gap: 4px; }
+      .tbar-btn { padding: 5px 8px; font-size: 0.72rem; }
+      .stat-body .num { font-size: 1.4rem; }
+      .last-msg { max-width: 120px; }
+      .action-btn { padding: 4px 7px; font-size: 0.7rem; }
+      .table-wrap { overflow-x: auto; }
+      th, td { padding: 9px 10px; font-size: 0.78rem; }
+      .admin-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 <!-- ════════ SIDEBAR ════════ -->
-<aside class="sidebar">
+<aside class="sidebar" id="mainSidebar">
   <div class="sb-brand">
     <div class="brand-row">
       <div class="brand-icon">🤖</div>
@@ -375,6 +440,7 @@
 
   <!-- Topbar -->
   <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
     <div class="topbar-actions">
       <button class="tbar-btn pause"  onclick="pauseBot()">⏸ إيقاف</button>
@@ -809,6 +875,24 @@
     t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3000);
   }
+
+  /* ── Mobile Sidebar Toggle ── */
+  function toggleSidebar() {
+    const sb = document.getElementById("mainSidebar");
+    const ov = document.getElementById("sidebarOverlay");
+    sb.classList.toggle("mobile-open");
+    ov.classList.toggle("open");
+  }
+  function closeSidebar() {
+    document.getElementById("mainSidebar").classList.remove("mobile-open");
+    document.getElementById("sidebarOverlay").classList.remove("open");
+  }
+  // Close sidebar when nav link clicked on mobile
+  document.querySelectorAll(".sb-link, .sb-logout").forEach(el => {
+    el.addEventListener("click", () => {
+      if (window.innerWidth <= 480) closeSidebar();
+    });
+  });
 
   loadData();
   setInterval(loadData, 30000);

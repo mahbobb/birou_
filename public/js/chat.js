@@ -58,6 +58,23 @@ lastMessageId = m.id || lastMessageId
 // ─────────────────────────────────────────
 // SELECT CONTACT
 // ─────────────────────────────────────────
+// ─── Mobile: show chat panel, hide sidebar ───────────────────────────────────
+function showChatPanel(){
+  if(window.innerWidth <= 640){
+    const sb = document.getElementById("sidebar")
+    const cp = document.getElementById("chatPanel")
+    if(sb) sb.classList.add("hidden")
+    if(cp) cp.classList.add("show")
+  }
+}
+
+function backToList(){
+  const sb = document.getElementById("sidebar")
+  const cp = document.getElementById("chatPanel")
+  if(sb) sb.classList.remove("hidden")
+  if(cp) cp.classList.remove("show")
+}
+
 function selectContact(el){
 
 const phone = el.dataset.phone
@@ -79,6 +96,7 @@ setViewTab("msgs")
 
 document.getElementById("noSelection").style.display="none"
 document.getElementById("chatView").classList.add("open")
+showChatPanel()
 
 const av = document.getElementById("chatAvatar")
 
@@ -140,6 +158,7 @@ setViewTab("msgs")
 
 document.getElementById("noSelection").style.display="none"
 document.getElementById("chatView").classList.add("open")
+showChatPanel()
 
 const av = document.getElementById("chatAvatar")
 

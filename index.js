@@ -66,7 +66,7 @@ function isDuplicate(contactId, message) {
 
 // ─── Multi-client setup ────────────────────────────────────────────────────
 
-const BOT_IDS = ["bot1", "bot2", "bot3"];
+const BOT_IDS = ["bot1"];
 
 const bots = new Map(BOT_IDS.map(id => [id, {
   client:       null,
@@ -90,10 +90,13 @@ function setupClient(botId) {
     authStrategy: new LocalAuth({ clientId: botId, dataPath: "./sessions" }),
     puppeteer: {
       headless: true,
+      protocolTimeout: 120000,
       args: [
         "--no-sandbox", "--disable-setuid-sandbox",
         "--disable-dev-shm-usage", "--disable-gpu",
         "--no-first-run", "--no-zygote", "--single-process",
+        "--disable-extensions", "--disable-default-apps",
+        "--disable-background-networking",
       ],
     },
   });
