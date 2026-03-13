@@ -433,6 +433,32 @@ function logout(){
 }
 
 // ─────────────────────────────────────────
+// DELETE CHAT
+// ─────────────────────────────────────────
+async function deleteChat() {
+  if (!selectedPhone) return;
+  const name = selectedName || selectedPhone;
+  if (!confirm(`هل تريد حذف محادثة "${name}" نهائياً؟\nسيتم حذف جميع الرسائل.`)) return;
+  try {
+    const res  = await fetch(`/api/contacts/${encodeURIComponent(selectedPhone)}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("🗑 تم حذف المحادثة");
+      selectedPhone = "";
+      selectedName  = "";
+      document.getElementById("chatView").classList.remove("open");
+      document.getElementById("noSelection").style.display = "";
+      backToList();
+      loadContacts();
+    } else {
+      showToast("❌ " + (data.error || "فشل الحذف"));
+    }
+  } catch {
+    showToast("❌ خطأ في الاتصال");
+  }
+}
+
+// ─────────────────────────────────────────
 // WHATSAPP CALL
 // ─────────────────────────────────────────
 function startCall(callType) {

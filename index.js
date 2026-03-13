@@ -703,6 +703,19 @@ app.get("/api/contacts", async (_req, res) => {
   res.json(list);
 });
 
+app.delete("/api/contacts/:phone", async (req, res) => {
+  try {
+    const pool = require("./db");
+    const phone = req.params.phone.replace(/\D/g, "");
+    const key   = phone.length > 9 ? phone.slice(-9) : phone;
+    await pool.query("DELETE FROM messages WHERE contact = ?", [key]);
+    await pool.query("DELETE FROM contacts WHERE phone = ?",  [key]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/send", async (req, res) => {
   const { phone: rawPhone, message, botId } = req.body;
   if (!rawPhone || !message) return res.status(400).json({ error: "phone و message مطلوبين" });
