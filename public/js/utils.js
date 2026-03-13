@@ -85,6 +85,13 @@ function previewText(body) {
   return (body || "").substring(0, 42);
 }
 
+// ── Format message count (1200 → 1.2k) ───────────────────────────────────
+function formatCount(n) {
+  n = parseInt(n) || 0;
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return n;
+}
+
 // ── Source label ──────────────────────────────────────────────────────────
 function srcLabel(s) {
   return s === "ai"      ? "ذكاء"

@@ -136,6 +136,8 @@ function renderContacts(list) {
     const classes  = ["contact-item", isActive ? "active" : "", isUnread ? "unread" : ""].filter(Boolean).join(" ");
     const botNum   = c.botId === "bot1" ? "1" : c.botId === "bot2" ? "2" : c.botId === "bot3" ? "3" : "";
     const botBadge = botNum ? `<span class="bot-badge">${botNum}</span>` : "";
+    const total    = c.totalMessages > 0 ? formatCount(c.totalMessages) : "";
+    const msgCount = total ? `<span class="msg-count-badge">${total}</span>` : "";
     return `
       <div class="${classes}"
         data-phone="${escHtml(c.phone)}" data-name="${escHtml(c.name || c.phone)}"
@@ -151,7 +153,10 @@ function renderContacts(list) {
           </div>
           <div class="contact-bottom">
             <span class="contact-preview">${escHtml(preview)}</span>
-            ${isUnread ? `<span class="unread-badge">💬 رد</span>` : ""}
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              ${msgCount}
+              ${isUnread ? `<span class="unread-badge">💬 رد</span>` : ""}
+            </div>
           </div>
         </div>
       </div>`;
