@@ -150,8 +150,8 @@ function renderContacts(list) {
             </div>
           </div>
           <div class="contact-bottom">
-            <span class="contact-preview">${isUnread ? "↩ " : ""}${escHtml(preview)}</span>
-            ${isUnread ? `<span class="unread-badge">!</span>` : ""}
+            <span class="contact-preview">${escHtml(preview)}</span>
+            ${isUnread ? `<span class="unread-badge">💬 رد</span>` : ""}
           </div>
         </div>
       </div>`;
