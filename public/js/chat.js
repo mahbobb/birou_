@@ -428,10 +428,25 @@ document.addEventListener("keydown", e=>{
 // LOGOUT
 // ─────────────────────────────────────────
 function logout(){
+  fetch("/api/logout",{method:"POST"})
+  .then(()=>location.href="/login")
+}
 
-fetch("/api/logout",{method:"POST"})
-.then(()=>location.href="/login")
-
+// ─────────────────────────────────────────
+// WHATSAPP CALL
+// ─────────────────────────────────────────
+function startCall(callType) {
+  if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  // بناء رقم بصيغة دولية
+  let p = String(selectedPhone).replace(/\D/g, "");
+  if (p.startsWith("00")) p = p.slice(2);
+  if (p.length === 9 && /^[5-7]/.test(p)) p = "212" + p;
+  if (p.length === 10 && p.startsWith("0"))  p = "212" + p.slice(1);
+  // wa.me يفتح واتساب (web أو تطبيق) لبدء مكالمة
+  const url = callType === "video"
+    ? `https://wa.me/${p}?video=1`
+    : `https://wa.me/${p}`;
+  window.open(url, "_blank");
 }
 
 // ─────────────────────────────────────────

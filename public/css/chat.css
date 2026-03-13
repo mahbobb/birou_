@@ -556,9 +556,27 @@ body {
 .qr-btn-save:hover   { opacity: 0.88; }
 .qr-btn-cancel:hover { color: #e9edef; }
 
+/* Header action buttons group */
+.header-actions {
+  margin-right: auto; display: flex; align-items: center; gap: 6px;
+}
+
+/* Call buttons */
+.header-call-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  cursor: pointer; font-size: 1rem; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: transform 0.15s, background 0.15s;
+}
+.header-call-btn:hover { transform: scale(1.1); }
+.header-call-btn.voice-call { background: rgba(0,168,132,0.18); color: #00a884; }
+.header-call-btn.voice-call:hover { background: rgba(0,168,132,0.35); }
+.header-call-btn.video-call { background: rgba(83,189,235,0.18); color: #53bdeb; }
+.header-call-btn.video-call:hover { background: rgba(83,189,235,0.35); }
+
 /* Button in chat header */
 .header-resp-btn {
-  margin-right: auto; background: rgba(0,168,132,0.15); border: 1px solid rgba(0,168,132,0.35);
+  background: rgba(0,168,132,0.15); border: 1px solid rgba(0,168,132,0.35);
   color: #00a884; border-radius: 8px; padding: 5px 11px;
   font-size: 0.75rem; cursor: pointer; white-space: nowrap;
   transition: background 0.15s;

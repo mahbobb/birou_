@@ -74,7 +74,11 @@
           <div class="name"  id="chatName">—</div>
           <div class="phone" id="chatPhone">—</div>
         </div>
-        <button class="header-resp-btn" onclick="openResponseModal()" title="إضافة رد مبرمج جديد">➕ رد مبرمج</button>
+        <div class="header-actions">
+          <button class="header-call-btn voice-call" id="voiceCallBtn" onclick="startCall('voice')" title="مكالمة صوتية">📞</button>
+          <button class="header-call-btn video-call" id="videoCallBtn" onclick="startCall('video')" title="مكالمة فيديو">📹</button>
+          <button class="header-resp-btn" onclick="openResponseModal()" title="إضافة رد مبرمج جديد">➕ رد مبرمج</button>
+        </div>
       </div>
       <div class="chat-tabs" id="chatTabs">
         <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 رسائل</button>
