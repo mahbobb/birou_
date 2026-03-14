@@ -9,14 +9,32 @@ let currentViewTab = "msgs"
 // ─────────────────────────────────────────
 // NOTIFICATION SOUND  (Web Audio API — no file needed)
 // ─────────────────────────────────────────
+const AC = window.AudioContext || (/** @type {any} */(window)).webkitAudioContext
+let _audioCtx = null
+
+// يُفعَّل عند أول تفاعل للمستخدم لتجاوز سياسة autoplay
+function unlockAudio() {
+  if (!_audioCtx && AC) {
+    _audioCtx = new AC()
+    if (_audioCtx.state === "suspended") _audioCtx.resume()
+  }
+  document.removeEventListener("click",   unlockAudio)
+  document.removeEventListener("keydown", unlockAudio)
+  document.removeEventListener("touchend",unlockAudio)
+}
+document.addEventListener("click",   unlockAudio, { once: true })
+document.addEventListener("keydown", unlockAudio, { once: true })
+document.addEventListener("touchend",unlockAudio, { once: true })
+
 function playNotifSound() {
   try {
-    const AC  = window.AudioContext || (/** @type {any} */(window)).webkitAudioContext
-    const ctx = new AC()
+    if (!_audioCtx) return   // المستخدم لم يتفاعل بعد
+    const ctx = _audioCtx
+    if (ctx.state === "suspended") ctx.resume()
 
     // نغمتان متتاليتان مثل WhatsApp
     const notes = [
-      { freq: 880, start: 0,    dur: 0.12 },
+      { freq: 880,  start: 0,    dur: 0.12 },
       { freq: 1100, start: 0.13, dur: 0.18 },
     ]
 
@@ -26,15 +44,15 @@ function playNotifSound() {
       osc.connect(gain)
       gain.connect(ctx.destination)
 
-      osc.type      = "sine"
+      osc.type = "sine"
       osc.frequency.setValueAtTime(freq, ctx.currentTime + start)
 
-      gain.gain.setValueAtTime(0, ctx.currentTime + start)
-      gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + start + 0.02)
+      gain.gain.setValueAtTime(0,    ctx.currentTime + start)
+      gain.gain.linearRampToValueAtTime(0.35,  ctx.currentTime + start + 0.02)
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur)
 
       osc.start(ctx.currentTime + start)
-      osc.stop(ctx.currentTime + start + dur + 0.05)
+      osc.stop(ctx.currentTime  + start + dur + 0.05)
     })
   } catch {}
 }
