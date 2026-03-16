@@ -179,6 +179,11 @@
 
       <div class="chat-input-bar" id="chatInputBar">
 
+        <!-- زر الردود السريعة -->
+        <button class="wa-input-btn" title="الردود المحفوظة" onclick="toggleQuickReplies()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 10H7v-2h10v2zm0-3H7V7h10v2z"/></svg>
+        </button>
+
         <!-- زر + للإرفاق (WhatsApp Web style) -->
         <button class="wa-input-btn" id="attachBtn" title="إرسال ملفات" onclick="openMediaModal()">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M11 13H5.5C4.948 13 4.5 12.552 4.5 12S4.948 11 5.5 11H11V5.5C11 4.948 11.448 4.5 12 4.5S13 4.948 13 5.5V11H18.5C19.052 11 19.5 11.448 19.5 12S19.052 13 18.5 13H13V18.5C13 19.052 12.552 19.5 12 19.5S11 19.052 11 18.5V13Z" fill="currentColor"/></svg>
@@ -225,6 +230,40 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ══ Quick Replies Panel ══ -->
+<div id="quickRepliesPanel" class="qr-panel">
+  <div class="qr-panel-header">
+    <span>💬 الردود المحفوظة</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="qr-add-btn" onclick="openAddReplyModal()">+ جديد</button>
+      <button class="qr-close-btn" onclick="closeQuickReplies()">✕</button>
+    </div>
+  </div>
+  <div class="qr-search-wrap">
+    <input id="qrSearch" class="qr-search" type="text" placeholder="🔍 بحث..." oninput="filterQuickReplies()">
+  </div>
+  <div id="qrList" class="qr-list"></div>
+</div>
+
+<!-- ══ Add Reply Modal ══ -->
+<div class="overlay" id="addReplyOverlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <h3>➕ رد جديد</h3>
+    <div class="form-group" style="margin-top:14px">
+      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">الكلمات المفتاحية</label>
+      <input id="arKeywords" type="text" class="modal-input" placeholder="سلام, مرحبا, hello">
+    </div>
+    <div class="form-group" style="margin-top:10px">
+      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">نص الرد *</label>
+      <textarea id="arReply" class="modal-textarea" rows="4" placeholder="اكتب الرد هنا..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+      <button class="modal-btn cancel" onclick="closeAddReplyModal()">إلغاء</button>
+      <button class="modal-btn save" onclick="saveQuickReply()">💾 حفظ</button>
+    </div>
   </div>
 </div>
 

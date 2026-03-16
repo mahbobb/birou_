@@ -388,6 +388,123 @@ document.addEventListener("click", e => {
 });
 
 // ─────────────────────────────────────────
+// QUICK REPLIES
+// ─────────────────────────────────────────
+let _qrAll = [];
+
+async function loadQuickReplies() {
+  try {
+    const data = await fetch("/api/responses").then(r => r.json());
+    _qrAll = (data.responses || []).filter(r => r.reply);
+    renderQuickReplies(_qrAll);
+  } catch { renderQuickReplies([]); }
+}
+
+function renderQuickReplies(list) {
+  const el = document.getElementById("qrList");
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div class="qr-empty">لا توجد ردود محفوظة<br><small>اضغط "+ جديد" لإضافة رد</small></div>`;
+    return;
+  }
+  el.innerHTML = list.map((r, i) => {
+    const reply = Array.isArray(r.reply) ? r.reply[0] : (r.reply || "");
+    const kws = (r.keywords || []).join(", ");
+    return `
+      <div class="qr-item" onclick="insertQuickReply(${i})">
+        <span class="qr-item-icon">💬</span>
+        <div class="qr-item-body">
+          <div class="qr-item-reply">${escHtml(reply)}</div>
+          ${kws ? `<div class="qr-item-kw">${escHtml(kws)}</div>` : ""}
+        </div>
+        <button class="qr-item-send" onclick="event.stopPropagation();sendQuickReply(${i})">إرسال</button>
+      </div>`;
+  }).join("");
+}
+
+function filterQuickReplies() {
+  const q = (document.getElementById("qrSearch")?.value || "").toLowerCase();
+  if (!q) { renderQuickReplies(_qrAll); return; }
+  const filtered = _qrAll.filter(r => {
+    const reply = Array.isArray(r.reply) ? r.reply.join(" ") : (r.reply || "");
+    return reply.toLowerCase().includes(q) ||
+      (r.keywords || []).some(k => k.toLowerCase().includes(q));
+  });
+  renderQuickReplies(filtered);
+}
+
+function insertQuickReply(i) {
+  const r = _qrAll[i];
+  if (!r) return;
+  const reply = Array.isArray(r.reply) ? r.reply[0] : (r.reply || "");
+  const ta = document.getElementById("msgInput");
+  if (ta) { ta.value = reply; autoResize(ta); ta.focus(); }
+  closeQuickReplies();
+}
+
+async function sendQuickReply(i) {
+  const r = _qrAll[i];
+  if (!r || !selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  const reply = Array.isArray(r.reply) ? r.reply[0] : (r.reply || "");
+  closeQuickReplies();
+  const ta = document.getElementById("msgInput");
+  if (ta) ta.value = reply;
+  await sendText();
+}
+
+function toggleQuickReplies() {
+  const panel = document.getElementById("quickRepliesPanel");
+  if (!panel) return;
+  const isOpen = panel.classList.contains("open");
+  panel.classList.toggle("open", !isOpen);
+  if (!isOpen) { loadQuickReplies(); document.getElementById("qrSearch").value = ""; }
+}
+
+function closeQuickReplies() {
+  document.getElementById("quickRepliesPanel")?.classList.remove("open");
+}
+
+function openAddReplyModal() {
+  closeQuickReplies();
+  document.getElementById("arKeywords").value = "";
+  document.getElementById("arReply").value = "";
+  document.getElementById("addReplyOverlay").style.display = "flex";
+}
+
+function closeAddReplyModal() {
+  document.getElementById("addReplyOverlay").style.display = "none";
+}
+
+async function saveQuickReply() {
+  const keywords = document.getElementById("arKeywords").value.trim();
+  const reply    = document.getElementById("arReply").value.trim();
+  if (!reply) return showToast("⚠️ اكتب نص الرد");
+  try {
+    const body = { reply, keywords: keywords || "عام" };
+    const d = await fetch("/api/responses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(r => r.json());
+    if (d.ok) {
+      showToast("✅ تم حفظ الرد");
+      closeAddReplyModal();
+    } else {
+      showToast("❌ " + (d.error || "خطأ"));
+    }
+  } catch { showToast("❌ فشل الاتصال"); }
+}
+
+// أغلق panel عند الضغط خارجه
+document.addEventListener("click", e => {
+  const panel = document.getElementById("quickRepliesPanel");
+  if (!panel?.classList.contains("open")) return;
+  if (!e.target.closest("#quickRepliesPanel") && !e.target.closest(".wa-input-btn[onclick*='QuickReplies']")) {
+    closeQuickReplies();
+  }
+});
+
+// ─────────────────────────────────────────
 // VIEW TABS
 // ─────────────────────────────────────────
 function setViewTab(tab) {
