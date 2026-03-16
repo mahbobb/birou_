@@ -452,7 +452,8 @@ async function sendQuickReply(i) {
   await sendText();
 }
 
-function toggleQuickReplies() {
+function toggleQuickReplies(e) {
+  if (e) e.stopPropagation();
   const panel = document.getElementById("quickRepliesPanel");
   if (!panel) return;
   const isOpen = panel.classList.contains("open");
@@ -499,7 +500,7 @@ async function saveQuickReply() {
 document.addEventListener("click", e => {
   const panel = document.getElementById("quickRepliesPanel");
   if (!panel?.classList.contains("open")) return;
-  if (!e.target.closest("#quickRepliesPanel") && !e.target.closest(".wa-input-btn[onclick*='QuickReplies']")) {
+  if (!e.target.closest("#quickRepliesPanel") && !e.target.closest("#qrToggleBtn")) {
     closeQuickReplies();
   }
 });
