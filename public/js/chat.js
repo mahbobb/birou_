@@ -455,10 +455,21 @@ async function sendQuickReply(i) {
 function toggleQuickReplies(e) {
   if (e) e.stopPropagation();
   const panel = document.getElementById("quickRepliesPanel");
-  if (!panel) return;
+  const btn   = document.getElementById("qrToggleBtn");
+  if (!panel || !btn) return;
+
   const isOpen = panel.classList.contains("open");
   panel.classList.toggle("open", !isOpen);
-  if (!isOpen) { loadQuickReplies(); document.getElementById("qrSearch").value = ""; }
+
+  if (!isOpen) {
+    // حسب موضع الزر
+    const rect = btn.getBoundingClientRect();
+    panel.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+    panel.style.left   = rect.left + "px";
+    loadQuickReplies();
+    const search = document.getElementById("qrSearch");
+    if (search) { search.value = ""; search.focus(); }
+  }
 }
 
 function closeQuickReplies() {

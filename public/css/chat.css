@@ -632,16 +632,15 @@ body {
 
 /* ══════════ QUICK REPLIES PANEL ══════════ */
 .qr-panel {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0; right: 0;
+  position: fixed;
   background: #1e2d35;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  z-index: 150;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 300;
   display: none;
   flex-direction: column;
-  max-height: 340px;
+  width: 320px;
+  max-height: 360px;
   overflow: hidden;
   border: 1px solid #2a3942;
 }
