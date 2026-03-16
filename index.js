@@ -86,16 +86,21 @@ function getActiveBot(preferredId = null) {
   return null;
 }
 
-// ── إيجاد مسار Chromium تلقائياً ──────────────────────────────────────────
+// ── إيجاد مسار Chrome/Chromium تلقائياً ────────────────────────────────────
 function findChromium() {
   const { execSync } = require("child_process");
+  // الأولوية: Google Chrome الحقيقي > Chromium snap الداخلي > snap wrapper
   const candidates = [
     process.env.CHROMIUM_PATH,
-    "/usr/bin/chromium-browser",
-    "/usr/bin/chromium",
     "/usr/bin/google-chrome-stable",
     "/usr/bin/google-chrome",
-    "/snap/bin/chromium",
+    "/usr/local/bin/google-chrome",
+    // snap الداخلي (يتجاوز wrapper)
+    "/snap/chromium/current/usr/lib/chromium-browser/chromium-browser",
+    "/snap/chromium/current/usr/lib/chromium/chromium",
+    "/usr/bin/chromium",
+    // snap wrapper — أقل أولوية (قد يفشل مع --no-sandbox)
+    "/usr/bin/chromium-browser",
   ].filter(Boolean);
   for (const p of candidates) {
     try {
@@ -103,9 +108,7 @@ function findChromium() {
       return p;
     } catch {}
   }
-  // آخر محاولة: which
-  try { return execSync("which chromium-browser || which chromium || which google-chrome", { encoding: "utf8" }).trim(); } catch {}
-  return null;
+  return null; // استخدم Puppeteer المدمج
 }
 
 const CHROMIUM_PATH = findChromium();
