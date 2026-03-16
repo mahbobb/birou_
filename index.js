@@ -67,7 +67,7 @@ function isDuplicate(contactId, message) {
 
 // ─── Multi-client setup ────────────────────────────────────────────────────
 
-const BOT_IDS = ["bot1"];
+const BOT_IDS = ["bot1", "bot2", "bot3"];
 
 const bots = new Map(BOT_IDS.map(id => [id, {
   client:       null,
@@ -95,9 +95,11 @@ function setupClient(botId) {
       args: [
         "--no-sandbox", "--disable-setuid-sandbox",
         "--disable-dev-shm-usage", "--disable-gpu",
-        "--no-first-run", "--no-zygote", "--single-process",
+        "--no-first-run", "--no-zygote",
         "--disable-extensions", "--disable-default-apps",
         "--disable-background-networking",
+        "--disable-features=TranslateUI",
+        "--memory-pressure-off",
       ],
     },
   });
@@ -149,13 +151,28 @@ function setupClient(botId) {
 
   c.on("disconnected", (reason) => {
     bot.botConnected = false;
+    bot.latestQr = null;
     console.log(`\n🔴 [${botId}] انقطع الاتصال:`, reason);
+    // إعادة التشغيل تلقائياً بعد 15 ثانية
+    setTimeout(() => {
+      console.log(`\n🔄 [${botId}] إعادة تشغيل تلقائية...`);
+      try { c.destroy().catch(() => {}); } catch {}
+      setupClient(botId);
+    }, 15000);
   });
 
   c.on("message", msg => handleIncoming(msg, botId));
   c.on("message_create", msg => handleOutgoing(msg, botId));
 
-  c.initialize();
+  c.initialize().catch((err) => {
+    console.error(`\n❌ [${botId}] فشل التهيئة:`, err.message || err);
+    // إعادة المحاولة بعد 20 ثانية
+    setTimeout(() => {
+      console.log(`\n🔄 [${botId}] إعادة محاولة التهيئة...`);
+      try { c.destroy().catch(() => {}); } catch {}
+      setupClient(botId);
+    }, 20000);
+  });
 }
 
 // ─── معالجة الرسائل الواردة ────────────────────────────────────────────────
@@ -203,6 +220,7 @@ async function handleIncoming(message, botId) {
         const imgUrl  = imgFile ? `/uploads/images/${imgFile}` : "📷 صورة";
         await saveMessage(senderNumber, name, "in", imgUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: imgUrl, source: "user", created_at: new Date().toISOString() });
+        if (imgFile) io.emit("new_media", { type: "image", phone: key, name, url: imgUrl });
         if (autoReplyEnabled) {
           const imgReply = "📸 وصلتنا صورتك، شكرا! إذا عندك أي سؤال على الشقق كلمنا على 0680040002 😊";
           await botReply(message, imgReply, botId);
@@ -219,6 +237,7 @@ async function handleIncoming(message, botId) {
         const voiceUrl  = voiceFile ? `/uploads/voices/${voiceFile}` : "🎤 رسالة صوتية";
         await saveMessage(senderNumber, name, "in", voiceUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: voiceUrl, source: "user", created_at: new Date().toISOString() });
+        if (voiceFile) io.emit("new_media", { type: "voice", phone: key, name, url: voiceUrl });
         if (autoReplyEnabled) {
           const audioReply = "🎤 وصلتنا رسالتك الصوتية! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
           await botReply(message, audioReply, botId);
@@ -235,6 +254,7 @@ async function handleIncoming(message, botId) {
         const videoUrl  = videoFile ? `/uploads/videos/${videoFile}` : "🎬 فيديو";
         await saveMessage(senderNumber, name, "in", videoUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: videoUrl, source: "user", created_at: new Date().toISOString() });
+        if (videoFile) io.emit("new_media", { type: "video", phone: key, name, url: videoUrl });
         if (autoReplyEnabled) {
           const videoReply = "🎬 وصلنا الفيديو ديالك، شكرا! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
           await botReply(message, videoReply, botId);
@@ -698,6 +718,34 @@ app.get("/api/qr", (_req, res) => {
   res.json(result);
 });
 
+app.post("/api/restart-bot/:id", async (req, res) => {
+  const botId = req.params.id;
+  if (!bots.has(botId)) return res.status(404).json({ error: "بوت غير موجود" });
+  try {
+    const bot = bots.get(botId);
+    // أوقف الكلاينت القديم
+    if (bot.client) {
+      try { await bot.client.destroy(); } catch {}
+    }
+    // احذف الجلسة حتى يظهر QR جديد
+    const sessionPath = path.join(__dirname, "sessions", botId);
+    if (fs.existsSync(sessionPath)) {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+    }
+    // أعد تعيين الحالة
+    bot.client       = null;
+    bot.latestQr     = null;
+    bot.botConnected = false;
+    bot.botPhone     = "";
+    bot.botMsgIds    = new Set();
+    // شغّل من جديد
+    setupClient(botId);
+    res.json({ ok: true, message: `تم إعادة تشغيل ${botId}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/contacts", async (_req, res) => {
   const list = await getAllContacts();
   res.json(list);
@@ -844,6 +892,15 @@ app.get("/api/messages", async (req, res) => {
   const { phone, limit = 100, offset = 0 } = req.query;
   const list = await getMessages({ phone, limit: parseInt(limit), offset: parseInt(offset) });
   res.json(list);
+});
+
+app.delete("/api/messages/:id", async (req, res) => {
+  const { id } = req.params;
+  const numId = Number(id);
+  if (!id || isNaN(numId) || numId <= 0) return res.status(400).json({ error: "id غير صالح" });
+  const [r] = await pool.query("DELETE FROM messages WHERE id = ?", [numId]);
+  if (r.affectedRows === 0) return res.status(404).json({ error: "الرسالة غير موجودة" });
+  res.json({ ok: true });
 });
 
 // ── جلب كل المحادثات من جميع البوتات المتصلة (للشريط الجانبي) ────────────
@@ -1346,6 +1403,64 @@ app.post("/api/videos/upload", async (req, res) => {
   }
 });
 
+// ─── الملاحظات ────────────────────────────────────────────────────────────
+
+const NOTES_FILE  = path.join(__dirname, "notes.json");
+const NOTES_DIR   = path.join(__dirname, "public", "uploads", "notes");
+if (!fs.existsSync(NOTES_DIR)) fs.mkdirSync(NOTES_DIR, { recursive: true });
+
+function readNotes() {
+  try { return JSON.parse(fs.readFileSync(NOTES_FILE, "utf8")); }
+  catch { return []; }
+}
+function writeNotes(notes) {
+  fs.writeFileSync(NOTES_FILE, JSON.stringify(notes, null, 2));
+}
+
+app.get("/api/notes", (_req, res) => {
+  res.json(readNotes());
+});
+
+app.post("/api/notes", (req, res) => {
+  const { title, text, images = [] } = req.body;
+  const note = { id: Date.now().toString(), title: title || "", text: text || "", images, createdAt: new Date().toISOString() };
+  const notes = readNotes();
+  notes.unshift(note);
+  writeNotes(notes);
+  res.json({ ok: true, note });
+});
+
+app.delete("/api/notes/:id", (req, res) => {
+  const notes = readNotes();
+  const idx   = notes.findIndex(n => n.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "غير موجود" });
+  // حذف صور الملاحظة
+  (notes[idx].images || []).forEach(url => {
+    try { fs.unlinkSync(path.join(__dirname, "public", url)); } catch {}
+  });
+  notes.splice(idx, 1);
+  writeNotes(notes);
+  res.json({ ok: true });
+});
+
+app.post("/api/notes/upload-image", (req, res) => {
+  const { data, mimetype } = req.body;
+  if (!data || !mimetype) return res.status(400).json({ error: "data و mimetype مطلوبين" });
+  try {
+    const ext      = mimetype.split("/")[1]?.split(";")[0] || "jpg";
+    const filename = `${Date.now()}_note.${ext}`;
+    const filepath = path.join(NOTES_DIR, filename);
+    fs.writeFileSync(filepath, Buffer.from(data, "base64"));
+    res.json({ ok: true, url: `/uploads/notes/${filename}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/notes", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "notes.html"));
+});
+
 // Dashboard HTML
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
@@ -1379,4 +1494,11 @@ process.on("SIGINT", async () => {
 // ─── تشغيل ────────────────────────────────────────────────────────────────
 
 console.log(`🚀 تشغيل بوت واتساب IA (${AI_PROVIDER}) — 3 أرقام...`);
-for (const id of BOT_IDS) setupClient(id);
+// تشغيل البوتات بتأخير 12 ثانية بين كل واحد — يمنع تعارض Chrome instances
+BOT_IDS.forEach((id, i) => {
+  if (i === 0) { setupClient(id); return; }
+  setTimeout(() => {
+    console.log(`\n⏱️  [${id}] بدء التشغيل (تأخير ${i * 20}ث)...`);
+    setupClient(id);
+  }, i * 20000);
+});

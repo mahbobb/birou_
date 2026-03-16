@@ -1,10 +1,29 @@
+# Dependencies
 node_modules/
+
+# WhatsApp sessions (sensitive)
 sessions/
 session/
-data/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Uploads (large files)
+public/uploads/
+
+# Environment (sensitive)
 .env
+
+# Logs
 *.log
+logs/
+
+# Build / temp
+data/
 .cache/
 dist/
 coverage/
 *.zip
+
+# OS
+.DS_Store
+Thumbs.db

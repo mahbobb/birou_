@@ -87,6 +87,12 @@ function updateBadges() {
   // أحمر إذا يوجد محادثات تنتظر رد
   const badge = document.getElementById("badgeUnread");
   badge.style.background = unread > 0 ? "#e53935" : "";
+  // ln-badge في الشريط الجانبي الأيسر
+  const ln = document.getElementById("lnBadge");
+  if (ln) {
+    ln.textContent = unread > 0 ? (unread > 99 ? "99+" : unread) : "";
+    ln.style.display = unread > 0 ? "flex" : "none";
+  }
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -94,6 +100,9 @@ function setTab(tab) {
   activeTab = tab;
   document.getElementById("tabAll").classList.toggle("active",    tab === "all");
   document.getElementById("tabUnread").classList.toggle("active", tab === "unread");
+  // تحديث الـ wf-tab class (نفس الـ IDs)
+  document.getElementById("tabAll").classList.toggle("wf-tab",    true);
+  document.getElementById("tabUnread").classList.toggle("wf-tab", true);
   applyFilter();
 }
 

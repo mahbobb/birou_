@@ -5,194 +5,252 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة الردود — واتساب بوت</title>
   <style>
+    :root {
+      --green: #25d366; --teal: #128c7e; --dark: #075e54;
+      --red: #e53935; --bg: #f0f2f5; --card: #ffffff;
+      --border: #e8edf2; --text: #1a1a2e; --muted: #8696a0;
+      --sidebar-w: 230px;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; display: flex; min-height: 100vh; }
 
-    header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    /* ════ SIDEBAR ════ */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh;
+      background: linear-gradient(180deg, var(--dark) 0%, #063d36 100%);
+      display: flex; flex-direction: column;
+      position: fixed; right: 0; top: 0; bottom: 0; z-index: 40;
+      box-shadow: -3px 0 16px rgba(0,0,0,0.18);
     }
-    header h1 { font-size: 1.3rem; }
-    .nav-links a {
-      color: white; text-decoration: none; margin-right: 12px;
-      font-size: 0.88rem; padding: 6px 12px;
-      border-radius: 8px; transition: background 0.2s;
+    .sb-brand { padding: 22px 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-row { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 40px; height: 40px; background: var(--green); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .sb-brand h2 { color: white; font-size: 1rem; font-weight: 700; }
+    .sb-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .sb-section { font-size: 0.68rem; color: rgba(255,255,255,0.35); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px 4px; }
+    .sb-link {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: 10px; text-decoration: none; color: rgba(255,255,255,0.7);
+      font-size: 0.88rem; transition: all 0.18s; cursor: pointer;
+      border: none; background: none; width: 100%; text-align: right; margin-bottom: 2px;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .sb-link:hover { background: rgba(255,255,255,0.1); color: white; }
+    .sb-link.active { background: rgba(37,211,102,0.2); color: var(--green); font-weight: 600; }
+    .sb-link .ico { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .sb-bottom { padding: 12px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .sb-logout {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-radius: 10px; background: rgba(229,57,53,0.15); color: #ef9a9a;
+      text-decoration: none; font-size: 0.83rem; transition: all 0.18s; cursor: pointer;
+      border: none; width: 100%; text-align: right;
+    }
+    .sb-logout:hover { background: rgba(229,57,53,0.3); }
 
-    .container { padding: 24px; max-width: 900px; margin: 0 auto; }
+    /* ════ SIDEBAR OVERLAY ════ */
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 39; }
+    .sidebar-overlay.open { display: block; }
 
-    /* ── بطاقة الفورم ── */
+    /* ════ MAIN ════ */
+    .main { margin-right: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar {
+      background: white; border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 58px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 30; box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+    .topbar-title { font-size: 1.05rem; font-weight: 700; }
+    .menu-btn { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; border: none; border-radius: 10px; background: var(--bg); cursor: pointer; font-size: 1.2rem; margin-left: 8px; }
+    .content { padding: 24px 28px; max-width: 920px; width: 100%; }
+
+    /* ════ CARDS ════ */
     .card {
-      background: white; border-radius: 14px;
-      padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      margin-bottom: 24px;
+      background: var(--card); border-radius: 14px; padding: 22px 24px;
+      border: 1px solid var(--border); box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
     }
-    .card h2 { font-size: 1.1rem; color: #075e54; margin-bottom: 18px; }
+    .card h2 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
+    /* ════ FORM ════ */
     .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; font-weight: 600; }
-    .form-group input, .form-group textarea {
-      width: 100%; padding: 10px 14px;
-      border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.9rem; outline: none; direction: rtl;
-      font-family: inherit;
+    .form-group label { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+    .form-input, .form-textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.9rem; outline: none; direction: rtl;
+      font-family: inherit; background: #fafafa; transition: border-color 0.2s;
     }
-    .form-group input:focus, .form-group textarea:focus { border-color: #128c7e; }
-    .form-group textarea { min-height: 90px; resize: vertical; }
-    .form-hint { font-size: 0.78rem; color: #999; margin-top: 4px; }
+    .form-input:focus, .form-textarea:focus { border-color: var(--teal); background: white; }
+    .form-textarea { min-height: 88px; resize: vertical; }
+    .form-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
 
     .btn {
       padding: 9px 20px; border: none; border-radius: 10px;
-      cursor: pointer; font-size: 0.9rem; font-weight: 600;
-      transition: opacity 0.2s;
+      cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.18s;
+      display: inline-flex; align-items: center; gap: 5px;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-green  { background: #25d366; color: white; }
-    .btn-red    { background: #e74c3c; color: white; padding: 5px 12px; font-size: 0.8rem; border-radius: 8px; }
-    .btn-reset  { background: #eee; color: #555; }
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-green { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
+    .btn-teal  { background: var(--teal);  color: white; }
+    .btn-reset { background: #f0f2f5; color: #555; }
+    .btn-sm-red { padding: 5px 11px; border: none; border-radius: 7px; cursor: pointer; font-size: 0.76rem; font-weight: 600; background: #ffebee; color: var(--red); transition: all 0.18s; }
+    .btn-sm-red:hover { background: #ffcdd2; }
 
-    .form-actions { display: flex; gap: 10px; margin-top: 6px; }
+    /* ════ RESPONSES LIST ════ */
+    .list-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+    .list-toolbar h2 { font-size: 1rem; font-weight: 700; color: var(--dark); display: flex; align-items: center; gap: 8px; }
+    .count-badge { background: var(--dark); color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; }
+    .search-box {
+      padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: 0.85rem; outline: none; direction: rtl; min-width: 220px;
+      background: var(--card); transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: var(--teal); }
 
-    /* ── قائمة الردود ── */
     .response-item {
-      background: white; border-radius: 12px;
-      padding: 16px 18px; margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      background: var(--card); border-radius: 12px; padding: 16px 18px;
+      margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
       display: flex; align-items: flex-start; gap: 14px;
+      transition: box-shadow 0.15s;
     }
+    .response-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.09); }
+    .response-num { font-size: 0.72rem; color: var(--muted); font-weight: 700; min-width: 22px; padding-top: 2px; }
     .response-body { flex: 1; }
     .response-reply {
-      font-size: 0.92rem; color: #1a1a2e; margin-bottom: 8px;
-      background: #f5f5f5; padding: 8px 12px; border-radius: 8px;
-      border-right: 3px solid #25d366;
+      font-size: 0.88rem; color: var(--text); margin-bottom: 10px;
+      background: #f8fdf9; padding: 9px 13px; border-radius: 8px;
+      border-right: 3px solid var(--green); line-height: 1.55; word-break: break-word;
     }
-    .response-keywords {
-      display: flex; flex-wrap: wrap; gap: 6px;
-    }
-    .kw-tag {
-      background: #e3f2fd; color: #1565c0;
-      padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
-    }
-    .voice-tag {
-      background: #f3e5f5; color: #6a1b9a;
-      padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
-    }
-    .response-actions { display: flex; align-items: center; }
+    .response-keywords { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .kw-tag { background: #e3f2fd; color: #1565c0; padding: 2px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
+    .voice-tag { background: #f3e5f5; color: #6a1b9a; padding: 2px 10px; border-radius: 20px; font-size: 0.76rem; }
+    .response-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 
-    .empty { text-align: center; padding: 40px; color: #aaa; }
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); font-size: 0.9rem; }
+    .empty .empty-ico { font-size: 3rem; margin-bottom: 10px; }
 
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
-    }
-    #toast.show { opacity: 1; }
+    /* ════ TOAST ════ */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .count-badge {
-      background: #075e54; color: white;
-      padding: 2px 10px; border-radius: 20px; font-size: 0.8rem;
-      margin-right: 8px;
-    }
-
-    /* ── Responsive ── */
+    /* ════ RESPONSIVE ════ */
     @media (max-width: 768px) {
-      header {
-        flex-direction: column; align-items: flex-start;
-        gap: 10px; padding: 12px 16px; flex-wrap: wrap;
-      }
-      .nav-links { display: flex; flex-wrap: wrap; gap: 4px; }
-      .nav-links a { font-size: 0.78rem; padding: 4px 8px; margin-right: 0; }
-      .container { padding: 16px; }
-      .card { padding: 20px; }
-      /* iOS: prevent zoom on input focus */
-      .form-group input,
-      .form-group textarea { font-size: 16px; }
-      .form-actions { flex-wrap: wrap; }
-      .form-actions .btn { flex: 1; min-width: 120px; text-align: center; }
+      :root { --sidebar-w: 60px; }
+      .sb-brand h2, .sb-link span, .sb-section { display: none; }
+      .sb-link { justify-content: center; padding: 10px; }
+      .sb-logout span:last-child { display: none; }
+      .sb-logout { justify-content: center; }
+      .main { margin-right: 60px; }
+      .content { padding: 14px; }
+      .topbar { padding: 0 14px; }
       .response-item { flex-direction: column; gap: 10px; }
-      .response-actions { align-self: flex-end; }
+      .response-actions { flex-direction: row; align-self: flex-end; }
     }
     @media (max-width: 480px) {
-      header { padding: 10px 12px; }
-      .nav-links a { font-size: 0.7rem; padding: 3px 6px; }
-      .container { padding: 10px 12px; }
-      .card { padding: 14px; }
-      .form-group input,
-      .form-group textarea { font-size: 16px; padding: 10px 12px; }
-      .form-actions .btn { width: 100%; }
-      .response-reply { font-size: 0.85rem; }
+      .sidebar { width: 230px !important; transform: translateX(100%); transition: transform 0.25s ease; }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .sb-brand h2, .sb-link span, .sb-section { display: block; }
+      .sb-link { justify-content: flex-start; padding: 9px 12px; }
+      .sb-logout span:last-child { display: inline; }
+      .sb-logout { justify-content: flex-start; }
+      .main { margin-right: 0; }
+      .menu-btn { display: flex; }
+      .content { padding: 10px; }
+      .topbar { padding: 0 10px; }
+      .form-input, .form-textarea { font-size: 16px; }
+      .form-actions .btn { flex: 1; justify-content: center; }
+      .search-box { min-width: 0; width: 100%; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>📋 إدارة الردود المبرمجة</h1>
-  <nav class="nav-links">
-    <a href="/">🏠 الرئيسية</a>
-    <a href="/messages">💬 الرسائل</a>
-    <a href="/responses" class="active">📋 الردود</a>
-    <a href="/qr">📲 QR Code</a>
-    <a href="/sync">🔄 المزامنة</a>
-    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="mainSidebar">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="brand-icon">🤖</div>
+      <div><h2>واتساب بوت</h2></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">الرئيسية</div>
+    <a class="sb-link" href="/"><span class="ico">📊</span><span>لوحة التحكم</span></a>
+    <div class="sb-section">التواصل</div>
+    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات</span></a>
+    <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
+    <a class="sb-link active" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
+    <div class="sb-section">الوسائط</div>
+    <a class="sb-link" href="/images"><span class="ico">📸</span><span>الصور</span></a>
+    <a class="sb-link" href="/voices"><span class="ico">🎤</span><span>الصوتيات</span></a>
+    <a class="sb-link" href="/videos"><span class="ico">🎬</span><span>الفيديوهات</span></a>
+    <div class="sb-section">الإعدادات</div>
+    <a class="sb-link" href="/notes"><span class="ico">📝</span><span>الملاحظات</span></a>
+    <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
+    <a class="sb-link" href="/sync"><span class="ico">🔄</span><span>المزامنة</span></a>
   </nav>
-</header>
+  <div class="sb-bottom">
+    <button class="sb-logout" onclick="doLogout()">
+      <span>🚪</span><span>خروج</span>
+    </button>
+  </div>
+</aside>
 
-<div class="container">
-
-  <!-- الرد الافتراضي -->
-  <div class="card">
-    <h2>💬 الرد الافتراضي (عند عدم وجود كلمة مفتاحية)</h2>
-    <div class="form-group">
-      <textarea id="fDefaultReply" placeholder="اكتب الرد الافتراضي هنا..." style="min-height:70px"></textarea>
-      <div class="form-hint">يُرسل هذا الرد عندما لا تطابق أي رسالة الكلمات المفتاحية</div>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-green" onclick="saveDefaultReply()">💾 حفظ الرد الافتراضي</button>
-    </div>
+<div class="main">
+  <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title">📋 إدارة الردود المبرمجة</div>
+    <div></div>
   </div>
 
-  <!-- فورم الإضافة -->
-  <div class="card">
-    <h2>➕ إضافة رد جديد</h2>
+  <div class="content">
 
-    <div class="form-group">
-      <label>الكلمات المفتاحية *</label>
-      <input type="text" id="fKeywords" placeholder="سلام, hello, مرحبا, bonjour">
-      <div class="form-hint">افصل بين الكلمات بفاصلة — البوت يجاوب إذا وجد أي كلمة منها</div>
+    <!-- الرد الافتراضي -->
+    <div class="card">
+      <h2>💬 الرد الافتراضي</h2>
+      <div class="form-group">
+        <label>يُرسل هذا الرد عندما لا تطابق أي رسالة الكلمات المفتاحية</label>
+        <textarea class="form-textarea" id="fDefaultReply" placeholder="اكتب الرد الافتراضي هنا..." style="min-height:72px"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-green" onclick="saveDefaultReply()">💾 حفظ الرد الافتراضي</button>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>نص الرد *</label>
-      <textarea id="fReply" placeholder="اكتب الرد هنا..."></textarea>
+    <!-- فورم الإضافة -->
+    <div class="card">
+      <h2>➕ إضافة رد جديد</h2>
+      <div class="form-group">
+        <label>الكلمات المفتاحية *</label>
+        <input class="form-input" type="text" id="fKeywords" placeholder="سلام, hello, مرحبا, bonjour">
+        <div class="form-hint">افصل بين الكلمات بفاصلة — البوت يجاوب إذا وجد أي كلمة منها</div>
+      </div>
+      <div class="form-group">
+        <label>نص الرد *</label>
+        <textarea class="form-textarea" id="fReply" placeholder="اكتب الرد هنا..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>ملف صوتي (اختياري)</label>
+        <input class="form-input" type="text" id="fVoice" placeholder="salam.ogg">
+        <div class="form-hint">اسم الملف فقط — يجب أن يكون موجوداً في مجلد voice/</div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-green" onclick="addResponse()">✅ حفظ الرد</button>
+        <button class="btn btn-reset" onclick="resetForm()">🗑 مسح</button>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label>ملف صوتي (اختياري)</label>
-      <input type="text" id="fVoice" placeholder="salam.ogg">
-      <div class="form-hint">اسم الملف فقط — يجب أن يكون موجوداً في مجلد voice/</div>
+    <!-- قائمة الردود -->
+    <div class="list-toolbar">
+      <h2>الردود المبرمجة <span class="count-badge" id="countBadge">0</span></h2>
+      <input class="search-box" type="text" id="searchInput" placeholder="🔍 ابحث في الردود..." oninput="renderList()">
     </div>
 
-    <div class="form-actions">
-      <button class="btn btn-green" onclick="addResponse()">✅ حفظ الرد</button>
-      <button class="btn btn-reset" onclick="resetForm()">🗑 مسح</button>
+    <div id="responsesList">
+      <div class="empty"><div class="empty-ico">⏳</div><p>جاري التحميل...</p></div>
     </div>
+
   </div>
-
-  <!-- قائمة الردود -->
-  <div style="display:flex;align-items:center;margin-bottom:12px;">
-    <h2 style="font-size:1.05rem;color:#075e54;">الردود المبرمجة</h2>
-    <span class="count-badge" id="countBadge">0</span>
-  </div>
-
-  <div id="responsesList">
-    <div class="empty">جاري التحميل...</div>
-  </div>
-
 </div>
 
 <div id="toast"></div>
@@ -200,107 +258,134 @@
 <script>
   let allResponses = [];
 
+  function escHtml(s) {
+    return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  /* ── Load ── */
   async function loadResponses() {
     try {
-      const res  = await fetch("/api/responses");
-      const data = await res.json();
-      allResponses = Array.isArray(data) ? data : (data.responses || []);
-      const defaultReply = data.defaultReply || "";
+      const data = await fetch("/api/responses").then(r => r.json());
+      allResponses = data.responses || [];
       document.getElementById("countBadge").textContent = allResponses.length;
-      if (defaultReply) document.getElementById("fDefaultReply").value = defaultReply;
+      const dr = data.defaultReply || "";
+      if (dr) document.getElementById("fDefaultReply").value = dr;
       renderList();
     } catch { showToast("❌ خطأ في تحميل الردود"); }
   }
 
+  /* ── Render ── */
   function renderList() {
+    const q = (document.getElementById("searchInput").value || "").toLowerCase();
     const container = document.getElementById("responsesList");
+
+    let list = allResponses.map((r, i) => ({ ...r, _idx: i }));
+    if (q) list = list.filter(r =>
+      (Array.isArray(r.keywords) ? r.keywords : []).some(k => k.toLowerCase().includes(q)) ||
+      String(r.reply || "").toLowerCase().includes(q)
+    );
+
+    document.getElementById("countBadge").textContent = allResponses.length;
+
     if (!allResponses.length) {
-      container.innerHTML = `<div class="empty">لا توجد ردود مبرمجة بعد</div>`;
+      container.innerHTML = `<div class="empty"><div class="empty-ico">📭</div><p>لا توجد ردود مبرمجة بعد — أضف أول رد!</p></div>`;
       return;
     }
-    container.innerHTML = allResponses.map((r, i) => {
+    if (!list.length) {
+      container.innerHTML = `<div class="empty"><div class="empty-ico">🔍</div><p>لا توجد نتائج للبحث</p></div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(r => {
+      const i = r._idx;
       const replyText = Array.isArray(r.reply) ? r.reply.join(" / ") : (r.reply || "");
-      const kws = r.keywords.map(k => `<span class="kw-tag">${k}</span>`).join("");
-      const voice = r.voice ? `<span class="voice-tag">🎤 ${r.voice}</span>` : "";
+      const kws   = (r.keywords || []).map(k => `<span class="kw-tag">${escHtml(k)}</span>`).join("");
+      const voice = r.voice ? `<span class="voice-tag">🎤 ${escHtml(r.voice)}</span>` : "";
       return `
         <div class="response-item">
+          <div class="response-num">#${i + 1}</div>
           <div class="response-body">
-            <div class="response-reply">${replyText}</div>
+            <div class="response-reply">${escHtml(replyText)}</div>
             <div class="response-keywords">${kws} ${voice}</div>
           </div>
           <div class="response-actions">
-            <button class="btn btn-red" onclick="deleteResponse(${i})">🗑 حذف</button>
+            <button class="btn-sm-red" onclick="deleteResponse(${i})">🗑 حذف</button>
           </div>
         </div>`;
     }).join("");
   }
 
+  /* ── Save default ── */
   async function saveDefaultReply() {
     const defaultReply = document.getElementById("fDefaultReply").value.trim();
     if (!defaultReply) return showToast("⚠️ اكتب الرد الافتراضي أولاً");
     try {
-      const res  = await fetch("/api/responses/default", {
+      const d = await fetch("/api/responses/default", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ defaultReply }),
-      });
-      const data = await res.json();
-      if (data.ok) showToast("✅ تم حفظ الرد الافتراضي");
-      else showToast("❌ " + (data.error || "خطأ"));
+      }).then(r => r.json());
+      d.ok ? showToast("✅ تم حفظ الرد الافتراضي") : showToast("❌ " + (d.error || "خطأ"));
     } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
   }
 
+  /* ── Add response ── */
   async function addResponse() {
     const keywords = document.getElementById("fKeywords").value.trim();
     const reply    = document.getElementById("fReply").value.trim();
     const voice    = document.getElementById("fVoice").value.trim();
-
-    if (!keywords || !reply) return showToast("⚠️ الكلمات المفتاحية والرد مطلوبين");
-
+    if (!keywords) return showToast("⚠️ أدخل كلمة مفتاحية واحدة على الأقل");
+    if (!reply)    return showToast("⚠️ اكتب نص الرد");
     try {
       const body = { keywords, reply };
       if (voice) body.voice = voice;
-
-      const res  = await fetch("/api/responses", {
+      const d = await fetch("/api/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        showToast("✅ تم حفظ الرد بنجاح");
-        resetForm();
-        loadResponses();
-      } else {
-        showToast("❌ " + (data.error || "خطأ"));
-      }
+      }).then(r => r.json());
+      if (d.ok) { showToast("✅ تم حفظ الرد"); resetForm(); loadResponses(); }
+      else showToast("❌ " + (d.error || "خطأ"));
     } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
   }
 
+  /* ── Delete ── */
   async function deleteResponse(index) {
     if (!confirm("هل تريد حذف هذا الرد؟")) return;
     try {
-      const res  = await fetch(`/api/responses/${index}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.ok) {
-        showToast("🗑 تم الحذف");
-        loadResponses();
-      } else {
-        showToast("❌ " + (data.error || "خطأ في الحذف"));
-      }
+      const d = await fetch(`/api/responses/${index}`, { method: "DELETE" }).then(r => r.json());
+      if (d.ok) { showToast("🗑 تم الحذف"); loadResponses(); }
+      else showToast("❌ " + (d.error || "خطأ في الحذف"));
     } catch { showToast("❌ فشل الاتصال بالسيرفر"); }
   }
 
+  /* ── Reset form ── */
   function resetForm() {
     document.getElementById("fKeywords").value = "";
     document.getElementById("fReply").value    = "";
     document.getElementById("fVoice").value    = "";
   }
 
+  /* ── Toast ── */
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  /* ── Logout ── */
+  function doLogout() {
+    fetch('/api/logout', { method: 'POST' }).then(() => { location.href = '/login'; });
+  }
+
+  /* ── Mobile sidebar ── */
+  function toggleSidebar() {
+    document.getElementById("mainSidebar").classList.toggle("mobile-open");
+    document.getElementById("sidebarOverlay").classList.toggle("open");
+  }
+  function closeSidebar() {
+    document.getElementById("mainSidebar").classList.remove("mobile-open");
+    document.getElementById("sidebarOverlay").classList.remove("open");
   }
 
   loadResponses();

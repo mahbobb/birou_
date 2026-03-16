@@ -324,33 +324,101 @@ sendText()
 // AUTO RESIZE TEXTAREA
 // ─────────────────────────────────────────
 function autoResize(el){
-
-el.style.height="auto"
-el.style.height=Math.min(el.scrollHeight,120)+"px"
-
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 130) + "px";
+  // إظهار زر الإرسال أو الميكروفون حسب وجود نص
+  const sendBtn = document.getElementById("sendTextBtn");
+  const micBtn  = document.getElementById("micBtn");
+  if (!sendBtn || !micBtn) return;
+  const hasText = el.value.trim().length > 0;
+  sendBtn.style.display = hasText ? "flex" : "none";
+  micBtn.style.display  = hasText ? "none" : "flex";
 }
+
+// ─────────────────────────────────────────
+// EMOJI PICKER
+// ─────────────────────────────────────────
+const EP_CATS = [
+  ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠"],
+  ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☯️","🕉️","☪️","🔯","✡️","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓","🆔","⚛️","🉑","☢️","☣️","📴","📳","🈶","🈚","🈸","🈺","🈷️","✴️","🆚","💮","🉐","㊙️","㊗️","🈴","🈵","🈹","🈲","🅰️","🅱️","🆎","🆑","🅾️","🆘","❌","⭕","🛑","⛔"],
+  ["👋","🤚","🖐️","✋","🖖","👌","🤌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦾","🦿","🦵","🦶","👂","🦻","👃","🫀","🫁","🧠","🦷","🦴","👀","👁️","👅","👄","💋","🫦","🧑","👱","👩","👨","🧔","👴","👵","🧓","👶","🍼","🎅","🤶","🧑‍🎄"],
+  ["🏠","🏡","🏢","🏣","🏤","🏥","🏦","🏨","🏩","🏪","🏫","🏬","🏭","🏯","🏰","💒","🗼","🗽","⛪","🕌","🛕","🕍","⛩️","🕋","⛲","⛺","🌁","🌃","🏙️","🌄","🌅","🌆","🌇","🌉","♨️","🌌","🌠","🎇","🎆","🌈","🏔️","⛰️","🌋","🗻","🏕️","🏖️","🏜️","🏝️","🏞️","🏟️","🏛️","🏗️","🧱","⛽","🛞","🚨","🚥","🚦","🛑","🚧","⚓","🛟","⛵","🚤","🛥️","🛳️","⛴️","🚢","✈️","🛩️","🛫","🛬","🪂","💺"],
+  ["🌍","🌎","🌏","🌐","🗺️","🧭","🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘","🌙","🌚","🌛","🌜","🌝","🌞","🪐","⭐","🌟","💫","✨","☄️","🌤️","⛅","🌥️","☁️","🌦️","🌧️","⛈️","🌩️","🌨️","❄️","☃️","⛄","🌬️","💨","🌀","🌈","🌂","☂️","☔","⛱️","⚡","🌱","🌿","☘️","🍀","🎋","🎍","🍃","🍂","🍁","🌾","🌺","🌸","🌼","🌻","🌞","🌹","🥀","🌷","💐","🍄","🌰","🦔","🐾","🌵","🎄"],
+];
+
+let epCatIdx = 0;
+
+function showEpCat(i) {
+  epCatIdx = i;
+  document.querySelectorAll(".ep-tab").forEach((t, j) => t.classList.toggle("active", j === i));
+  const grid = document.getElementById("epGrid");
+  grid.innerHTML = EP_CATS[i].map(e =>
+    `<button class="ep-emoji" onclick="insertEmoji('${e}')">${e}</button>`
+  ).join("");
+}
+
+function toggleEmojiPicker(btn) {
+  const picker = document.getElementById("emojiPicker");
+  const isOpen = picker.classList.contains("open");
+  picker.classList.toggle("open", !isOpen);
+  if (!isOpen) {
+    showEpCat(epCatIdx);
+    // ضع البانيل فوق زر الإيموجي
+    const rect = btn.getBoundingClientRect();
+    picker.style.bottom = (window.innerHeight - rect.top + 6) + "px";
+    picker.style.right  = (window.innerWidth - rect.right - 40) + "px";
+  }
+}
+
+function insertEmoji(e) {
+  const ta = document.getElementById("msgInput");
+  if (!ta) return;
+  const s = ta.selectionStart ?? ta.value.length;
+  const end = ta.selectionEnd ?? s;
+  ta.value = ta.value.slice(0, s) + e + ta.value.slice(end);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = s + e.length;
+  autoResize(ta);
+}
+
+// أغلق البانيل عند الضغط خارجه
+document.addEventListener("click", e => {
+  if (!e.target.closest("#emojiPicker") && !e.target.closest(".wa-emoji-btn"))
+    document.getElementById("emojiPicker")?.classList.remove("open");
+});
 
 // ─────────────────────────────────────────
 // VIEW TABS
 // ─────────────────────────────────────────
-function setViewTab(tab){
+function setViewTab(tab) {
+  currentViewTab = tab;
 
-currentViewTab = tab
+  const isMsgs = tab === "msgs" || tab === "msgs-in" || tab === "msgs-out";
 
-document.querySelectorAll(".chat-tab-btn").forEach((btn,i)=>{
-btn.classList.toggle("active",["msgs","imgs","vids","auds"][i]===tab)
-})
+  document.querySelectorAll(".chat-tab-btn").forEach(btn => {
+    const onc = btn.getAttribute("onclick") || "";
+    // Use exact match: setViewTab('msgs') should not activate setViewTab('msgs-in')
+    const match = onc.match(/setViewTab\('([^']+)'\)/);
+    btn.classList.toggle("active", match ? match[1] === tab : false);
+  });
 
-document.getElementById("messagesWrap").style.display = tab==="msgs" ? "" : "none"
-document.getElementById("chatInputBar").style.display = tab==="msgs" ? "" : "none"
-document.getElementById("imgsPanel").classList.toggle("show", tab==="imgs")
-document.getElementById("vidsPanel").classList.toggle("show", tab==="vids")
-document.getElementById("audsPanel").classList.toggle("show", tab==="auds")
+  document.getElementById("messagesWrap").style.display = isMsgs ? "" : "none";
+  document.getElementById("chatInputBar").style.display = isMsgs ? "" : "none";
+  document.getElementById("imgsPanel").classList.toggle("show", tab === "imgs");
+  document.getElementById("vidsPanel").classList.toggle("show", tab === "vids");
+  document.getElementById("audsPanel").classList.toggle("show", tab === "auds");
 
-if(tab==="imgs") loadImagesPanel()
-if(tab==="vids") loadVideosPanel()
-if(tab==="auds") loadVoicesPanel()
+  // فرز الرسائل
+  if (typeof setMsgFilter === "function") {
+    if (tab === "msgs-in")  setMsgFilter("in");
+    else if (tab === "msgs-out") setMsgFilter("out");
+    else setMsgFilter("all");
+  }
 
+  if (isMsgs) { loadMessages(false); return; }
+  if (tab === "imgs") loadImagesPanel();
+  if (tab === "vids") loadVideosPanel();
+  if (tab === "auds") loadVoicesPanel();
 }
 
 // ─────────────────────────────────────────

@@ -8,41 +8,80 @@
 </head>
 <body>
 
-<!-- Top Navigation -->
-<div class="top-nav">
-  <a href="/">🏠 الرئيسية</a>
-  <span class="top-nav-sep">|</span>
-  <a href="/messages">📋 الرسائل</a>
-  <a href="/images">📸 الصور</a>
-  <a href="/voices">🎤 الصوتيات</a>
-  <a href="/videos">🎬 الفيديوهات</a>
-  <span class="top-nav-sep">|</span>
-  <a href="/chat" class="active">💬 الشات</a>
-  <a href="/qr">📲 QR</a>
-  <a href="/sync">🔄 مزامنة</a>
-  <span class="top-nav-sep">|</span>
-  <a href="#" onclick="logout()" class="logout">🚪 خروج</a>
-</div>
-
 <div class="chat-layout">
+
+  <!-- Left vertical nav (WhatsApp Web style) -->
+  <div class="left-nav">
+    <div class="ln-top">
+      <a href="/" class="ln-icon" title="الرئيسية">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </a>
+      <a href="/chat" class="ln-icon active" title="الشات">
+        <div style="position:relative">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M22 6.667C22 5.194 20.806 4 19.333 4H1.79C1.013 4 .54 4.863.94 5.53L3 9v8.333C3 18.806 4.194 20 5.667 20H19.333C20.806 20 22 18.806 22 17.333V6.667ZM7 10a1 1 0 0 1 1-1h9a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1Zm1 3a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2H8Z"/></svg>
+          <span class="ln-badge" id="lnBadge" style="display:none"></span>
+        </div>
+      </a>
+      <a href="/messages" class="ln-icon" title="الرسائل">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 4-7 4.5L5 8V6l7 4.5L19 6v2z"/></svg>
+      </a>
+      <a href="/responses" class="ln-icon" title="الردود التلقائية">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 9h-2V7h2v2zm0 8h-2v-6h2v6zm-1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+      </a>
+      <a href="/notes" class="ln-icon" title="الملاحظات">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 18h12v-2H3v2zm0-5h12v-2H3v2zm0-7v2h12V6H3zm14 9.5V16h-2v2.5l3 3 3-3V16h-2v2.5l-1 1-1-1z"/></svg>
+      </a>
+      <div class="ln-sep"></div>
+      <a href="/images" class="ln-icon" title="الصور">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      </a>
+      <a href="/voices" class="ln-icon" title="الصوتيات">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+      </a>
+      <a href="/videos" class="ln-icon" title="الفيديوهات">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m10 8 6 4-6 4V8zm11-5H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+      </a>
+    </div>
+    <div class="ln-bottom">
+      <div class="ln-sep"></div>
+      <a href="/qr" class="ln-icon" title="QR / الأجهزة">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-4 4h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm0 4h2v2h-2v-2zm-4-4h2v6h-2v-6z"/></svg>
+      </a>
+      <a href="/sync" class="ln-icon" title="مزامنة">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+      </a>
+      <a href="#" class="ln-icon ln-logout" onclick="logout()" title="خروج">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10.09 15.59 11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+      </a>
+    </div>
+  </div>
 
   <!-- ══ SIDEBAR ══ -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-top">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div class="sidebar-tabs" style="flex:1">
-          <button class="tab-btn active" id="tabAll" onclick="setTab('all')">
-            الكل <span class="tab-badge" id="badgeAll">0</span>
-          </button>
-          <button class="tab-btn" id="tabUnread" onclick="setTab('unread')">
-            للرد <span class="tab-badge" id="badgeUnread">0</span>
+      <!-- WA-style header -->
+      <div class="wa-sidebar-header">
+        <div class="wa-logo">
+          <svg viewBox="0 0 35 35" width="28" height="28" fill="#00a884"><path d="M17.5 0C7.835 0 0 7.835 0 17.5c0 3.093.811 6.001 2.232 8.528L0 35l9.197-2.41A17.457 17.457 0 0 0 17.5 35C27.165 35 35 27.165 35 17.5S27.165 0 17.5 0z"/><path d="M26.07 21.677c-.355-.178-2.1-1.036-2.424-1.154-.323-.118-.559-.178-.794.178-.236.355-.914 1.154-1.12 1.389-.206.236-.413.266-.768.089-2.071-1.036-3.43-1.848-4.79-4.191-.362-.622.362-.578.931-1.733a.652.652 0 0 0-.03-.614c-.089-.178-.794-1.912-1.087-2.615-.286-.687-.577-.591-.794-.603-.206-.012-.443-.015-.679-.015-.236 0-.62.089-.944.443-.324.355-1.238 1.21-1.238 2.95s1.267 3.42 1.443 3.657c.178.236 2.49 3.797 6.033 5.328 2.243.968 3.12 1.05 4.242.883.682-.103 2.1-.859 2.396-1.69.295-.83.295-1.543.207-1.69-.087-.158-.323-.247-.678-.425z" fill="#fff"/></svg>
+          <span>واتساب بوت</span>
+        </div>
+        <div class="wa-header-actions">
+          <button class="wa-icon-btn" title="محادثة جديدة" onclick="toggleNewChat()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9.53277 12.9911H11.5086V14.9671C11.5086 15.3999 11.7634 15.8175 12.1762 15.9488C12.8608 16.1661 13.4909 15.6613 13.4909 15.009V12.9911H15.4672C15.9005 12.9911 16.3181 12.7358 16.449 12.3226C16.6659 11.6381 16.1606 11.0089 15.5086 11.0089H13.4909V9.03332C13.4909 8.60007 13.2361 8.18252 12.8233 8.05119C12.1391 7.83391 11.5086 8.33872 11.5086 8.991V11.0089H9.49088C8.83941 11.0089 8.33411 11.6381 8.55097 12.3226C8.68144 12.7358 9.09947 12.9911 9.53277 12.9911Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0.944298 5.52617L2.99998 8.84848V17.3333C2.99998 18.8061 4.19389 20 5.66665 20H19.3333C20.8061 20 22 18.8061 22 17.3333V6.66667C22 5.19391 20.8061 4 19.3333 4H1.79468C1.01126 4 0.532088 4.85997 0.944298 5.52617ZM4.99998 8.27977V17.3333C4.99998 17.7015 5.29845 18 5.66665 18H19.3333C19.7015 18 20 17.7015 20 17.3333V6.66667C20 6.29848 19.7015 6 19.3333 6H3.58937L4.99998 8.27977Z"/></svg>
           </button>
         </div>
-        <button class="new-chat-btn" title="محادثة جديدة برقم الهاتف" onclick="toggleNewChat()">✏️</button>
       </div>
+      <!-- Search -->
       <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-box" id="searchContact" type="text" placeholder="ابحث باسم أو رقم...">
+        <span class="search-icon">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.367 4.366c1-1 2.214-1.5 3.637-1.5s2.637.5 3.634 1.497c.997.997 1.497 2.212 1.497 3.637a5.33 5.33 0 0 1-.338 1.867 5.35 5.35 0 0 1-.815 1.45l4.38 4.381a.877.877 0 0 1-1.242 1.237l-4.38-4.385a5.36 5.36 0 0 1-1.45.815A5.33 5.33 0 0 1 8.004 13.13c-1.423 0-2.637-.5-3.637-1.497C3.367 10.633 2.87 9.42 2.87 8c0-1.423.498-2.637 1.497-3.634ZM8 4.63c-.938 0-1.731.327-2.387.982C4.957 6.27 4.63 7.062 4.63 8s.327 1.731.983 2.387c.656.656 1.449.983 2.387.983s1.731-.327 2.387-.983C11.043 9.731 11.37 8.938 11.37 8s-.327-1.73-.983-2.388C9.731 4.957 8.938 4.63 8 4.63Z"/></svg>
+        </span>
+        <input class="search-box" id="searchContact" type="text" placeholder="بحث أو بدء محادثة جديدة">
+      </div>
+      <!-- Filter tabs -->
+      <div class="wa-filters">
+        <button class="wf-tab active" id="tabAll" onclick="setTab('all')">الكل <span class="tab-badge" id="badgeAll">0</span></button>
+        <button class="wf-tab" id="tabUnread" onclick="setTab('unread')">غير مقروء <span class="tab-badge" id="badgeUnread">0</span></button>
       </div>
     </div>
     <div class="new-chat-bar" id="newChatBar">
@@ -59,10 +98,44 @@
   <!-- ══ CHAT PANEL ══ -->
   <div class="chat-panel" id="chatPanel">
 
-    <!-- No chat selected -->
+    <!-- No chat selected — WhatsApp Web style -->
     <div class="chat-no-selection" id="noSelection">
-      <div class="icon">💬</div>
-      <p>اختر محادثة من القائمة</p>
+      <div class="ns-inner">
+        <div class="ns-art">
+          <svg viewBox="0 0 300 200" width="300" height="200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Laptop body -->
+            <rect x="50" y="30" width="200" height="130" rx="10" fill="#2a3942" stroke="#374045" stroke-width="2"/>
+            <rect x="58" y="38" width="184" height="108" rx="6" fill="#111b21"/>
+            <!-- Screen content — chat bubbles -->
+            <rect x="70" y="52" width="80" height="14" rx="7" fill="#005c4b" opacity="0.8"/>
+            <rect x="70" y="72" width="60" height="14" rx="7" fill="#005c4b" opacity="0.6"/>
+            <rect x="160" y="86" width="70" height="14" rx="7" fill="#202c33" opacity="0.9"/>
+            <rect x="70" y="100" width="90" height="14" rx="7" fill="#005c4b" opacity="0.7"/>
+            <rect x="155" y="116" width="75" height="14" rx="7" fill="#202c33" opacity="0.9"/>
+            <!-- Laptop base -->
+            <path d="M30 162 Q30 168 36 168 H264 Q270 168 270 162 L256 160 H44 Z" fill="#2a3942" stroke="#374045" stroke-width="1.5"/>
+            <rect x="120" y="158" width="60" height="4" rx="2" fill="#374045"/>
+            <!-- Phone (right side) -->
+            <rect x="215" y="90" width="55" height="90" rx="8" fill="#2a3942" stroke="#374045" stroke-width="1.5"/>
+            <rect x="220" y="100" width="45" height="68" rx="4" fill="#111b21"/>
+            <circle cx="242" cy="173" r="3" fill="#374045"/>
+            <!-- Phone screen bubbles -->
+            <rect x="224" y="108" width="30" height="8" rx="4" fill="#005c4b" opacity="0.7"/>
+            <rect x="228" y="120" width="22" height="8" rx="4" fill="#202c33" opacity="0.9"/>
+            <rect x="224" y="132" width="28" height="8" rx="4" fill="#005c4b" opacity="0.6"/>
+            <!-- WA icon floating -->
+            <circle cx="155" cy="155" r="16" fill="#00a884" opacity="0.15"/>
+            <circle cx="155" cy="155" r="11" fill="#00a884" opacity="0.25"/>
+            <circle cx="155" cy="155" r="6"  fill="#00a884" opacity="0.6"/>
+          </svg>
+        </div>
+        <h2 class="ns-title">ابدأ محادثة مع زبائنك</h2>
+        <p class="ns-sub">اختر محادثة من القائمة أو استخدم ✏️ لفتح محادثة جديدة</p>
+        <div class="ns-enc">
+          <svg viewBox="0 0 12 12" width="12" height="12" fill="#8696a0"><path d="M6 1a2.5 2.5 0 0 0-2.5 2.5V5H2.5A.5.5 0 0 0 2 5.5v5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-5A.5.5 0 0 0 9.5 5H8.5V3.5A2.5 2.5 0 0 0 6 1zm1.5 4H4.5V3.5a1.5 1.5 0 0 1 3 0V5z"/></svg>
+          <span>مشفر من طرف إلى طرف</span>
+        </div>
+      </div>
     </div>
 
     <!-- Chat view -->
@@ -82,7 +155,9 @@
         </div>
       </div>
       <div class="chat-tabs" id="chatTabs">
-        <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 رسائل</button>
+        <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 الكل</button>
+        <button class="chat-tab-btn" onclick="setViewTab('msgs-in')">📩 رسائل</button>
+        <button class="chat-tab-btn" onclick="setViewTab('msgs-out')">🤖 ردود</button>
         <button class="chat-tab-btn" onclick="setViewTab('imgs')">📸 صور</button>
         <button class="chat-tab-btn" onclick="setViewTab('vids')">🎬 فيديو</button>
         <button class="chat-tab-btn" onclick="setViewTab('auds')">🎤 صوت</button>
@@ -103,27 +178,48 @@
       </div>
 
       <div class="chat-input-bar" id="chatInputBar">
-        <button class="send-btn attach" id="attachBtn" title="إرسال ملفات" onclick="openMediaModal()">📎</button>
-        <textarea id="msgInput" rows="1" placeholder="اكتب رسالة..."
-          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
-        <select id="botSelect" class="bot-select" title="اختر الرقم للإرسال">
-          <option value="">🤖 تلقائي</option>
-          <option value="bot1">رقم 1</option>
-          <option value="bot2">رقم 2</option>
-          <option value="bot3">رقم 3</option>
-        </select>
-        <button class="send-btn text" id="sendTextBtn" onclick="sendText()">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
-            <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/>
-          </svg>
-        </button>
-        <button class="send-btn voice" id="micBtn" title="تسجيل صوتي" onclick="toggleInlineRecord()">🎤</button>
 
-        <div class="rec-bar" id="recBar">
-          <div class="rec-dot"></div>
-          <span class="rec-label">جاري التسجيل...</span>
-          <span class="rec-timer" id="recTimer">0:00</span>
+        <!-- زر + للإرفاق (WhatsApp Web style) -->
+        <button class="wa-input-btn" id="attachBtn" title="إرسال ملفات" onclick="openMediaModal()">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M11 13H5.5C4.948 13 4.5 12.552 4.5 12S4.948 11 5.5 11H11V5.5C11 4.948 11.448 4.5 12 4.5S13 4.948 13 5.5V11H18.5C19.052 11 19.5 11.448 19.5 12S19.052 13 18.5 13H13V18.5C13 19.052 12.552 19.5 12 19.5S11 19.052 11 18.5V13Z" fill="currentColor"/></svg>
+        </button>
+
+        <!-- منطقة النص المركزية -->
+        <div class="wa-input-center">
+          <!-- زر إيموجي -->
+          <button class="wa-emoji-btn" title="إيموجي" onclick="toggleEmojiPicker(this)">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8.5 10.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM17 8.75a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM7.35 13.25a.75.75 0 0 0-1.2.9C7.415 15.694 9.538 17 12 17s4.585-1.306 5.85-2.85a.75.75 0 1 0-1.2-.9C15.665 14.556 13.962 15.5 12 15.5s-3.665-.944-4.65-2.25ZM12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2Zm-8.5 10a8.5 8.5 0 1 1 17 0 8.5 8.5 0 0 1-17 0Z"/></svg>
+          </button>
+
+          <!-- textarea -->
+          <textarea id="msgInput" rows="1" placeholder="اكتب رسالة..."
+            oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+
+          <!-- rec bar داخل المنطقة -->
+          <div class="rec-bar" id="recBar">
+            <div class="rec-dot"></div>
+            <span class="rec-label">جاري التسجيل...</span>
+            <span class="rec-timer" id="recTimer">0:00</span>
+          </div>
         </div>
+
+        <!-- اختيار البوت -->
+        <select id="botSelect" class="bot-select" title="اختر الرقم للإرسال">
+          <option value="">تلقائي</option>
+          <option value="bot1">1</option>
+          <option value="bot2">2</option>
+          <option value="bot3">3</option>
+        </select>
+
+        <!-- زر إرسال / ميكروفون (يتبادلان) -->
+        <button class="wa-send-btn" id="sendTextBtn" onclick="sendText()" title="إرسال" style="display:none">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/></svg>
+        </button>
+        <button class="wa-send-btn mic-active" id="micBtn" title="تسجيل صوتي" onclick="toggleInlineRecord()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M12 14c-.833 0-1.542-.292-2.125-.875S9 11.833 9 11V5c0-.833.292-1.542.875-2.125S11.167 2 12 2s1.542.292 2.125.875S15 4.167 15 5v6c0 .833-.292 1.542-.875 2.125S12.833 14 12 14Zm0 7c-.552 0-1-.448-1-1v-2.075C9.267 17.692 7.833 16.917 6.7 15.6 5.787 14.54 5.242 13.34 5.064 11.997 4.992 11.45 5.448 11 6 11s.988.452 1.09.995c.183.963.63 1.81 1.363 2.543C9.438 15.512 10.617 16 12 16s2.563-.488 3.538-1.462c.732-.733 1.18-1.58 1.362-2.543C17.012 11.452 17.448 11 18 11s1.008.45.936.997c-.178 1.34-.723 2.542-1.636 3.603C16.167 16.917 14.733 17.692 13 17.925V20c0 .552-.448 1-1 1Zm0-9c.283 0 .521-.096.713-.288.191-.191.287-.429.287-.712V5c0-.283-.096-.521-.287-.713A.968.968 0 0 0 12 4a.968.968 0 0 0-.713.287A.968.968 0 0 0 11 5v6c0 .283.096.521.287.712.192.192.43.288.713.288Z"/></svg>
+        </button>
+
+        <!-- أزرار التسجيل -->
         <button class="rec-cancel-btn" id="recCancelBtn" style="display:none" onclick="cancelInlineRecord()" title="إلغاء">✕</button>
         <button class="rec-send-btn"   id="recSendBtn"   style="display:none" onclick="stopAndSendRecord()" title="إرسال">✓</button>
       </div>
@@ -182,9 +278,21 @@
 </div>
 
 <!-- Image Lightbox -->
-<div id="lightbox" onclick="closeLightbox()">
+<div id="lightbox">
   <button id="lightbox-close" onclick="closeLightbox()">✕</button>
   <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- Emoji Picker -->
+<div id="emojiPicker" class="emoji-picker">
+  <div class="ep-tabs">
+    <button class="ep-tab active" onclick="showEpCat(0)">😀</button>
+    <button class="ep-tab" onclick="showEpCat(1)">❤️</button>
+    <button class="ep-tab" onclick="showEpCat(2)">🙏</button>
+    <button class="ep-tab" onclick="showEpCat(3)">🏠</button>
+    <button class="ep-tab" onclick="showEpCat(4)">🌍</button>
+  </div>
+  <div class="ep-grid" id="epGrid"></div>
 </div>
 
 <div id="toast"></div>

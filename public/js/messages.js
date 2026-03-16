@@ -125,17 +125,29 @@ async function loadMessages(scrollToBottom = false) {
 // ─────────────────────────────────────────────────────
 // Render helpers
 // ─────────────────────────────────────────────────────
+// فلتر الرسائل الحالي: 'all' | 'in' | 'out'
+let msgFilter = "all";
+
+function setMsgFilter(f) {
+  msgFilter = f;
+}
+
 function renderMessages(msgs) {
   if (!Array.isArray(msgs) || !msgs.length) {
-    return `
-      <div style="text-align:center;color:#8696a0;padding:30px">
-        لا توجد رسائل بعد
-      </div>
-    `;
+    return `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
+  }
+
+  let filtered = msgs;
+  if (msgFilter === "in")  filtered = msgs.filter(m => m.direction === "in");
+  if (msgFilter === "out") filtered = msgs.filter(m => m.direction === "out");
+
+  if (!filtered.length) {
+    const label = msgFilter === "in" ? "لا توجد رسائل واردة" : "لا توجد ردود";
+    return `<div style="text-align:center;color:#8696a0;padding:30px">${label}</div>`;
   }
 
   lastDateRendered = "";
-  return msgs.map((m) => renderSingleMessage(m)).join("");
+  return filtered.map((m) => renderSingleMessage(m)).join("");
 }
 
 function renderSingleMessage(m) {
@@ -145,7 +157,8 @@ function renderSingleMessage(m) {
   const body = String(m.body || "").trim();
   const direction = m.direction === "out" ? "out" : "in";
 
-  if (!body) return "";
+  // Skip only if there is no body AND no on-demand WA media to render
+  if (!body && !(m.hasMedia && m.wa_msg_id)) return "";
 
   let html = "";
 
@@ -239,14 +252,93 @@ function renderSingleMessage(m) {
     content = `<span>${escHtml(body)}</span>`;
   }
 
+  const msgId = escAttr(String(m.id ?? ""));
   html += `
-    <div class="msg-bubble ${direction}${extraClass ? " " + extraClass : ""}" data-id="${escAttr(String(m.id ?? ""))}">
+    <div class="msg-bubble ${direction}${extraClass ? " " + extraClass : ""}" data-id="${msgId}" data-source="${escAttr(m.source||'')}">
+      <button class="msg-menu-btn" onclick="toggleMsgMenu(this)" title="خيارات">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+          <path d="M7 10l5 5 5-5z"/>
+        </svg>
+      </button>
+      <div class="msg-menu">
+        <div class="msg-menu-item delete" onclick="deleteMessage('${msgId}', this)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          حذف
+        </div>
+      </div>
       ${content}
       ${skipMeta ? "" : `<div class="msg-meta">${src} ${time} ${ticks}</div>`}
     </div>
   `;
 
   return html;
+}
+
+// ─────────────────────────────────────────────────────
+// Message context menu
+// ─────────────────────────────────────────────────────
+function toggleMsgMenu(btn) {
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains("open");
+  // أغلق كل القوائم المفتوحة
+  document.querySelectorAll(".msg-menu.open").forEach(m => m.classList.remove("open"));
+  if (!isOpen) menu.classList.add("open");
+}
+
+// أغلق القوائم عند الضغط خارجها
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".msg-bubble")) {
+    document.querySelectorAll(".msg-menu.open").forEach(m => m.classList.remove("open"));
+  }
+});
+
+async function deleteMessage(msgId, el) {
+  if (!msgId) return;
+  const bubble = el.closest(".msg-bubble");
+  el.closest(".msg-menu").classList.remove("open");
+
+  // أنيميشن اختفاء
+  bubble.style.transition = "opacity 0.22s, transform 0.22s, max-height 0.28s 0.15s, margin 0.28s 0.15s, padding 0.28s 0.15s";
+  bubble.style.opacity    = "0";
+  bubble.style.transform  = "scale(0.88)";
+  bubble.style.maxHeight  = bubble.offsetHeight + "px";
+  bubble.style.overflow   = "hidden";
+
+  const collapse = () => {
+    bubble.style.maxHeight   = "0";
+    bubble.style.marginBottom = "0";
+    bubble.style.paddingTop   = "0";
+    bubble.style.paddingBottom = "0";
+    setTimeout(() => bubble.remove(), 300);
+  };
+
+  // رسائل من قاعدة البيانات — id رقمي
+  const isDbMsg = msgId && !isNaN(Number(msgId)) && Number(msgId) > 0;
+
+  if (!isDbMsg) {
+    // رسالة WA فقط (id = "wa_...") — حذف من الواجهة فقط
+    setTimeout(collapse, 180);
+    return;
+  }
+
+  // حذف من قاعدة البيانات
+  try {
+    const r = await fetch(`/api/messages/${msgId}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    setTimeout(collapse, 180);
+  } catch (err) {
+    // إرجاع الرسالة عند الفشل
+    bubble.style.transition = "opacity 0.2s";
+    bubble.style.opacity    = "1";
+    bubble.style.transform  = "";
+    bubble.style.maxHeight  = "";
+    bubble.style.marginBottom = "";
+    console.error("حذف فشل:", err);
+    if (typeof showToast === "function") showToast("❌ فشل الحذف");
+  }
 }
 
 // ─────────────────────────────────────────────────────

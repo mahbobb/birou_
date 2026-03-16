@@ -32,7 +32,7 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS messages (
       id         BIGINT PRIMARY KEY AUTO_INCREMENT,
       contact    VARCHAR(50),
-      direction  ENUM('incoming','outgoing'),
+      direction  ENUM('in','out'),
       body       TEXT,
       media_url  TEXT,
       media_type VARCHAR(20),
@@ -42,6 +42,11 @@ async function initDb() {
       INDEX idx_messages_created_at (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // ── Migration: تحديث ENUM direction من 'incoming'/'outgoing' إلى 'in'/'out' ──
+  try {
+    await pool.query(`ALTER TABLE messages MODIFY COLUMN direction ENUM('in','out')`);
+  } catch (_) { /* لا يوجد تغيير */ }
 
   // ── Migration: إعادة تسمية عمود phone → contact إذا كان الجدول قديماً ──
   try {

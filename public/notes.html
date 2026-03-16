@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الملاحظات — واتساب بوت</title>
+  <style>
+    :root {
+      --green: #25d366; --teal: #128c7e; --dark: #075e54;
+      --red: #e53935; --bg: #f0f2f5; --card: #ffffff;
+      --border: #e8edf2; --text: #1a1a2e; --muted: #8696a0;
+      --sidebar-w: 230px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; display: flex; min-height: 100vh; }
+
+    /* ════ SIDEBAR ════ */
+    .sidebar {
+      width: var(--sidebar-w); min-height: 100vh;
+      background: linear-gradient(180deg, var(--dark) 0%, #063d36 100%);
+      display: flex; flex-direction: column;
+      position: fixed; right: 0; top: 0; bottom: 0; z-index: 40;
+      box-shadow: -3px 0 16px rgba(0,0,0,0.18);
+    }
+    .sb-brand { padding: 22px 18px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .brand-row { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 40px; height: 40px; background: var(--green); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .sb-brand h2 { color: white; font-size: 1rem; font-weight: 700; }
+    .sb-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .sb-section { font-size: 0.68rem; color: rgba(255,255,255,0.35); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px 4px; }
+    .sb-link {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: 10px; text-decoration: none; color: rgba(255,255,255,0.7);
+      font-size: 0.88rem; transition: all 0.18s; cursor: pointer;
+      border: none; background: none; width: 100%; text-align: right; margin-bottom: 2px;
+    }
+    .sb-link:hover { background: rgba(255,255,255,0.1); color: white; }
+    .sb-link.active { background: rgba(37,211,102,0.2); color: var(--green); font-weight: 600; }
+    .sb-link .ico { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+    .sb-bottom { padding: 12px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .sb-logout {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-radius: 10px; background: rgba(229,57,53,0.15); color: #ef9a9a;
+      text-decoration: none; font-size: 0.83rem; transition: all 0.18s; cursor: pointer;
+      border: none; width: 100%; text-align: right;
+    }
+    .sb-logout:hover { background: rgba(229,57,53,0.3); }
+
+    /* ════ MAIN ════ */
+    .main { margin-right: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    .topbar {
+      background: white; border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 58px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 30; box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+    }
+    .topbar-title { font-size: 1.05rem; font-weight: 700; }
+    .menu-btn { display: none; align-items: center; justify-content: center; width: 38px; height: 38px; border: none; border-radius: 10px; background: var(--bg); cursor: pointer; font-size: 1.2rem; margin-left: 8px; }
+    .content { padding: 24px 28px; flex: 1; }
+
+    /* ════ ADD NOTE FORM ════ */
+    .add-note-card {
+      background: var(--card); border-radius: 16px; padding: 22px 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 28px;
+    }
+    .add-note-card h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+    .form-input, .form-textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.9rem; outline: none; direction: rtl;
+      font-family: inherit; background: #fafafa; transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: var(--teal); background: white; }
+    .form-textarea { min-height: 100px; resize: vertical; }
+
+    /* Image upload area */
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+      text-align: center; cursor: pointer; transition: all 0.2s;
+      background: #fafafa; position: relative;
+    }
+    .upload-area:hover, .upload-area.drag-over { border-color: var(--teal); background: #f0faf9; }
+    .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-area .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+    .upload-area .upload-text { font-size: 0.85rem; color: var(--muted); }
+    .upload-area .upload-text strong { color: var(--teal); }
+
+    /* Image previews */
+    .img-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .img-preview-wrap { position: relative; width: 90px; height: 90px; border-radius: 10px; overflow: hidden; border: 2px solid var(--border); }
+    .img-preview-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .img-preview-wrap .del-preview {
+      position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+      background: rgba(229,57,53,0.85); color: white; border: none; border-radius: 50%;
+      cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center;
+    }
+    .uploading-badge { font-size: 0.72rem; color: var(--teal); margin-top: 6px; }
+
+    .btn-save {
+      padding: 10px 28px; border: none; border-radius: 10px;
+      background: var(--green); color: white; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+    }
+    .btn-save:hover { box-shadow: 0 4px 14px rgba(37,211,102,0.4); transform: translateY(-1px); }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ════ NOTES GRID ════ */
+    .section-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content:""; flex:1; height:1px; background:var(--border); }
+
+    .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+
+    .note-card {
+      background: var(--card); border-radius: 14px; padding: 18px;
+      border: 1px solid var(--border); box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+      transition: transform 0.15s, box-shadow 0.15s; display: flex; flex-direction: column; gap: 10px;
+    }
+    .note-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+    .note-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .note-title { font-size: 0.95rem; font-weight: 700; color: var(--dark); flex: 1; word-break: break-word; }
+    .note-del-btn {
+      background: #ffebee; color: var(--red); border: none; border-radius: 8px;
+      padding: 4px 8px; cursor: pointer; font-size: 0.75rem; flex-shrink: 0;
+      transition: all 0.18s;
+    }
+    .note-del-btn:hover { background: #ffcdd2; }
+
+    .note-text { font-size: 0.85rem; color: #444; line-height: 1.6; word-break: break-word; white-space: pre-wrap; }
+
+    .note-images { display: flex; flex-wrap: wrap; gap: 8px; }
+    .note-img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+      border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s;
+    }
+    .note-img:hover { transform: scale(1.05); }
+
+    .note-date { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .empty-notes { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-notes .empty-ico { font-size: 3rem; margin-bottom: 12px; }
+    .empty-notes p { font-size: 0.9rem; }
+
+    /* ════ IMAGE LIGHTBOX ════ */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 500; align-items: center; justify-content: center; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    .lightbox-close { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.15); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* ════ TOAST ════ */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ════ SIDEBAR OVERLAY ════ */
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 39; }
+    .sidebar-overlay.open { display: block; }
+
+    /* ════ RESPONSIVE ════ */
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 60px; }
+      .sb-brand h2, .sb-link span, .sb-section { display: none; }
+      .sb-link { justify-content: center; padding: 10px; }
+      .sb-logout span:last-child { display: none; }
+      .sb-logout { justify-content: center; }
+      .main { margin-right: 60px; }
+      .content { padding: 14px; }
+      .topbar { padding: 0 14px; }
+    }
+    @media (max-width: 480px) {
+      .sidebar { width: 230px !important; transform: translateX(100%); transition: transform 0.25s ease; }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .sb-brand h2, .sb-link span, .sb-section { display: block; }
+      .sb-link { justify-content: flex-start; padding: 9px 12px; }
+      .sb-logout span:last-child { display: inline; }
+      .sb-logout { justify-content: flex-start; }
+      .main { margin-right: 0; }
+      .menu-btn { display: flex; }
+      .content { padding: 10px; }
+      .topbar { padding: 0 10px; }
+      .notes-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="mainSidebar">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="brand-icon">🤖</div>
+      <div><h2>واتساب بوت</h2></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">الرئيسية</div>
+    <a class="sb-link" href="/"><span class="ico">📊</span><span>لوحة التحكم</span></a>
+    <div class="sb-section">التواصل</div>
+    <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
+    <a class="sb-link" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
+    <div class="sb-section">الوسائط</div>
+    <a class="sb-link" href="/images"><span class="ico">📸</span><span>الصور</span></a>
+    <a class="sb-link" href="/voices"><span class="ico">🎤</span><span>الصوتيات</span></a>
+    <a class="sb-link" href="/videos"><span class="ico">🎬</span><span>الفيديوهات</span></a>
+    <div class="sb-section">الإعدادات</div>
+    <a class="sb-link active" href="/notes"><span class="ico">📝</span><span>الملاحظات</span></a>
+    <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
+    <a class="sb-link" href="/sync"><span class="ico">🔄</span><span>المزامنة</span></a>
+  </nav>
+  <div class="sb-bottom">
+    <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">
+      <span>🚪</span><span>خروج</span>
+    </button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title">📝 الملاحظات</div>
+    <div></div>
+  </div>
+
+  <div class="content">
+
+    <!-- Add Note Form -->
+    <div class="add-note-card">
+      <h3>➕ إضافة ملاحظة جديدة</h3>
+      <div class="form-row">
+        <label>العنوان (اختياري)</label>
+        <input class="form-input" id="noteTitle" type="text" placeholder="عنوان الملاحظة...">
+      </div>
+      <div class="form-row">
+        <label>النص</label>
+        <textarea class="form-textarea" id="noteText" placeholder="اكتب ملاحظتك هنا..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>الصور (اختياري)</label>
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="fileInput" accept="image/*" multiple>
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">اسحب الصور هنا أو <strong>اضغط للاختيار</strong></div>
+        </div>
+        <div class="img-previews" id="imgPreviews"></div>
+        <div class="uploading-badge" id="uploadingBadge" style="display:none">⏳ جاري رفع الصور...</div>
+      </div>
+      <button class="btn-save" id="saveBtn" onclick="saveNote()">💾 حفظ الملاحظة</button>
+    </div>
+
+    <!-- Notes List -->
+    <div class="section-title">📝 الملاحظات المحفوظة <span id="notesCount" style="font-size:0.78rem;color:var(--muted);font-weight:400"></span></div>
+    <div class="notes-grid" id="notesGrid">
+      <div class="empty-notes"><div class="empty-ico">📋</div><p>جاري التحميل...</p></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let pendingImages = []; // [{url, local}]
+
+  // ── File upload ──
+  const fileInput   = document.getElementById("fileInput");
+  const uploadArea  = document.getElementById("uploadArea");
+  const imgPreviews = document.getElementById("imgPreviews");
+  const uploadBadge = document.getElementById("uploadingBadge");
+
+  uploadArea.addEventListener("dragover",  e => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
+  uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
+  uploadArea.addEventListener("drop", e => {
+    e.preventDefault();
+    uploadArea.classList.remove("drag-over");
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener("change", () => handleFiles(fileInput.files));
+
+  async function handleFiles(files) {
+    if (!files.length) return;
+    uploadBadge.style.display = "block";
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) continue;
+      try {
+        const url = await uploadImage(file);
+        pendingImages.push({ url, local: URL.createObjectURL(file) });
+        addPreview(url, pendingImages.length - 1);
+      } catch (e) {
+        showToast("❌ فشل رفع الصورة: " + file.name);
+      }
+    }
+    uploadBadge.style.display = "none";
+    fileInput.value = "";
+  }
+
+  function addPreview(url, idx) {
+    const wrap = document.createElement("div");
+    wrap.className = "img-preview-wrap";
+    wrap.dataset.idx = idx;
+    wrap.innerHTML = `<img src="${pendingImages[idx].local}" alt=""><button class="del-preview" onclick="removePreview(${idx})">✕</button>`;
+    imgPreviews.appendChild(wrap);
+  }
+
+  function removePreview(idx) {
+    pendingImages[idx] = null;
+    const el = imgPreviews.querySelector(`[data-idx="${idx}"]`);
+    if (el) el.remove();
+  }
+
+  async function uploadImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const base64 = e.target.result.split(",")[1];
+        try {
+          const r = await fetch("/api/notes/upload-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: base64, mimetype: file.type })
+          }).then(r => r.json());
+          if (r.ok) resolve(r.url);
+          else reject(new Error(r.error));
+        } catch (err) { reject(err); }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Save note ──
+  async function saveNote() {
+    const title  = document.getElementById("noteTitle").value.trim();
+    const text   = document.getElementById("noteText").value.trim();
+    const images = pendingImages.filter(Boolean).map(p => p.url);
+
+    if (!title && !text && !images.length) return showToast("⚠️ أدخل عنواناً أو نصاً أو صورة");
+
+    const btn = document.getElementById("saveBtn");
+    btn.disabled = true; btn.textContent = "⏳ جاري الحفظ...";
+
+    try {
+      const r = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, text, images })
+      }).then(r => r.json());
+
+      if (r.ok) {
+        showToast("✅ تم حفظ الملاحظة");
+        document.getElementById("noteTitle").value = "";
+        document.getElementById("noteText").value  = "";
+        pendingImages = [];
+        imgPreviews.innerHTML = "";
+        loadNotes();
+      } else showToast("❌ " + (r.error || "فشل الحفظ"));
+    } catch { showToast("❌ خطأ في الاتصال"); }
+
+    btn.disabled = false; btn.textContent = "💾 حفظ الملاحظة";
+  }
+
+  // ── Load notes ──
+  async function loadNotes() {
+    try {
+      const notes = await fetch("/api/notes").then(r => r.json());
+      const grid  = document.getElementById("notesGrid");
+      const count = document.getElementById("notesCount");
+      count.textContent = notes.length ? `(${notes.length})` : "";
+
+      if (!notes.length) {
+        grid.innerHTML = `<div class="empty-notes"><div class="empty-ico">📋</div><p>لا توجد ملاحظات بعد — أضف أول ملاحظة!</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = notes.map(n => {
+        const date   = new Date(n.createdAt).toLocaleDateString("ar-MA", { year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" });
+        const imgs   = (n.images || []).map(url => `<img class="note-img" src="${escHtml(url)}" onclick="openLightbox('${escHtml(url)}')" alt="">`).join("");
+        const title  = n.title ? `<div class="note-title">${escHtml(n.title)}</div>` : "";
+        const text   = n.text  ? `<div class="note-text">${escHtml(n.text)}</div>` : "";
+        const imgsEl = imgs    ? `<div class="note-images">${imgs}</div>` : "";
+        return `
+          <div class="note-card">
+            <div class="note-header">
+              ${title || '<div class="note-title" style="color:var(--muted);font-weight:400">بدون عنوان</div>'}
+              <button class="note-del-btn" onclick="deleteNote('${n.id}')">🗑 حذف</button>
+            </div>
+            ${text}
+            ${imgsEl}
+            <div class="note-date">🕐 ${date}</div>
+          </div>`;
+      }).join("");
+    } catch { showToast("❌ فشل تحميل الملاحظات"); }
+  }
+
+  // ── Delete note ──
+  async function deleteNote(id) {
+    if (!confirm("هل تريد حذف هذه الملاحظة؟")) return;
+    try {
+      const r = await fetch(`/api/notes/${id}`, { method: "DELETE" }).then(r => r.json());
+      if (r.ok) { showToast("🗑 تم الحذف"); loadNotes(); }
+      else showToast("❌ فشل الحذف");
+    } catch { showToast("❌ خطأ في الاتصال"); }
+  }
+
+  // ── Lightbox ──
+  function openLightbox(url) {
+    document.getElementById("lightboxImg").src = url;
+    document.getElementById("lightbox").classList.add("open");
+  }
+  function closeLightbox() {
+    document.getElementById("lightbox").classList.remove("open");
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+
+  // ── Toast ──
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  function escHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── Mobile sidebar ──
+  function toggleSidebar() {
+    document.getElementById("mainSidebar").classList.toggle("mobile-open");
+    document.getElementById("sidebarOverlay").classList.toggle("open");
+  }
+  function closeSidebar() {
+    document.getElementById("mainSidebar").classList.remove("mobile-open");
+    document.getElementById("sidebarOverlay").classList.remove("open");
+  }
+
+  loadNotes();
+</script>
+</body>
+</html>

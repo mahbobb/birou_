@@ -116,6 +116,45 @@
       color: #aaa;
     }
 
+    .restart-btn {
+      margin-top: 14px;
+      padding: 9px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #e8f5e9;
+      color: #075e54;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .restart-btn:hover { background: #c8e6c9; }
+    .restart-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .disconnect-btn {
+      margin-top: 8px;
+      padding: 7px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #ffebee;
+      color: #c62828;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .disconnect-btn:hover { background: #ffcdd2; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 5px solid #e0f2f1;
+      border-top-color: #128c7e;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 12px;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; }
@@ -143,6 +182,7 @@
     <a href="/voices">🎤 الصوتيات</a>
     <a href="/videos">🎬 الفيديوهات</a>
     <a href="/chat">💬 الشات</a>
+    <a href="/notes">📝 الملاحظات</a>
     <a href="/qr" class="active">📲 QR Code</a>
     <a href="/sync">🔄 المزامنة</a>
     <a href="#" onclick="logout()" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
@@ -157,10 +197,9 @@
 </div>
 
 <script>
-  const BOT_LABELS = { bot1: "البوت" };
-  const BOT_IDS    = ["bot1"];
+  const BOT_LABELS = { bot1: "الرقم 1", bot2: "الرقم 2", bot3: "الرقم 3" };
+  const BOT_IDS    = ["bot1", "bot2", "bot3"];
 
-  // per-bot state
   const state = {};
   BOT_IDS.forEach(id => { state[id] = { lastQr: null }; });
 
@@ -171,11 +210,11 @@
   function buildCards() {
     const grid = document.getElementById('cardsGrid');
     grid.innerHTML = BOT_IDS.map(id => `
-      <div class="card">
+      <div class="card" id="card-${id}">
         <h2>${BOT_LABELS[id]}</h2>
         <p>افتح واتساب ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز ← اسكن الكود</p>
         <div class="qr-box" id="qr-box-${id}">
-          <span class="status loading"><span class="dot"></span> جاري التحميل...</span>
+          <div><div class="spinner"></div><span class="status loading"><span class="dot"></span> جاري التحميل...</span></div>
         </div>
         <div class="status-label" id="status-${id}"></div>
       </div>
@@ -189,14 +228,14 @@
 
     if (data.connected) {
       box.innerHTML = '<span class="status connected"><span class="dot"></span> متصل ✅</span>';
-      label.innerHTML = data.phone
-        ? `<p style="color:#075e54;font-weight:600;">البوت متصل ويعمل بشكل طبيعي</p>
-           <p style="color:#555;font-size:0.95rem;margin-top:6px;">📞 <strong dir="ltr">+${data.phone}</strong></p>`
-        : '<p style="color:#075e54;font-weight:600;">البوت متصل ويعمل بشكل طبيعي</p>';
+      label.innerHTML = `
+        ${data.phone ? `<p style="color:#075e54;font-weight:600;margin-bottom:6px;">البوت متصل ويعمل بشكل طبيعي</p>
+        <p style="color:#555;font-size:0.95rem;margin-bottom:10px;">📞 <strong dir="ltr">+${data.phone}</strong></p>` : '<p style="color:#075e54;font-weight:600;margin-bottom:10px;">البوت متصل ويعمل بشكل طبيعي</p>'}
+        <button class="disconnect-btn" onclick="restartBot('${id}')">🔌 قطع الاتصال وإعادة QR</button>`;
       state[id].lastQr = null;
 
     } else if (data.qr) {
-      label.innerHTML = '';
+      label.innerHTML = '<p style="color:#128c7e;font-size:0.82rem;margin-top:6px;">اسكن الكود بالواتساب ⬆️</p>';
       if (data.qr !== state[id].lastQr) {
         state[id].lastQr = data.qr;
         box.innerHTML = `<div id="qr-render-${id}"></div>`;
@@ -211,9 +250,29 @@
       }
 
     } else {
-      box.innerHTML = '<span class="status waiting"><span class="dot"></span> في انتظار QR...</span>';
-      label.innerHTML = '<p style="color:#666;font-size:0.82rem;margin-top:6px;">تأكد أن البوت شغال</p>';
+      box.innerHTML = `
+        <div>
+          <div class="spinner"></div>
+          <span class="status waiting"><span class="dot"></span> في انتظار QR...</span>
+        </div>`;
+      label.innerHTML = `
+        <p style="color:#666;font-size:0.82rem;margin:8px 0 10px;">البوت يتهيأ، انتظر لحظة أو اضغط زر التشغيل</p>
+        <button class="restart-btn" id="restart-${id}" onclick="restartBot('${id}')">🔄 تشغيل وتوليد QR</button>`;
       state[id].lastQr = null;
+    }
+  }
+
+  async function restartBot(id) {
+    const btn = document.getElementById(`restart-${id}`);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التشغيل...'; }
+    const box = document.getElementById(`qr-box-${id}`);
+    if (box) box.innerHTML = `<div><div class="spinner"></div><span class="status loading"><span class="dot"></span> إعادة التشغيل...</span></div>`;
+    try {
+      await fetch(`/api/restart-bot/${id}`, { method: 'POST' });
+      state[id].lastQr = null;
+      setTimeout(refresh, 3000);
+    } catch {
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 تشغيل وتوليد QR'; }
     }
   }
 
@@ -221,13 +280,10 @@
     try {
       const res  = await fetch('/api/qr');
       const data = await res.json();
-      // data = { bot1: {qr, connected, phone}, bot2: {...}, bot3: {...} }
       for (const id of BOT_IDS) {
         if (data[id]) updateCard(id, data[id]);
       }
-    } catch {
-      // silent fail
-    }
+    } catch {}
   }
 
   buildCards();

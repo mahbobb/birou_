@@ -379,6 +379,7 @@
     <a href="/images">📸 الصور</a>
     <a href="/voices" class="active">🎤 الصوتيات</a>
     <a href="/videos">🎬 الفيديوهات</a>
+    <a href="/notes">📝 الملاحظات</a>
     <a href="/qr">📲 QR</a>
     <a href="/sync">🔄 مزامنة</a>
     <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")">🚪 خروج</a>
@@ -885,6 +886,20 @@
 
   loadStats(); load();
   setInterval(() => { loadStats(); load(); }, 30000);
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const _sock = io();
+  _sock.on("new_media", (data) => {
+    if (data.type !== "voice") return;
+    const t = document.getElementById("toast");
+    t.textContent = `🎤 رسالة صوتية جديدة من ${data.name || data.phone}`;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3500);
+    loadStats();
+    load();
+  });
 </script>
 </body>
 </html>

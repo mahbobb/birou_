@@ -244,6 +244,12 @@
         "au revoir"
       ],
       "reply": "بالسلامة 😊 مرحبا بك في أي وقت."
+    },
+    {
+      "keywords": [
+        "merhba"
+      ],
+      "reply": "merhba"
     }
   ]
 }

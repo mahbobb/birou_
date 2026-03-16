@@ -24,7 +24,7 @@ function parseBody(body) {
 async function saveMessage(phone, _name, direction, body, source, createdAt = null, wa_msg_id = null) {
   try {
     const contact  = normalizePhone(phone);
-    const dir      = direction === "out" ? "outgoing" : "incoming";
+    const dir      = direction === "out" ? "out" : "in";
     const ts       = createdAt ? new Date(createdAt) : new Date();
     const { text, media_url, media_type } = parseBody(body);
     const bodyVal  = text || media_url || body || "";
@@ -56,7 +56,7 @@ async function saveMessage(phone, _name, direction, body, source, createdAt = nu
 async function checkMessageExists(phone, direction, timestampMs) {
   try {
     const contact = normalizePhone(phone);
-    const dir     = direction === "out" ? "outgoing" : "incoming";
+    const dir     = direction === "out" ? "out" : "in";
     const [rows]  = await pool.query(
       `SELECT id FROM messages
         WHERE contact = ? AND direction = ?
@@ -79,7 +79,7 @@ async function getMessages({ phone, limit = 100, offset = 0 }) {
     const select = `
       SELECT id,
              contact                                          AS phone,
-             CASE direction WHEN 'outgoing' THEN 'out' ELSE 'in' END AS direction,
+             IF(direction='out','out','in') AS direction,
              COALESCE(media_url, body)                        AS body,
              media_url,
              media_type,
