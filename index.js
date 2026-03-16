@@ -86,22 +86,52 @@ function getActiveBot(preferredId = null) {
   return null;
 }
 
+// ── إيجاد مسار Chromium تلقائياً ──────────────────────────────────────────
+function findChromium() {
+  const { execSync } = require("child_process");
+  const candidates = [
+    process.env.CHROMIUM_PATH,
+    "/usr/bin/chromium-browser",
+    "/usr/bin/chromium",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/google-chrome",
+    "/snap/bin/chromium",
+  ].filter(Boolean);
+  for (const p of candidates) {
+    try {
+      execSync(`test -x "${p}"`, { stdio: "ignore" });
+      return p;
+    } catch {}
+  }
+  // آخر محاولة: which
+  try { return execSync("which chromium-browser || which chromium || which google-chrome", { encoding: "utf8" }).trim(); } catch {}
+  return null;
+}
+
+const CHROMIUM_PATH = findChromium();
+if (CHROMIUM_PATH) console.log(`🌐 Chromium: ${CHROMIUM_PATH}`);
+else console.warn("⚠️  Chromium غير موجود — سيستخدم Puppeteer المدمج");
+
 function setupClient(botId) {
+  const puppeteerOpts = {
+    headless: true,
+    protocolTimeout: 120000,
+    args: [
+      "--no-sandbox", "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage", "--disable-gpu",
+      "--no-first-run", "--no-zygote",
+      "--disable-extensions", "--disable-default-apps",
+      "--disable-background-networking",
+      "--disable-features=TranslateUI",
+      "--memory-pressure-off",
+      "--single-process",
+    ],
+  };
+  if (CHROMIUM_PATH) puppeteerOpts.executablePath = CHROMIUM_PATH;
+
   const c = new Client({
     authStrategy: new LocalAuth({ clientId: botId, dataPath: "./sessions" }),
-    puppeteer: {
-      headless: true,
-      protocolTimeout: 120000,
-      args: [
-        "--no-sandbox", "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage", "--disable-gpu",
-        "--no-first-run", "--no-zygote",
-        "--disable-extensions", "--disable-default-apps",
-        "--disable-background-networking",
-        "--disable-features=TranslateUI",
-        "--memory-pressure-off",
-      ],
-    },
+    puppeteer: puppeteerOpts,
   });
 
   const bot = bots.get(botId);
