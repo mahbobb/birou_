@@ -23,10 +23,16 @@ async function initDb() {
       last_seen      DATETIME     NOT NULL,
       last_message   TEXT,
       total_messages INT          NOT NULL DEFAULT 1,
+      is_blocked     TINYINT(1)   NOT NULL DEFAULT 0,
       UNIQUE KEY uq_contacts_phone (phone),
       INDEX idx_contacts_last_seen (last_seen)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // migration: add is_blocked if missing
+  await pool.query(`
+    ALTER TABLE contacts ADD COLUMN IF NOT EXISTS is_blocked TINYINT(1) NOT NULL DEFAULT 0
+  `).catch(() => {});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS messages (
