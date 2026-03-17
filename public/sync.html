@@ -110,14 +110,25 @@
 
 <div class="container">
   <div class="card">
-    <h2>📥 استيراد الصور والفيديوهات القديمة من واتساب</h2>
-    <p>هذه الأداة تمر على جميع محادثاتك في واتساب وتحفظ الصور والفيديوهات القديمة في قاعدة البيانات حتى تظهر في لوحة التحكم والشات.</p>
+    <h2>📥 استيراد جميع الرسائل القديمة من واتساب</h2>
+    <p>هذه الأداة تمر على جميع محادثاتك في واتساب وتحفظ <b>الرسائل النصية والصور والفيديوهات</b> القديمة في قاعدة البيانات حتى تظهر في لوحة التحكم والشات.</p>
 
     <div class="stats-row">
       <div class="stat"><div class="num" id="sDone">—</div><div class="lbl">محادثة منتهية</div></div>
       <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي المحادثات</div></div>
-      <div class="stat"><div class="num" id="sSaved">—</div><div class="lbl">وسائط محفوظة</div></div>
+      <div class="stat"><div class="num" id="sSaved">—</div><div class="lbl">رسائل محفوظة</div></div>
       <div class="stat"><div class="num" id="sErrors">—</div><div class="lbl">أخطاء</div></div>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <label style="font-size:0.85rem;color:#555;font-weight:600">📩 عدد الرسائل لكل محادثة:</label>
+      <select id="msgLimit" style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:0.88rem;outline:none">
+        <option value="500">500 رسالة</option>
+        <option value="1000">1,000 رسالة</option>
+        <option value="3000" selected>3,000 رسالة (افتراضي)</option>
+        <option value="5000">5,000 رسالة</option>
+        <option value="99999">الكل (بطيء)</option>
+      </select>
     </div>
 
     <div class="progress-text" id="progressText">اضغط "ابدأ المزامنة" للبدء</div>
@@ -135,8 +146,9 @@
       ⚠️ <b>ملاحظات:</b><br>
       • المزامنة قد تأخذ وقتاً حسب عدد المحادثات وحجم الوسائط.<br>
       • واتساب يحذف الوسائط القديمة من سيرفراته — بعض الملفات قد لا تكون متاحة للتحميل.<br>
-      • لن يتم حفظ نفس الوسيلة مرتين (يتحقق من التكرار تلقائياً).<br>
-      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.
+      • لن يتم حفظ نفس الرسالة مرتين (يتحقق من التكرار تلقائياً).<br>
+      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.<br>
+      • كلما زاد عدد الرسائل المطلوبة كلما استغرقت المزامنة وقتاً أطول.
     </div>
   </div>
 </div>
@@ -154,7 +166,12 @@
     document.getElementById("errorMsg").style.display = "none";
 
     try {
-      const res  = await fetch("/api/wa-sync-media", { method: "POST" });
+      const limit = document.getElementById("msgLimit").value;
+      const res  = await fetch("/api/wa-sync-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit })
+      });
       const data = await res.json();
       if (!res.ok || data.error) {
         showError(data.error || "فشل بدء المزامنة");

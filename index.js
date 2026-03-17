@@ -1043,11 +1043,12 @@ app.get("/api/wa-chats", async (_req, res) => {
 });
 
 // ── مزامنة الوسائط القديمة من واتساب ─────────────────────────────────────
-app.post("/api/wa-sync-media", async (_req, res) => {
+app.post("/api/wa-sync-media", async (req, res) => {
   const activeBot = getActiveBot();
   if (!activeBot) return res.status(503).json({ error: "البوت غير متصل بواتساب" });
   if (mediaSyncStatus.running) return res.json({ ok: true, message: "المزامنة جارية بالفعل", status: mediaSyncStatus });
 
+  const msgLimit = parseInt(req.body?.limit) || 3000;
   mediaSyncStatus = { running: true, done: 0, total: 0, saved: 0, errors: 0, currentChat: "" };
   res.json({ ok: true, message: "بدأت المزامنة في الخلفية" });
 
@@ -1064,7 +1065,7 @@ app.post("/api/wa-sync-media", async (_req, res) => {
         mediaSyncStatus.currentChat = `${chatName} (${phone})`;
 
         try {
-          const msgs = await chat.fetchMessages({ limit: 1000 });
+          const msgs = await chat.fetchMessages({ limit: msgLimit });
           for (const msg of msgs) {
             try {
               const dir     = msg.fromMe ? "out" : "in";
