@@ -857,9 +857,13 @@ app.get("/api/block-status/:phone", async (req, res) => {
   const bot = getActiveBot();
   if (!bot) return res.json({ blocked: false });
   try {
-    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
-    const contact  = await bot.client.getContactById(outPhone + "@c.us");
-    res.json({ blocked: contact.isBlocked || false });
+    const key      = phoneKey(cleanPhone(req.params.phone));
+    const blocked  = await bot.client.getBlockedContacts();
+    const isBlocked = blocked.some(c => {
+      const cKey = phoneKey(cleanPhone(c.id._serialized));
+      return cKey === key;
+    });
+    res.json({ blocked: isBlocked });
   } catch { res.json({ blocked: false }); }
 });
 
@@ -871,7 +875,10 @@ app.post("/api/block/:phone", async (req, res) => {
     const contact  = await bot.client.getContactById(outPhone + "@c.us");
     await contact.block();
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    console.error("[block]", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/api/unblock/:phone", async (req, res) => {
@@ -882,7 +889,10 @@ app.post("/api/unblock/:phone", async (req, res) => {
     const contact  = await bot.client.getContactById(outPhone + "@c.us");
     await contact.unblock();
     res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    console.error("[unblock]", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/api/send", async (req, res) => {
