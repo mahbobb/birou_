@@ -247,6 +247,7 @@ document.getElementById("chatName").textContent = phone
 document.getElementById("chatPhone").textContent = "+"+phone
 
 loadMessages(true)
+loadBlockStatus(phone)
 showToast("📱 فتح محادثة: +"+phone)
 
 }
@@ -741,26 +742,58 @@ function logout(){
 // BLOCK / UNBLOCK USER
 // ─────────────────────────────────────────
 let _isBlocked = false;
+const _blockedSet = new Set(); // phones blocked in this session
 
 async function loadBlockStatus(phone) {
   try {
     const d = await fetch(`/api/block-status/${encodeURIComponent(phone)}`).then(r => r.json());
     _isBlocked = d.blocked || false;
+    if (_isBlocked) _blockedSet.add(normalizeKey(phone));
+    else _blockedSet.delete(normalizeKey(phone));
     updateBlockBtn();
+    // تحديث badge في قائمة المحادثات
+    const item = document.querySelector(`.contact-item[data-phone="${phone}"]`);
+    if (item) {
+      item.querySelector(".blocked-tag")?.remove();
+      if (_isBlocked) {
+        const tag = document.createElement("span");
+        tag.className = "blocked-tag";
+        tag.textContent = "🚫";
+        tag.title = "محجوب";
+        item.querySelector(".contact-avatar")?.after(tag);
+      }
+    }
   } catch { _isBlocked = false; updateBlockBtn(); }
 }
 
 function updateBlockBtn() {
-  const btn = document.getElementById("blockBtn");
+  const btn     = document.getElementById("blockBtn");
+  const bar     = document.getElementById("chatInputBar");
+  const blocker = document.getElementById("blockedBar");
+
   if (!btn) return;
+
   if (_isBlocked) {
     btn.textContent = "✅";
-    btn.title = "إلغاء الحجب";
+    btn.title       = "إلغاء الحجب";
     btn.classList.add("blocked");
+    // إخفاء شريط الإرسال وإظهار شريط المحجوب
+    if (bar) bar.style.display = "none";
+    if (!blocker) {
+      const div = document.createElement("div");
+      div.id        = "blockedBar";
+      div.className = "blocked-bar";
+      div.innerHTML = `<span>🚫 هذا المستخدم محجوب</span>
+        <button onclick="toggleBlock()">إلغاء الحجب</button>`;
+      bar?.parentNode?.insertBefore(div, bar);
+    }
   } else {
     btn.textContent = "🚫";
-    btn.title = "حجب المستخدم";
+    btn.title       = "حجب المستخدم";
     btn.classList.remove("blocked");
+    // إظهار شريط الإرسال وإزالة شريط المحجوب
+    if (bar) bar.style.display = "";
+    blocker?.remove();
   }
 }
 

@@ -914,6 +914,31 @@ body {
 .header-block-btn.blocked { background: rgba(229,57,53,0.2); }
 .header-block-btn.blocked:hover { background: rgba(229,57,53,0.38); }
 
+/* Blocked tag in contact list */
+.blocked-tag {
+  position: absolute; top: 2px; right: 2px;
+  font-size: 0.6rem; background: rgba(229,57,53,0.85);
+  border-radius: 50%; width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.contact-item { position: relative; }
+
+/* Blocked bar */
+.blocked-bar {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 12px 20px; background: #1e0a0a;
+  border-top: 1px solid rgba(229,57,53,0.3);
+  color: #ef9a9a; font-size: 0.88rem;
+}
+.blocked-bar button {
+  padding: 6px 14px; border: 1px solid rgba(229,57,53,0.5);
+  border-radius: 8px; background: rgba(229,57,53,0.15);
+  color: #ef9a9a; cursor: pointer; font-size: 0.82rem;
+  transition: background 0.15s;
+}
+.blocked-bar button:hover { background: rgba(229,57,53,0.3); }
+
 /* Delete chat button */
 .header-del-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none;
