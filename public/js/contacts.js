@@ -6,12 +6,14 @@ let contactsSig = "";
 // ── Load & merge contacts from DB + WhatsApp ──────────────────────────────
 async function loadContacts() {
   try {
-    const [dbRes, waRes] = await Promise.all([
+    const [dbRes, waRes, delRes] = await Promise.all([
       fetch("/api/contacts"),
       fetch("/api/wa-chats"),
+      fetch("/api/deleted-phones"),
     ]);
-    const dbContacts = await dbRes.json();
-    const waChats    = await waRes.json();
+    const dbContacts   = await dbRes.json();
+    const waChats      = await waRes.json();
+    const deletedKeys  = new Set((await delRes.json()).map(p => normalizeKey(p)));
 
     const merged = new Map();
 
@@ -67,6 +69,7 @@ async function loadContacts() {
     }
 
     const newList = Array.from(merged.values())
+      .filter(c => !deletedKeys.has(normalizeKey(c.phone)))
       .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
 
     const newSig = newList.map(c => c.phone + c.lastSeen).join("|");
@@ -165,7 +168,6 @@ function renderContacts(list) {
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               ${msgCount}
               ${isUnread ? `<span class="unread-badge">💬 رد</span>` : ""}
-              <button class="contact-del-btn" title="حذف" onclick="deleteContact('${escHtml(c.phone)}',event)">🗑</button>
             </div>
           </div>
         </div>

@@ -32,7 +32,11 @@ async function initDb() {
   // migration: add is_blocked if missing (compatible with MySQL 5.7)
   await pool.query(`
     ALTER TABLE contacts ADD COLUMN is_blocked TINYINT(1) NOT NULL DEFAULT 0
-  `).catch(() => {}); // تجاهل خطأ "column already exists"
+  `).catch(() => {});
+  // migration: add is_deleted if missing
+  await pool.query(`
+    ALTER TABLE contacts ADD COLUMN is_deleted TINYINT(1) NOT NULL DEFAULT 0
+  `).catch(() => {});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS messages (

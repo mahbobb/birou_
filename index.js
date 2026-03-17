@@ -801,7 +801,17 @@ app.delete("/api/contacts/:phone", async (req, res) => {
     const phone = req.params.phone.replace(/\D/g, "");
     const key   = phone.length > 9 ? phone.slice(-9) : phone;
     await pool.query("DELETE FROM messages WHERE contact = ?", [key]);
-    await pool.query("DELETE FROM contacts WHERE phone = ?",  [key]);
+    // soft-delete: نحتفظ بالسجل مع is_deleted=1 لمنع ظهوره مجدداً من wa-chats
+    const [exist] = await pool.query("SELECT id FROM contacts WHERE phone = ?", [key]);
+    if (exist.length) {
+      await pool.query("UPDATE contacts SET is_deleted = 1 WHERE phone = ?", [key]);
+    } else {
+      // إذا لم يكن موجوداً نُنشئه كـ deleted لمنعه من الظهور لاحقاً
+      await pool.query(
+        "INSERT INTO contacts (phone, name, first_seen, last_seen, is_deleted) VALUES (?,?,NOW(),NOW(),1)",
+        [key, key]
+      );
+    }
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1048,6 +1058,15 @@ app.delete("/api/messages/:id", async (req, res) => {
   const [r] = await pool.query("DELETE FROM messages WHERE id = ?", [numId]);
   if (r.affectedRows === 0) return res.status(404).json({ error: "الرسالة غير موجودة" });
   res.json({ ok: true });
+});
+
+// ── جلب قائمة الأرقام المحذوفة (لفلترتها في الـ frontend) ──────────────────
+app.get("/api/deleted-phones", async (_req, res) => {
+  try {
+    const pool = require("./db");
+    const [rows] = await pool.query("SELECT phone FROM contacts WHERE is_deleted = 1");
+    res.json(rows.map(r => r.phone));
+  } catch { res.json([]); }
 });
 
 // ── جلب كل المحادثات من جميع البوتات المتصلة (للشريط الجانبي) ────────────

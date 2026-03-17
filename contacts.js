@@ -66,6 +66,7 @@ async function getAllContacts() {
                WHERE contact = c.phone
                ORDER BY created_at DESC LIMIT 1) AS lastDirection
         FROM contacts c
+       WHERE (c.is_deleted IS NULL OR c.is_deleted = 0)
        ORDER BY c.last_seen DESC
     `);
     return rows;
