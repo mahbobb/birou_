@@ -867,19 +867,31 @@ app.get("/api/block-status/:phone", async (req, res) => {
   } catch { res.json({ blocked: false }); }
 });
 
+async function blockAction(bot, phone, action) {
+  const outPhone = normalizeOutPhone(cleanPhone(phone));
+  const jid      = outPhone + "@c.us";
+  // محاولة 1: WPP API (الأكثر موثوقية)
+  try {
+    await bot.client.pupPage.evaluate(async (id, act) => {
+      if (act === "block")   await WPP.contact.blockContact(id);
+      else                   await WPP.contact.unblockContact(id);
+    }, jid, action);
+    return { ok: true };
+  } catch (e1) {
+    console.warn(`[${action}] WPP failed (${e1.message}), trying getContactById...`);
+  }
+  // محاولة 2: getContactById
+  const contact = await bot.client.getContactById(jid);
+  const result  = action === "block" ? await contact.block() : await contact.unblock();
+  return { ok: result !== false };
+}
+
 app.post("/api/block/:phone", async (req, res) => {
   const bot = getActiveBot();
   if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
   try {
-    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
-    const jid      = outPhone + "@c.us";
-    await bot.client.pupPage.evaluate(async (contactId) => {
-      const contact = window.Store.Contact.get(contactId)
-        || await window.Store.Contact.findContact(contactId);
-      if (!contact) throw new Error("Contact not found: " + contactId);
-      await window.Store.BlockContact.blockContact({ contact });
-    }, jid);
-    res.json({ ok: true });
+    const r = await blockAction(bot, req.params.phone, "block");
+    res.json(r);
   } catch (err) {
     console.error("[block]", err.message);
     res.status(500).json({ error: err.message });
@@ -890,15 +902,8 @@ app.post("/api/unblock/:phone", async (req, res) => {
   const bot = getActiveBot();
   if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
   try {
-    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
-    const jid      = outPhone + "@c.us";
-    await bot.client.pupPage.evaluate(async (contactId) => {
-      const contact = window.Store.Contact.get(contactId)
-        || await window.Store.Contact.findContact(contactId);
-      if (!contact) throw new Error("Contact not found: " + contactId);
-      await window.Store.BlockContact.unblockContact(contact);
-    }, jid);
-    res.json({ ok: true });
+    const r = await blockAction(bot, req.params.phone, "unblock");
+    res.json(r);
   } catch (err) {
     console.error("[unblock]", err.message);
     res.status(500).json({ error: err.message });
