@@ -177,6 +177,14 @@ body {
   font-size: 0.6rem; font-weight: 700; flex-shrink: 0;
   padding: 1px 5px; letter-spacing: 0.03em;
 }
+.contact-del-btn {
+  display: none; background: none; border: none; cursor: pointer;
+  font-size: 0.85rem; padding: 2px 4px; border-radius: 6px;
+  color: #8696a0; flex-shrink: 0; line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.contact-item:hover .contact-del-btn { display: flex; align-items: center; }
+.contact-del-btn:hover { background: rgba(229,57,53,0.15); color: #e53935; }
 .msg-count-badge {
   background: #2a3942; color: #8696a0; border-radius: 10px;
   font-size: 0.62rem; font-weight: 600; flex-shrink: 0;

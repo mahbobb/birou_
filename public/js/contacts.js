@@ -165,11 +165,32 @@ function renderContacts(list) {
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               ${msgCount}
               ${isUnread ? `<span class="unread-badge">💬 رد</span>` : ""}
+              <button class="contact-del-btn" title="حذف" onclick="deleteContact('${escHtml(c.phone)}',event)">🗑</button>
             </div>
           </div>
         </div>
       </div>`;
   }).join("");
+}
+
+// ── Delete contact ────────────────────────────────────────────────────────
+async function deleteContact(phone, e) {
+  e.stopPropagation();
+  if (!confirm("حذف هذه المحادثة وجميع رسائلها؟")) return;
+  try {
+    const res = await fetch(`/api/contacts/${encodeURIComponent(phone)}`, { method: "DELETE" });
+    const d   = await res.json();
+    if (!d.ok) { showToast("❌ فشل الحذف"); return; }
+    allContacts = allContacts.filter(c => normalizeKey(c.phone) !== normalizeKey(phone));
+    if (normalizeKey(selectedPhone) === normalizeKey(phone)) {
+      selectedPhone = "";
+      document.getElementById("chatView").classList.remove("open");
+      document.getElementById("noSelection").style.display = "";
+    }
+    updateBadges();
+    applyFilter();
+    showToast("🗑 تم الحذف");
+  } catch { showToast("❌ خطأ في الاتصال"); }
 }
 
 // ── Mark contact as replied (remove from unread instantly) ────────────────
