@@ -797,6 +797,57 @@ app.delete("/api/contacts/:phone", async (req, res) => {
   }
 });
 
+// ── Broadcast endpoint ────────────────────────────────────────
+app.post("/api/broadcast", async (req, res) => {
+  const dbPool = require("./db");
+  const { message, hours = 24, botId = null, dryRun = false } = req.body;
+  if (!message) return res.status(400).json({ error: "message مطلوب" });
+
+  const since = new Date();
+  since.setHours(since.getHours() - Number(hours));
+
+  try {
+    const [contacts] = await dbPool.query(`
+      SELECT m.contact AS phone, c.name, MAX(m.created_at) AS lastSent
+      FROM messages m
+      LEFT JOIN contacts c ON c.phone = m.contact
+      WHERE m.direction = 'out'
+        AND m.created_at >= ?
+        AND m.contact IS NOT NULL AND m.contact != ''
+      GROUP BY m.contact, c.name
+      ORDER BY lastSent DESC
+    `, [since]);
+
+    if (!contacts.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0, results: [] });
+
+    const results = [];
+    let sent = 0, failed = 0;
+
+    for (const { phone, name } of contacts) {
+      if (dryRun) { results.push({ phone, name, status: "dry-run" }); continue; }
+      try {
+        const outPhone = normalizeOutPhone(cleanPhone(phone));
+        const key      = phoneKey(outPhone);
+        const jid      = outPhone + "@c.us";
+        await botSend(jid, message, {}, botId);
+        await saveMessage(key, "أنت", "out", message, "manual");
+        emitMessage(key, { phone: key, name: "أنت", direction: "out", body: message, source: "manual", created_at: new Date().toISOString() });
+        results.push({ phone, name, status: "sent" });
+        sent++;
+        await new Promise(r => setTimeout(r, 2500));
+      } catch (err) {
+        results.push({ phone, name, status: "failed", error: err.message });
+        failed++;
+      }
+    }
+
+    res.json({ ok: true, sent, failed, total: contacts.length, results });
+  } catch (err) {
+    console.error("[broadcast] error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/send", async (req, res) => {
   const { phone: rawPhone, message, botId } = req.body;
   if (!rawPhone || !message) return res.status(400).json({ error: "phone و message مطلوبين" });

@@ -293,6 +293,22 @@
     .mbtn-cancel { background: #f0f2f5; color: #555; }
     .mbtn-green  { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
 
+    /* ════════ BROADCAST MODAL ════════ */
+    .bc-result-box {
+      margin-top: 14px; background: #f0f2f5; border-radius: 10px;
+      padding: 12px 14px; font-size: 0.82rem; max-height: 200px;
+      overflow-y: auto; direction: ltr; font-family: monospace;
+      display: none; white-space: pre-wrap; color: #333; line-height: 1.6;
+    }
+    .bc-result-box.open { display: block; }
+    .bc-summary { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .bc-stat { flex: 1; min-width: 80px; text-align: center; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; }
+    .bc-stat.s-green  { background: #e8f5e9; color: #2e7d32; }
+    .bc-stat.s-red    { background: #ffebee; color: #c62828; }
+    .bc-stat.s-blue   { background: #e3f2fd; color: #1565c0; }
+    .bc-spinner { display: none; text-align: center; padding: 20px; font-size: 1.4rem; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* ════════ TOAST ════════ */
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; backdrop-filter: blur(8px); }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -499,6 +515,9 @@
       <a class="quick-card" href="/qr">          <div class="qico">📲</div><div class="qtxt">QR Code</div></a>
       <a class="quick-card" href="/sync">        <div class="qico">🔄</div><div class="qtxt">المزامنة</div></a>
       <a class="quick-card" href="/notes">       <div class="qico">📝</div><div class="qtxt">الملاحظات</div></a>
+      <div class="quick-card" onclick="openBroadcast()" style="cursor:pointer">
+        <div class="qico">📢</div><div class="qtxt">إرسال جماعي</div>
+      </div>
     </div>
 
     <!-- Recent contacts -->
@@ -566,6 +585,7 @@
           <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">🤖 تبديل الردود التلقائية</button>
           <a href="/qr" class="form-btn fb-teal" style="text-align:center;text-decoration:none;display:block">📲 ربط رقم جديد (QR)</a>
           <a href="/sync" class="form-btn" style="background:#e3f2fd;color:var(--blue);text-align:center;text-decoration:none;display:block">🔄 مزامنة الرسائل القديمة</a>
+          <button class="form-btn" style="background:#f3e5f5;color:#6a1b9a" onclick="openBroadcast()">📢 إرسال تذكير جماعي</button>
         </div>
       </div>
 
@@ -604,6 +624,54 @@
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeModal()">إلغاء</button>
       <button class="mbtn mbtn-green"  onclick="sendMsg()">إرسال ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- Broadcast Modal -->
+<div class="overlay" id="broadcastOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <h3>📢 إرسال تذكير جماعي</h3>
+      <button class="modal-close" onclick="closeBroadcast()">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">⏱ آخر كم ساعة؟</label>
+        <input class="form-input" type="number" id="bcHours" value="24" min="1" max="720" style="text-align:center">
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">🤖 البوت</label>
+        <select class="form-input" id="bcBot">
+          <option value="">تلقائي</option>
+          <option value="bot1">Bot 1</option>
+          <option value="bot2">Bot 2</option>
+          <option value="bot3">Bot 3</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px;display:flex;align-items:flex-end">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;padding-bottom:9px">
+          <input type="checkbox" id="bcDryRun" style="width:16px;height:16px;cursor:pointer">
+          <span>معاينة فقط</span>
+        </label>
+      </div>
+    </div>
+    <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:5px">📝 نص الرسالة</label>
+    <textarea id="bcMessage" style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;resize:vertical;outline:none;direction:rtl;font-family:inherit;transition:border-color .2s" placeholder="اكتب رسالة التذكير...">مرحباً 👋
+
+أنا هنا وجاهز للإجابة عن أسئلتك في أي وقت 😊
+لا تتردد في التواصل معي!</textarea>
+
+    <div class="bc-spinner" id="bcSpinner">⏳</div>
+    <div class="bc-result-box" id="bcResultBox"></div>
+    <div class="bc-summary" id="bcSummary" style="display:none">
+      <div class="bc-stat s-green" id="bcSent">✅ 0 تم</div>
+      <div class="bc-stat s-red"   id="bcFailed">❌ 0 فشل</div>
+      <div class="bc-stat s-blue"  id="bcTotal">📊 0 مجموع</div>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeBroadcast()">إغلاق</button>
+      <button class="mbtn mbtn-green" id="bcSendBtn" onclick="runBroadcast()">📢 إرسال</button>
     </div>
   </div>
 </div>
@@ -865,6 +933,76 @@
         setTimeout(() => location.href="/login", 2000);
       } else showToast("❌ " + (d.error||"فشل التغيير"));
     } catch { showToast("❌ خطأ في الاتصال"); }
+  }
+
+  /* ── Broadcast ── */
+  function openBroadcast() {
+    document.getElementById("bcResultBox").className  = "bc-result-box";
+    document.getElementById("bcResultBox").textContent = "";
+    document.getElementById("bcSummary").style.display = "none";
+    document.getElementById("bcSpinner").style.display  = "none";
+    document.getElementById("bcSendBtn").disabled = false;
+    document.getElementById("broadcastOverlay").classList.add("open");
+  }
+  function closeBroadcast() {
+    document.getElementById("broadcastOverlay").classList.remove("open");
+  }
+  document.getElementById("broadcastOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("broadcastOverlay")) closeBroadcast();
+  });
+
+  async function runBroadcast() {
+    const message = document.getElementById("bcMessage").value.trim();
+    const hours   = parseInt(document.getElementById("bcHours").value) || 24;
+    const botId   = document.getElementById("bcBot").value || null;
+    const dryRun  = document.getElementById("bcDryRun").checked;
+    if (!message) return showToast("⚠️ اكتب نص الرسالة أولاً");
+
+    const btn = document.getElementById("bcSendBtn");
+    btn.disabled = true;
+    document.getElementById("bcSpinner").style.display  = "block";
+    document.getElementById("bcSummary").style.display  = "none";
+    document.getElementById("bcResultBox").className    = "bc-result-box";
+    document.getElementById("bcResultBox").textContent  = "";
+
+    try {
+      const d = await fetch("/api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, hours, botId, dryRun })
+      }).then(r => r.json());
+
+      document.getElementById("bcSpinner").style.display = "none";
+
+      if (!d.ok) { showToast("❌ " + (d.error || "خطأ")); btn.disabled = false; return; }
+
+      if (d.total === 0) {
+        document.getElementById("bcResultBox").className    = "bc-result-box open";
+        document.getElementById("bcResultBox").textContent  = "⚠️ لا يوجد زبائن في هذه الفترة";
+        btn.disabled = false;
+        return;
+      }
+
+      // Show results
+      const lines = d.results.map(r => {
+        const label = r.name && !/^\d+$/.test(r.name) ? r.name : r.phone;
+        const icon  = r.status === "sent" ? "✅" : r.status === "dry-run" ? "👁" : "❌";
+        return `${icon} ${label}${r.error ? " — " + r.error : ""}`;
+      }).join("\n");
+      document.getElementById("bcResultBox").className   = "bc-result-box open";
+      document.getElementById("bcResultBox").textContent = lines;
+
+      document.getElementById("bcSent").textContent   = `✅ ${d.sent} تم`;
+      document.getElementById("bcFailed").textContent = `❌ ${d.failed} فشل`;
+      document.getElementById("bcTotal").textContent  = `📊 ${d.total} مجموع`;
+      document.getElementById("bcSummary").style.display = "flex";
+
+      if (!dryRun) showToast(`✅ تم الإرسال: ${d.sent} / ${d.total}`);
+    } catch {
+      document.getElementById("bcSpinner").style.display = "none";
+      showToast("❌ فشل الاتصال");
+    }
+    btn.disabled = false;
   }
 
   /* ── Toast ── */

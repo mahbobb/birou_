@@ -3,9 +3,9 @@
 //  broadcast.js — إرسال رسالة جماعية للزبائن الذين تمت إجابتهم
 //
 //  الاستخدام:
-//    node broadcast.js                        ← رسالة افتراضية
+//    node broadcast.js                        ← رسالة افتراضية (آخر 24 ساعة)
 //    node broadcast.js "رسالتك هنا"           ← رسالة مخصصة
-//    node broadcast.js --days 7               ← زبائن آخر 7 أيام فقط
+//    node broadcast.js --hours 48             ← زبائن آخر 48 ساعة
 //    node broadcast.js --dry-run              ← معاينة بدون إرسال
 //    node broadcast.js --bot bot2             ← استخدام بوت معين
 // ═══════════════════════════════════════════════════════════════
@@ -25,17 +25,17 @@ const PORT        = process.env.PORT || 3000;
 // ── قراءة الأوامر ─────────────────────────────────────────────
 const args    = process.argv.slice(2);
 const dryRun  = args.includes("--dry-run");
-const dayIdx  = args.indexOf("--days");
+const hourIdx = args.indexOf("--hours");
 const botIdx  = args.indexOf("--bot");
-const days    = dayIdx !== -1 ? parseInt(args[dayIdx + 1]) || 30 : 30;
+const hours   = hourIdx !== -1 ? parseInt(args[hourIdx + 1]) || 24 : 24;
 const botId   = botIdx !== -1 ? args[botIdx + 1] : null;
-const msgArg  = args.find(a => !a.startsWith("--") && args.indexOf(a) !== dayIdx + 1 && args.indexOf(a) !== botIdx + 1);
+const msgArg  = args.find(a => !a.startsWith("--") && args.indexOf(a) !== hourIdx + 1 && args.indexOf(a) !== botIdx + 1);
 const message = msgArg || DEFAULT_MSG;
 
 // ── جلب الزبائن الذين تمت إجابتهم ─────────────────────────────
-async function getAnsweredContacts(days) {
+async function getAnsweredContacts(hours) {
   const since = new Date();
-  since.setDate(since.getDate() - days);
+  since.setHours(since.getHours() - hours);
 
   const [rows] = await pool.query(`
     SELECT DISTINCT m.contact AS phone, c.name
@@ -51,8 +51,43 @@ async function getAnsweredContacts(days) {
   return rows;
 }
 
+// ── تسجيل الدخول والحصول على الـ token ─────────────────────────
+async function login() {
+  const http = require("http");
+  const password = process.env.DASHBOARD_PASSWORD || "admin123";
+  const body = JSON.stringify({ password });
+
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: "localhost",
+      port: PORT,
+      path: "/api/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+    }, (res) => {
+      let data = "";
+      res.on("data", d => data += d);
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          if (!json.ok) return reject(new Error("فشل تسجيل الدخول: " + (json.error || "")));
+          // استخراج الـ cookie
+          const setCookie = res.headers["set-cookie"] || [];
+          const tokenCookie = setCookie.find(c => c.startsWith("auth_token="));
+          if (!tokenCookie) return reject(new Error("لم يتم استلام الـ token"));
+          const token = tokenCookie.split(";")[0].split("=")[1];
+          resolve(token);
+        } catch { reject(new Error("parse error في login")); }
+      });
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 // ── إرسال رسالة عبر API ────────────────────────────────────────
-async function sendMessage(phone, text, botId) {
+async function sendMessage(phone, text, botId, authToken) {
   const http = require("http");
   const body = JSON.stringify({ phone, message: text, ...(botId ? { botId } : {}) });
 
@@ -62,7 +97,11 @@ async function sendMessage(phone, text, botId) {
       port: PORT,
       path: "/api/send",
       method: "POST",
-      headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body),
+        "Cookie": `auth_token=${authToken}`
+      }
     }, (res) => {
       let data = "";
       res.on("data", d => data += d);
@@ -89,12 +128,23 @@ async function main() {
   console.log("═══════════════════════════════════════");
   console.log("  📢 Broadcast — إرسال تذكير جماعي");
   console.log("═══════════════════════════════════════");
-  console.log(`📅 آخر ${days} يوم`);
+  console.log(`📅 آخر ${hours} ساعة`);
   console.log(`🤖 البوت: ${botId || "تلقائي"}`);
   console.log(`📝 الرسالة:\n${message}\n`);
   if (dryRun) console.log("⚠️  DRY RUN — لن يتم إرسال أي رسالة\n");
 
-  const contacts = await getAnsweredContacts(days);
+  // تسجيل الدخول
+  let authToken;
+  try {
+    authToken = await login();
+    console.log("🔑 تسجيل الدخول: ✅\n");
+  } catch (err) {
+    console.error("❌ فشل تسجيل الدخول:", err.message);
+    await pool.end();
+    process.exit(1);
+  }
+
+  const contacts = await getAnsweredContacts(hours);
 
   if (!contacts.length) {
     console.log("⚠️  لا يوجد زبائن في الفترة المحددة");
@@ -117,7 +167,7 @@ async function main() {
     }
 
     try {
-      const result = await sendMessage(phone, message, botId);
+      const result = await sendMessage(phone, message, botId, authToken);
       if (result.ok) {
         console.log("✅ تم");
         sent++;
