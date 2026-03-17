@@ -125,9 +125,12 @@ function setupClient(botId) {
       "--no-first-run", "--no-zygote",
       "--disable-extensions", "--disable-default-apps",
       "--disable-background-networking",
-      "--disable-features=TranslateUI",
+      "--disable-features=TranslateUI,VizDisplayCompositor",
       "--memory-pressure-off",
       "--single-process",
+      "--disable-web-security",
+      "--disable-features=site-per-process",
+      "--js-flags=--max-old-space-size=256",
     ],
   };
   if (CHROMIUM_PATH) puppeteerOpts.executablePath = CHROMIUM_PATH;
@@ -186,12 +189,13 @@ function setupClient(botId) {
     bot.botConnected = false;
     bot.latestQr = null;
     console.log(`\n🔴 [${botId}] انقطع الاتصال:`, reason);
-    // إعادة التشغيل تلقائياً بعد 15 ثانية
+    // إعادة التشغيل بعد 30-50 ثانية (عشوائي لتفادي تصادم البوتات)
+    const delay = 30000 + Math.floor(Math.random() * 20000);
     setTimeout(() => {
       console.log(`\n🔄 [${botId}] إعادة تشغيل تلقائية...`);
       try { c.destroy().catch(() => {}); } catch {}
       setupClient(botId);
-    }, 15000);
+    }, delay);
   });
 
   c.on("message", msg => handleIncoming(msg, botId));
@@ -199,12 +203,13 @@ function setupClient(botId) {
 
   c.initialize().catch((err) => {
     console.error(`\n❌ [${botId}] فشل التهيئة:`, err.message || err);
-    // إعادة المحاولة بعد 20 ثانية
+    // إعادة المحاولة بعد 35-60 ثانية (عشوائي لتفادي تصادم البوتات)
+    const delay = 35000 + Math.floor(Math.random() * 25000);
     setTimeout(() => {
       console.log(`\n🔄 [${botId}] إعادة محاولة التهيئة...`);
       try { c.destroy().catch(() => {}); } catch {}
       setupClient(botId);
-    }, 20000);
+    }, delay);
   });
 }
 
@@ -1578,11 +1583,11 @@ process.on("SIGINT", async () => {
 // ─── تشغيل ────────────────────────────────────────────────────────────────
 
 console.log(`🚀 تشغيل بوت واتساب IA (${AI_PROVIDER}) — 3 أرقام...`);
-// تشغيل البوتات بتأخير 12 ثانية بين كل واحد — يمنع تعارض Chrome instances
+// تشغيل البوتات بتأخير 40 ثانية بين كل واحد — يمنع تعارض Chrome instances
 BOT_IDS.forEach((id, i) => {
   if (i === 0) { setupClient(id); return; }
   setTimeout(() => {
-    console.log(`\n⏱️  [${id}] بدء التشغيل (تأخير ${i * 20}ث)...`);
+    console.log(`\n⏱️  [${id}] بدء التشغيل (تأخير ${i * 40}ث)...`);
     setupClient(id);
-  }, i * 20000);
+  }, i * 40000);
 });
