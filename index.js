@@ -872,8 +872,13 @@ app.post("/api/block/:phone", async (req, res) => {
   if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
   try {
     const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
-    const contact  = await bot.client.getContactById(outPhone + "@c.us");
-    await contact.block();
+    const jid      = outPhone + "@c.us";
+    await bot.client.pupPage.evaluate(async (contactId) => {
+      const contact = window.Store.Contact.get(contactId)
+        || await window.Store.Contact.findContact(contactId);
+      if (!contact) throw new Error("Contact not found: " + contactId);
+      await window.Store.BlockContact.blockContact({ contact });
+    }, jid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[block]", err.message);
@@ -886,8 +891,13 @@ app.post("/api/unblock/:phone", async (req, res) => {
   if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
   try {
     const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
-    const contact  = await bot.client.getContactById(outPhone + "@c.us");
-    await contact.unblock();
+    const jid      = outPhone + "@c.us";
+    await bot.client.pupPage.evaluate(async (contactId) => {
+      const contact = window.Store.Contact.get(contactId)
+        || await window.Store.Contact.findContact(contactId);
+      if (!contact) throw new Error("Contact not found: " + contactId);
+      await window.Store.BlockContact.unblockContact(contact);
+    }, jid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[unblock]", err.message);
