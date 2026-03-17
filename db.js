@@ -29,10 +29,10 @@ async function initDb() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
-  // migration: add is_blocked if missing
+  // migration: add is_blocked if missing (compatible with MySQL 5.7)
   await pool.query(`
-    ALTER TABLE contacts ADD COLUMN IF NOT EXISTS is_blocked TINYINT(1) NOT NULL DEFAULT 0
-  `).catch(() => {});
+    ALTER TABLE contacts ADD COLUMN is_blocked TINYINT(1) NOT NULL DEFAULT 0
+  `).catch(() => {}); // تجاهل خطأ "column already exists"
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS messages (
