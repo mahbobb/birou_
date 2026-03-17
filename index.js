@@ -126,10 +126,9 @@ function setupClient(botId) {
       "--disable-extensions", "--disable-default-apps",
       "--disable-background-networking",
       "--disable-features=TranslateUI,VizDisplayCompositor",
-      "--memory-pressure-off",
-      "--single-process",
-      "--disable-web-security",
-      "--disable-features=site-per-process",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--disable-backgrounding-occluded-windows",
       "--js-flags=--max-old-space-size=256",
     ],
   };
