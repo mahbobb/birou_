@@ -506,6 +506,10 @@ body {
   flex-shrink: 0; transition: color 0.15s;
 }
 .wa-input-btn:hover { color: #e9edef; }
+.wa-block-btn { color: #8696a0; }
+.wa-block-btn:hover { color: #ff8a80; }
+.wa-block-btn.active-block { color: #e53935; }
+.wa-block-btn.active-block:hover { color: #ff5252; }
 
 /* المنطقة المركزية (إيموجي + textarea + rec-bar) */
 .wa-input-center {

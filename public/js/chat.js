@@ -768,16 +768,13 @@ async function loadBlockStatus(phone) {
 
 function updateBlockBtn() {
   const btn     = document.getElementById("blockBtn");
+  const btnBot  = document.getElementById("blockBtnBottom");
   const bar     = document.getElementById("chatInputBar");
   const blocker = document.getElementById("blockedBar");
 
-  if (!btn) return;
-
   if (_isBlocked) {
-    btn.textContent = "✅";
-    btn.title       = "إلغاء الحجب";
-    btn.classList.add("blocked");
-    // إخفاء شريط الإرسال وإظهار شريط المحجوب
+    if (btn)    { btn.textContent = "✅"; btn.title = "إلغاء الحجب"; btn.classList.add("blocked"); }
+    if (btnBot) { btnBot.classList.add("active-block"); btnBot.title = "إلغاء الحجب"; }
     if (bar) bar.style.display = "none";
     if (!blocker) {
       const div = document.createElement("div");
@@ -788,10 +785,8 @@ function updateBlockBtn() {
       bar?.parentNode?.insertBefore(div, bar);
     }
   } else {
-    btn.textContent = "🚫";
-    btn.title       = "حجب المستخدم";
-    btn.classList.remove("blocked");
-    // إظهار شريط الإرسال وإزالة شريط المحجوب
+    if (btn)    { btn.textContent = "🚫"; btn.title = "حجب المستخدم"; btn.classList.remove("blocked"); }
+    if (btnBot) { btnBot.classList.remove("active-block"); btnBot.title = "حجب المستخدم"; }
     if (bar) bar.style.display = "";
     blocker?.remove();
   }

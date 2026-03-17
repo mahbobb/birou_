@@ -180,6 +180,11 @@
 
       <div class="chat-input-bar" id="chatInputBar">
 
+        <!-- زر الحجب -->
+        <button class="wa-input-btn wa-block-btn" id="blockBtnBottom" title="حجب المستخدم" onclick="toggleBlock()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
+        </button>
+
         <!-- زر الردود السريعة -->
         <button class="wa-input-btn" id="qrToggleBtn" title="الردود المحفوظة" onclick="toggleQuickReplies(event)">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 10H7v-2h10v2zm0-3H7V7h10v2z"/></svg>
