@@ -903,6 +903,17 @@ body {
 }
 .header-resp-btn:hover { background: rgba(0,168,132,0.28); }
 
+/* Block user button */
+.header-block-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  cursor: pointer; font-size: 1rem; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  background: rgba(255,152,0,0.15); transition: background 0.15s, transform 0.15s;
+}
+.header-block-btn:hover { background: rgba(255,152,0,0.35); transform: scale(1.1); }
+.header-block-btn.blocked { background: rgba(229,57,53,0.2); }
+.header-block-btn.blocked:hover { background: rgba(229,57,53,0.38); }
+
 /* Delete chat button */
 .header-del-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none;

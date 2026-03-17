@@ -189,6 +189,7 @@ document.querySelectorAll(".contact-item")
 el.classList.add("active")
 
 loadMessages(true)
+loadBlockStatus(phone)
 
 }
 
@@ -734,6 +735,51 @@ document.addEventListener("keydown", e=>{
 function logout(){
   fetch("/api/logout",{method:"POST"})
   .then(()=>location.href="/login")
+}
+
+// ─────────────────────────────────────────
+// BLOCK / UNBLOCK USER
+// ─────────────────────────────────────────
+let _isBlocked = false;
+
+async function loadBlockStatus(phone) {
+  try {
+    const d = await fetch(`/api/block-status/${encodeURIComponent(phone)}`).then(r => r.json());
+    _isBlocked = d.blocked || false;
+    updateBlockBtn();
+  } catch { _isBlocked = false; updateBlockBtn(); }
+}
+
+function updateBlockBtn() {
+  const btn = document.getElementById("blockBtn");
+  if (!btn) return;
+  if (_isBlocked) {
+    btn.textContent = "✅";
+    btn.title = "إلغاء الحجب";
+    btn.classList.add("blocked");
+  } else {
+    btn.textContent = "🚫";
+    btn.title = "حجب المستخدم";
+    btn.classList.remove("blocked");
+  }
+}
+
+async function toggleBlock() {
+  if (!selectedPhone) return;
+  const action = _isBlocked ? "unblock" : "block";
+  const label  = _isBlocked ? "إلغاء الحجب" : "حجب";
+  const name   = selectedName || selectedPhone;
+  if (!confirm(`${label} "${name}"؟`)) return;
+  try {
+    const d = await fetch(`/api/${action}/${encodeURIComponent(selectedPhone)}`, { method: "POST" }).then(r => r.json());
+    if (d.ok) {
+      _isBlocked = !_isBlocked;
+      updateBlockBtn();
+      showToast(_isBlocked ? `🚫 تم حجب ${name}` : `✅ تم إلغاء حجب ${name}`);
+    } else {
+      showToast("❌ " + (d.error || "فشل"));
+    }
+  } catch { showToast("❌ خطأ في الاتصال"); }
 }
 
 // ─────────────────────────────────────────

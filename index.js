@@ -852,6 +852,39 @@ app.post("/api/broadcast", async (req, res) => {
   }
 });
 
+// ── Block / Unblock ───────────────────────────────────────────────────────
+app.get("/api/block-status/:phone", async (req, res) => {
+  const bot = getActiveBot();
+  if (!bot) return res.json({ blocked: false });
+  try {
+    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
+    const contact  = await bot.client.getContactById(outPhone + "@c.us");
+    res.json({ blocked: contact.isBlocked || false });
+  } catch { res.json({ blocked: false }); }
+});
+
+app.post("/api/block/:phone", async (req, res) => {
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
+  try {
+    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
+    const contact  = await bot.client.getContactById(outPhone + "@c.us");
+    await contact.block();
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/unblock/:phone", async (req, res) => {
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
+  try {
+    const outPhone = normalizeOutPhone(cleanPhone(req.params.phone));
+    const contact  = await bot.client.getContactById(outPhone + "@c.us");
+    await contact.unblock();
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.post("/api/send", async (req, res) => {
   const { phone: rawPhone, message, botId } = req.body;
   if (!rawPhone || !message) return res.status(400).json({ error: "phone و message مطلوبين" });
