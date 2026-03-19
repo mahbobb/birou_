@@ -951,17 +951,27 @@
   function previewBcImage(input) {
     const file = input.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      _bcImageBase64 = e.target.result;
-      _bcImageMime   = file.type;
-      document.getElementById("bcImagePreview").src     = e.target.result;
+    _bcImageMime = "image/jpeg"; // نرسل دائماً JPEG بعد الضغط
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // ضغط الصورة إلى أقصى 1200px وجودة 80%
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      _bcImageBase64 = canvas.toDataURL("image/jpeg", 0.8);
+      URL.revokeObjectURL(url);
+      document.getElementById("bcImagePreview").src            = _bcImageBase64;
       document.getElementById("bcImagePreview").style.display  = "block";
       document.getElementById("bcImagePlaceholder").style.display = "none";
-      document.getElementById("bcImageRemove").style.display  = "block";
+      document.getElementById("bcImageRemove").style.display   = "block";
       document.getElementById("bcImageArea").style.borderColor = "var(--green)";
     };
-    reader.readAsDataURL(file);
+    img.src = url;
   }
 
   function removeBcImage(e) {

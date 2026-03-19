@@ -892,8 +892,12 @@ app.post("/api/broadcast", async (req, res) => {
         const jid      = outPhone + "@c.us";
 
         if (media) {
-          // إرسال صورة مع التعليق
-          await botSend(jid, media, { caption: message || "" }, botId);
+          // إرسال الصورة — caption فقط إذا يوجد نص
+          const mediaOpts = message ? { caption: message } : {};
+          const bot = getActiveBot(botId);
+          if (!bot) throw new Error("لا يوجد بوت متصل");
+          const sent = await bot.client.sendMessage(jid, media, mediaOpts);
+          if (sent?.id?._serialized) bot.botMsgIds.add(sent.id._serialized);
         } else {
           await botSend(jid, message, {}, botId);
         }
