@@ -657,10 +657,19 @@
       </div>
     </div>
     <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin-bottom:5px">📝 نص الرسالة</label>
-    <textarea id="bcMessage" style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;resize:vertical;outline:none;direction:rtl;font-family:inherit;transition:border-color .2s" placeholder="اكتب رسالة التذكير...">مرحباً 👋
+    <textarea id="bcMessage" style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;resize:vertical;outline:none;direction:rtl;font-family:inherit;transition:border-color .2s" placeholder="اكتب رسالة التذكير... (اختياري إذا أرسلت صورة)">مرحباً 👋
 
 أنا هنا وجاهز للإجابة عن أسئلتك في أي وقت 😊
 لا تتردد في التواصل معي!</textarea>
+
+    <!-- رفع صورة اختياري -->
+    <label style="font-size:0.75rem;color:var(--muted);font-weight:600;display:block;margin:10px 0 5px">🖼 صورة مرفقة (اختياري)</label>
+    <div id="bcImageArea" style="border:2px dashed var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative" onclick="document.getElementById('bcImageInput').click()">
+      <input type="file" id="bcImageInput" accept="image/*" style="display:none" onchange="previewBcImage(this)">
+      <div id="bcImagePlaceholder" style="color:var(--muted);font-size:0.85rem">📎 اضغط لرفع صورة</div>
+      <img id="bcImagePreview" src="" alt="" style="display:none;max-height:150px;max-width:100%;border-radius:8px;object-fit:contain">
+      <button id="bcImageRemove" onclick="removeBcImage(event)" style="display:none;position:absolute;top:6px;left:6px;background:#e53935;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1">✕</button>
+    </div>
 
     <div class="bc-spinner" id="bcSpinner">⏳</div>
     <div class="bc-result-box" id="bcResultBox"></div>
@@ -936,6 +945,36 @@
   }
 
   /* ── Broadcast ── */
+  let _bcImageBase64 = null;
+  let _bcImageMime   = null;
+
+  function previewBcImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      _bcImageBase64 = e.target.result;
+      _bcImageMime   = file.type;
+      document.getElementById("bcImagePreview").src     = e.target.result;
+      document.getElementById("bcImagePreview").style.display  = "block";
+      document.getElementById("bcImagePlaceholder").style.display = "none";
+      document.getElementById("bcImageRemove").style.display  = "block";
+      document.getElementById("bcImageArea").style.borderColor = "var(--green)";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeBcImage(e) {
+    e.stopPropagation();
+    _bcImageBase64 = null;
+    _bcImageMime   = null;
+    document.getElementById("bcImageInput").value           = "";
+    document.getElementById("bcImagePreview").style.display = "none";
+    document.getElementById("bcImagePlaceholder").style.display = "block";
+    document.getElementById("bcImageRemove").style.display  = "none";
+    document.getElementById("bcImageArea").style.borderColor = "";
+  }
+
   function openBroadcast() {
     document.getElementById("bcResultBox").className  = "bc-result-box";
     document.getElementById("bcResultBox").textContent = "";
@@ -956,7 +995,7 @@
     const hours   = parseInt(document.getElementById("bcHours").value) || 24;
     const botId   = document.getElementById("bcBot").value || null;
     const dryRun  = document.getElementById("bcDryRun").checked;
-    if (!message) return showToast("⚠️ اكتب نص الرسالة أولاً");
+    if (!message && !_bcImageBase64) return showToast("⚠️ اكتب رسالة أو أضف صورة");
 
     const btn = document.getElementById("bcSendBtn");
     btn.disabled = true;
@@ -966,10 +1005,13 @@
     document.getElementById("bcResultBox").textContent  = "";
 
     try {
+      const payload = { message, hours, botId, dryRun };
+      if (_bcImageBase64) { payload.imageBase64 = _bcImageBase64; payload.imageMime = _bcImageMime; }
+
       const d = await fetch("/api/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, hours, botId, dryRun })
+        body: JSON.stringify(payload)
       }).then(r => r.json());
 
       document.getElementById("bcSpinner").style.display = "none";

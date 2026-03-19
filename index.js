@@ -851,11 +851,21 @@ app.delete("/api/contacts/:phone", async (req, res) => {
 // ── Broadcast endpoint ────────────────────────────────────────
 app.post("/api/broadcast", async (req, res) => {
   const dbPool = require("./db");
-  const { message, hours = 24, botId = null, dryRun = false } = req.body;
-  if (!message) return res.status(400).json({ error: "message مطلوب" });
+  const { message, hours = 24, botId = null, dryRun = false, imageBase64 = null, imageMime = null } = req.body;
+  if (!message && !imageBase64) return res.status(400).json({ error: "message أو image مطلوب" });
 
   const since = new Date();
   since.setHours(since.getHours() - Number(hours));
+
+  // تحضير الميديا إذا وُجدت صورة
+  let media = null;
+  if (imageBase64 && imageMime) {
+    try {
+      media = new MessageMedia(imageMime, imageBase64.replace(/^data:[^;]+;base64,/, ""), "broadcast_image");
+    } catch (e) {
+      return res.status(400).json({ error: "صورة غير صالحة" });
+    }
+  }
 
   try {
     const [contacts] = await dbPool.query(`
@@ -880,9 +890,17 @@ app.post("/api/broadcast", async (req, res) => {
         const outPhone = normalizeOutPhone(cleanPhone(phone));
         const key      = phoneKey(outPhone);
         const jid      = outPhone + "@c.us";
-        await botSend(jid, message, {}, botId);
-        await saveMessage(key, "أنت", "out", message, "manual");
-        emitMessage(key, { phone: key, name: "أنت", direction: "out", body: message, source: "manual", created_at: new Date().toISOString() });
+
+        if (media) {
+          // إرسال صورة مع التعليق
+          await botSend(jid, media, { caption: message || "" }, botId);
+        } else {
+          await botSend(jid, message, {}, botId);
+        }
+
+        const bodyText = message || "📷 صورة";
+        await saveMessage(key, "أنت", "out", bodyText, "manual");
+        emitMessage(key, { phone: key, name: "أنت", direction: "out", body: bodyText, source: "manual", created_at: new Date().toISOString() });
         results.push({ phone, name, status: "sent" });
         sent++;
         await new Promise(r => setTimeout(r, 2500));
