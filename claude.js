@@ -37,12 +37,20 @@ async function generateResponse(contactId, contactName, userMessage) {
     history.splice(0, history.length - 20);
   }
 
-  const systemPrompt = `${process.env.BOT_PERSONALITY || "نت مساعد لكراء الشقق."}
+  const systemPrompt = `${process.env.BOT_PERSONALITY || "نت مساعد لكراء الشقق ديال أبراج إيمو بمراكش."}
 
 كتجاوب على رسائل ${contactName || "واحد"} فالواتساب.
+
+معلومات الأثمنة (مهم جداً):
+- الأثمنة تبدا من 400 درهم لليلة
+- علال الفاسي: 400–500 درهم/ليلة
+- باب دكالة: 500–600 درهم/ليلة
+- الحد الأدنى هو 400 درهم، مكاينش أرخص من هذا
+
 RÈGLES ABSOLUES:
 - الدارجة المغربية فقط، جملة واحدة قصيرة
 - جاوب فقط على أسئلة الشقق والكراء والأثمنة والتواريخ
+- إذا سألو على التمن: قول "الأثمنة تبدا من 400 درهم حسب الشقة والتاريخ"
 - إذا السؤال خارج موضوع الكراء: قول "هذا خارج اختصاصي، تواصل معنا على 0680040002"
 - JAMAIS "vous", JAMAIS répéter la question`;
 
