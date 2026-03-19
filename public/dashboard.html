@@ -671,7 +671,7 @@
       <button id="bcImageRemove" onclick="removeBcImage(event)" style="display:none;position:absolute;top:6px;left:6px;background:#e53935;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1">✕</button>
     </div>
 
-    <div class="bc-spinner" id="bcSpinner">⏳</div>
+    <div class="bc-spinner" id="bcSpinner" style="display:none">⏳ جاري الإرسال...</div>
     <div class="bc-result-box" id="bcResultBox"></div>
     <div class="bc-summary" id="bcSummary" style="display:none">
       <div class="bc-stat s-green" id="bcSent">✅ 0 تم</div>
@@ -680,6 +680,7 @@
     </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeBroadcast()">إغلاق</button>
+      <button class="mbtn" id="bcStopBtn" onclick="stopBroadcast()" style="display:none;background:#e53935;color:#fff">⏹ وقف</button>
       <button class="mbtn mbtn-green" id="bcSendBtn" onclick="runBroadcast()">📢 إرسال</button>
     </div>
   </div>
@@ -986,12 +987,19 @@
   }
 
   function openBroadcast() {
-    document.getElementById("bcResultBox").className  = "bc-result-box";
+    document.getElementById("bcResultBox").className   = "bc-result-box";
     document.getElementById("bcResultBox").textContent = "";
     document.getElementById("bcSummary").style.display = "none";
-    document.getElementById("bcSpinner").style.display  = "none";
-    document.getElementById("bcSendBtn").disabled = false;
+    document.getElementById("bcSpinner").style.display = "none";
+    document.getElementById("bcStopBtn").style.display = "none";
+    document.getElementById("bcSendBtn").disabled      = false;
     document.getElementById("broadcastOverlay").classList.add("open");
+  }
+
+  async function stopBroadcast() {
+    document.getElementById("bcStopBtn").disabled = true;
+    document.getElementById("bcStopBtn").textContent = "⏹ يتم الإيقاف...";
+    await fetch("/api/broadcast/stop", { method: "POST" });
   }
   function closeBroadcast() {
     document.getElementById("broadcastOverlay").classList.remove("open");
@@ -1007,8 +1015,12 @@
     const dryRun  = document.getElementById("bcDryRun").checked;
     if (!message && !_bcImageBase64) return showToast("⚠️ اكتب رسالة أو أضف صورة");
 
-    const btn = document.getElementById("bcSendBtn");
-    btn.disabled = true;
+    const btn     = document.getElementById("bcSendBtn");
+    const stopBtn = document.getElementById("bcStopBtn");
+    btn.disabled           = true;
+    stopBtn.style.display  = "inline-flex";
+    stopBtn.disabled       = false;
+    stopBtn.textContent    = "⏹ وقف";
     document.getElementById("bcSpinner").style.display  = "block";
     document.getElementById("bcSummary").style.display  = "none";
     document.getElementById("bcResultBox").className    = "bc-result-box";
@@ -1025,6 +1037,7 @@
       }).then(r => r.json());
 
       document.getElementById("bcSpinner").style.display = "none";
+      stopBtn.style.display = "none";
 
       if (!d.ok) { showToast("❌ " + (d.error || "خطأ")); btn.disabled = false; return; }
 
@@ -1038,20 +1051,24 @@
       // Show results
       const lines = d.results.map(r => {
         const label = r.name && !/^\d+$/.test(r.name) ? r.name : r.phone;
-        const icon  = r.status === "sent" ? "✅" : r.status === "dry-run" ? "👁" : "❌";
+        const icon  = r.status === "sent" ? "✅" : r.status === "dry-run" ? "👁" : r.status === "stopped" ? "⏹" : "❌";
         return `${icon} ${label}${r.error ? " — " + r.error : ""}`;
       }).join("\n");
       document.getElementById("bcResultBox").className   = "bc-result-box open";
       document.getElementById("bcResultBox").textContent = lines;
 
+      const stoppedCount = d.stopped || 0;
       document.getElementById("bcSent").textContent   = `✅ ${d.sent} تم`;
       document.getElementById("bcFailed").textContent = `❌ ${d.failed} فشل`;
-      document.getElementById("bcTotal").textContent  = `📊 ${d.total} مجموع`;
+      document.getElementById("bcTotal").textContent  = stoppedCount ? `⏹ ${stoppedCount} موقوف` : `📊 ${d.total} مجموع`;
       document.getElementById("bcSummary").style.display = "flex";
 
-      if (!dryRun) showToast(`✅ تم الإرسال: ${d.sent} / ${d.total}`);
+      if (d.cancelled) showToast(`⏹ توقف الإرسال: ${d.sent} / ${d.total}`);
+      else if (!dryRun) showToast(`✅ تم الإرسال: ${d.sent} / ${d.total}`);
+      btn.disabled = false;
     } catch {
       document.getElementById("bcSpinner").style.display = "none";
+      stopBtn.style.display = "none";
       showToast("❌ فشل الاتصال");
     }
     btn.disabled = false;

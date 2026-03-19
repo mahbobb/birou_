@@ -848,6 +848,13 @@ app.delete("/api/contacts/:phone", async (req, res) => {
   }
 });
 
+// ── Broadcast stop flag ───────────────────────────────────────
+let broadcastCancelled = false;
+app.post("/api/broadcast/stop", (_req, res) => {
+  broadcastCancelled = true;
+  res.json({ ok: true });
+});
+
 // ── Broadcast endpoint ────────────────────────────────────────
 app.post("/api/broadcast", async (req, res) => {
   const dbPool = require("./db");
@@ -883,8 +890,10 @@ app.post("/api/broadcast", async (req, res) => {
 
     const results = [];
     let sent = 0, failed = 0;
+    broadcastCancelled = false; // إعادة ضبط عند بدء إرسال جديد
 
     for (const { phone, name } of contacts) {
+      if (broadcastCancelled) { results.push({ phone, name, status: "stopped" }); continue; }
       if (dryRun) { results.push({ phone, name, status: "dry-run" }); continue; }
       try {
         const outPhone = normalizeOutPhone(cleanPhone(phone));
@@ -914,7 +923,8 @@ app.post("/api/broadcast", async (req, res) => {
       }
     }
 
-    res.json({ ok: true, sent, failed, total: contacts.length, results });
+    const stopped = results.filter(r => r.status === "stopped").length;
+    res.json({ ok: true, sent, failed, stopped, total: contacts.length, results, cancelled: broadcastCancelled });
   } catch (err) {
     console.error("[broadcast] error:", err);
     res.status(500).json({ error: err.message });
