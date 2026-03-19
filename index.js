@@ -182,9 +182,39 @@ function setupClient(botId) {
     const stats = await getStats();
     console.log(`\n📋 الزبائن المسجلين: ${stats.total} | اليوم: ${stats.today}`);
     console.log(`\n🟢 [${botId}] في انتظار الرسائل...\n`);
+
+    // ── Watchdog: فحص حالة الاتصال كل 45 ثانية — إعادة تشغيل تلقائية إذا تجمّد ──
+    if (bot._keepaliveTimer) clearInterval(bot._keepaliveTimer);
+    bot._watchdogFails = 0;
+    bot._keepaliveTimer = setInterval(async () => {
+      if (!bot.botConnected) return;
+      try {
+        const state = await Promise.race([
+          c.getState(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+        ]);
+        if (state === "CONNECTED") {
+          bot._watchdogFails = 0; // إعادة العدّ عند النجاح
+        } else {
+          bot._watchdogFails = (bot._watchdogFails || 0) + 1;
+          console.warn(`⚠️  [${botId}] حالة WA: ${state} (محاولة ${bot._watchdogFails})`);
+          if (bot._watchdogFails >= 2) throw new Error(`state=${state}`);
+        }
+      } catch (err) {
+        console.warn(`⚠️  [${botId}] watchdog فشل: ${err.message} — إعادة تشغيل تلقائية...`);
+        bot.botConnected = false;
+        bot._watchdogFails = 0;
+        clearInterval(bot._keepaliveTimer);
+        bot._keepaliveTimer = null;
+        try { c.destroy().catch(() => {}); } catch {}
+        const delay = 15000 + Math.floor(Math.random() * 15000);
+        setTimeout(() => setupClient(botId), delay);
+      }
+    }, 45000);
   });
 
   c.on("disconnected", (reason) => {
+    if (bot._keepaliveTimer) { clearInterval(bot._keepaliveTimer); bot._keepaliveTimer = null; }
     bot.botConnected = false;
     bot.latestQr = null;
     console.log(`\n🔴 [${botId}] انقطع الاتصال:`, reason);

@@ -62,6 +62,11 @@ function playNotifSound() {
 // ─────────────────────────────────────────
 const socket = io()
 
+// إعادة الانضمام للغرفة تلقائياً عند إعادة الاتصال بالسيرفر
+socket.on("connect", () => {
+  if (selectedPhone) socket.emit("join", normalizeKey(selectedPhone))
+})
+
 socket.on("new_message", (m) => {
 
 // ── Browser notification for incoming messages ────────────────────────────
