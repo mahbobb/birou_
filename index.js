@@ -1172,10 +1172,11 @@ app.get("/api/wa-groups", async (_req, res) => {
 });
 
 // ── جلب رسائل مجموعة من واتساب ───────────────────────────────────────────
-app.get("/api/group-messages/:groupId", async (req, res) => {
-  const groupId = decodeURIComponent(req.params.groupId);
+app.get("/api/group-messages", async (req, res) => {
+  const groupId = req.query.groupId;
   const limit   = Math.min(parseInt(req.query.limit) || 50, 200);
   const botId   = req.query.botId || null;
+  if (!groupId) return res.status(400).json({ error: "groupId مطلوب" });
 
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });

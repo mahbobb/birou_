@@ -326,7 +326,7 @@
     wrap.innerHTML = '<div class="chat-spinner">⏳ جاري التحميل...</div>';
     try {
       const msgs = await fetch(
-        `/api/group-messages/${encodeURIComponent(chatGroupId)}?limit=${limit}&botId=${chatBotId}`
+        `/api/group-messages?groupId=${encodeURIComponent(chatGroupId)}&limit=${limit}&botId=${encodeURIComponent(chatBotId || "")}`
       ).then(r => r.json());
 
       if (msgs.error) { wrap.innerHTML = `<div class="chat-spinner">❌ ${escHtml(msgs.error)}</div>`; return; }
