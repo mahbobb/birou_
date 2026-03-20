@@ -86,21 +86,44 @@
     .action-btn{padding:6px 13px;border:none;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:600;transition:all .18s}
     .action-btn:hover{filter:brightness(1.1)}
     .ab-send{background:#e8f5e9;color:#2e7d32}
-    .ab-info{background:#e3f2fd;color:#1565c0}
+    .ab-view{background:#e3f2fd;color:#1565c0}
 
-    /* Send modal */
+    /* Overlays */
     .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
     .overlay.open{display:flex}
-    .modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
-    .modal h3{font-size:1rem;color:var(--dark);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative}
+    .modal h3{font-size:1rem;color:var(--dark);margin-bottom:16px}
     .modal-close{position:absolute;top:16px;left:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
-    .modal{position:relative}
     textarea{width:100%;min-height:110px;padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;resize:vertical;outline:none;direction:rtl;font-family:inherit;transition:border-color .2s}
     textarea:focus{border-color:var(--teal)}
     .modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
     .mbtn{padding:9px 20px;border:none;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:600}
     .mbtn-cancel{background:#f0f2f5;color:var(--text)}
     .mbtn-green{background:var(--green);color:white}
+
+    /* Chat view modal */
+    .chat-modal{background:var(--card);border-radius:16px;width:94%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.3);position:relative;overflow:hidden}
+    .chat-hdr{background:linear-gradient(135deg,var(--dark),var(--teal));color:white;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .chat-hdr .ch-name{font-weight:700;font-size:.95rem;flex:1}
+    .chat-hdr .ch-count{font-size:.78rem;opacity:.8}
+    .chat-hdr button{background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px}
+    .chat-hdr button:hover{background:rgba(255,255,255,.2)}
+    .chat-toolbar{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0}
+    .chat-toolbar select{padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.8rem;outline:none}
+    .chat-toolbar select:focus{border-color:var(--teal)}
+    .chat-toolbar button{padding:5px 12px;border:none;border-radius:8px;background:var(--teal);color:white;cursor:pointer;font-size:.8rem;font-weight:600}
+    .msgs-wrap{flex:1;overflow-y:auto;padding:14px;background:#e5ddd5;display:flex;flex-direction:column;gap:8px}
+    .bubble{max-width:72%;padding:8px 12px;border-radius:12px;font-size:.85rem;line-height:1.45;word-break:break-word;position:relative}
+    .bubble.me{background:#dcf8c6;align-self:flex-end;border-bottom-right-radius:3px}
+    .bubble.them{background:white;align-self:flex-start;border-bottom-left-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+    .bubble .b-author{font-size:.72rem;color:var(--teal);font-weight:700;margin-bottom:3px}
+    .bubble .b-time{font-size:.68rem;color:var(--muted);text-align:left;margin-top:4px;display:block}
+    .bubble .b-media{font-style:italic;color:var(--muted)}
+    .chat-input-bar{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+    .chat-input-bar textarea{flex:1;min-height:42px;max-height:100px;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:.85rem;resize:none;outline:none;font-family:inherit}
+    .chat-input-bar textarea:focus{border-color:var(--teal)}
+    .chat-input-bar button{padding:0 16px;border:none;border-radius:10px;background:var(--green);color:white;cursor:pointer;font-size:1rem;font-weight:700}
+    .chat-spinner{text-align:center;padding:40px;color:var(--muted)}
 
     .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:.95rem}
     .bot-tag{background:#f3e5f5;color:#7b1fa2;padding:1px 7px;border-radius:5px;font-size:.72rem;font-weight:600}
@@ -160,6 +183,35 @@
   <div class="empty">⏳ جاري التحميل...</div>
 </div>
 
+<!-- Chat View Modal -->
+<div class="overlay" id="chatOverlay">
+  <div class="chat-modal">
+    <div class="chat-hdr">
+      <div>
+        <div class="ch-name" id="chatTitle">—</div>
+        <div class="ch-count" id="chatSubtitle"></div>
+      </div>
+      <button onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-toolbar">
+      <select id="msgLimit" onchange="reloadChat()">
+        <option value="30">30 رسالة</option>
+        <option value="50" selected>50 رسالة</option>
+        <option value="100">100 رسالة</option>
+        <option value="200">200 رسالة</option>
+      </select>
+      <button onclick="reloadChat()">🔄 تحديث</button>
+    </div>
+    <div class="msgs-wrap" id="msgsWrap">
+      <div class="chat-spinner">⏳ جاري التحميل...</div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea id="chatSendMsg" placeholder="اكتب رسالة للمجموعة..." rows="1"></textarea>
+      <button onclick="sendFromChat()">➤</button>
+    </div>
+  </div>
+</div>
+
 <!-- Send Modal -->
 <div class="overlay" id="sendOverlay">
   <div class="modal">
@@ -177,9 +229,11 @@
 <div id="toast"></div>
 
 <script>
-  let allGroups = [];
+  let allGroups   = [];
   let sendGroupId = null;
   let sendBotId   = null;
+  let chatGroupId = null;
+  let chatBotId   = null;
 
   /* ── Load ── */
   async function load() {
@@ -221,6 +275,7 @@
             ${g.lastMessage ? `<div class="group-last">💬 ${escHtml(g.lastMessage)}</div>` : ""}
           </div>
           <div class="group-actions">
+            <button class="action-btn ab-view" onclick="openChat('${escHtml(g.id)}','${escHtml(g.name)}','${g.botId}')">💬 الرسائل</button>
             <button class="action-btn ab-send" onclick="openSend('${escHtml(g.id)}','${escHtml(g.name)}','${g.botId}')">📤 إرسال</button>
           </div>
         </div>`;
@@ -245,6 +300,86 @@
       showToast(enabled ? "✅ البوت سيرد في المجموعات" : "⛔ البوت لن يرد في المجموعات");
     } catch { showToast("❌ خطأ"); }
   }
+
+  /* ── Chat view ── */
+  function openChat(groupId, groupName, botId) {
+    chatGroupId = groupId;
+    chatBotId   = botId;
+    document.getElementById("chatTitle").textContent    = groupName;
+    document.getElementById("chatSubtitle").textContent = "";
+    document.getElementById("chatSendMsg").value        = "";
+    document.getElementById("msgsWrap").innerHTML       = '<div class="chat-spinner">⏳ جاري التحميل...</div>';
+    document.getElementById("chatOverlay").classList.add("open");
+    fetchChatMsgs();
+  }
+
+  function closeChat() {
+    document.getElementById("chatOverlay").classList.remove("open");
+    chatGroupId = null;
+  }
+
+  function reloadChat() { if (chatGroupId) fetchChatMsgs(); }
+
+  async function fetchChatMsgs() {
+    const limit = document.getElementById("msgLimit").value;
+    const wrap  = document.getElementById("msgsWrap");
+    wrap.innerHTML = '<div class="chat-spinner">⏳ جاري التحميل...</div>';
+    try {
+      const msgs = await fetch(
+        `/api/group-messages/${encodeURIComponent(chatGroupId)}?limit=${limit}&botId=${chatBotId}`
+      ).then(r => r.json());
+
+      if (msgs.error) { wrap.innerHTML = `<div class="chat-spinner">❌ ${escHtml(msgs.error)}</div>`; return; }
+      if (!msgs.length) { wrap.innerHTML = '<div class="chat-spinner">لا توجد رسائل</div>'; return; }
+
+      document.getElementById("chatSubtitle").textContent = `${msgs.length} رسالة`;
+
+      wrap.innerHTML = msgs.map(m => {
+        const cls  = m.fromMe ? "me" : "them";
+        const time = m.timestamp ? new Date(m.timestamp * 1000).toLocaleTimeString("ar-MA", { hour:"2-digit", minute:"2-digit" }) : "";
+        const date = m.timestamp ? new Date(m.timestamp * 1000).toLocaleDateString("ar-MA") : "";
+        const author = !m.fromMe && m.author ? `<div class="b-author">${escHtml(m.author.replace(/@.+/,""))}</div>` : "";
+        let body = "";
+        if (m.hasMedia) {
+          const icons = { image:"🖼️ صورة", video:"🎬 فيديو", audio:"🎵 صوت", document:"📄 ملف", sticker:"🎭 ملصق" };
+          body = `<span class="b-media">${icons[m.type] || "📎 وسائط"}</span>`;
+        } else {
+          body = escHtml(m.body || "");
+        }
+        return `<div class="bubble ${cls}">${author}${body}<span class="b-time">${date} ${time}</span></div>`;
+      }).join("");
+
+      // scroll to bottom
+      wrap.scrollTop = wrap.scrollHeight;
+    } catch (err) {
+      wrap.innerHTML = `<div class="chat-spinner">❌ ${escHtml(err.message)}</div>`;
+    }
+  }
+
+  async function sendFromChat() {
+    const msg = document.getElementById("chatSendMsg").value.trim();
+    if (!msg || !chatGroupId) return;
+    try {
+      const d = await fetch("/api/send-group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: chatGroupId, message: msg, botId: chatBotId }),
+      }).then(r => r.json());
+      if (d.ok) {
+        document.getElementById("chatSendMsg").value = "";
+        setTimeout(fetchChatMsgs, 1000);
+      } else showToast("❌ " + (d.error || "فشل"));
+    } catch { showToast("❌ خطأ"); }
+  }
+
+  // إرسال بـ Enter (Shift+Enter لسطر جديد)
+  document.getElementById("chatSendMsg").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendFromChat(); }
+  });
+
+  document.getElementById("chatOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("chatOverlay")) closeChat();
+  });
 
   /* ── Send modal ── */
   function openSend(groupId, groupName, botId) {

@@ -1171,6 +1171,43 @@ app.get("/api/wa-groups", async (_req, res) => {
   res.json(groups);
 });
 
+// ── جلب رسائل مجموعة من واتساب ───────────────────────────────────────────
+app.get("/api/group-messages/:groupId", async (req, res) => {
+  const groupId = decodeURIComponent(req.params.groupId);
+  const limit   = Math.min(parseInt(req.query.limit) || 50, 200);
+  const botId   = req.query.botId || null;
+
+  const bot = getActiveBot(botId);
+  if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
+
+  try {
+    const chat = await Promise.race([
+      bot.client.getChatById(groupId),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+    ]);
+    if (!chat) return res.status(404).json({ error: "المجموعة غير موجودة" });
+
+    const msgs = await Promise.race([
+      chat.fetchMessages({ limit }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
+    ]);
+
+    const result = msgs.map(m => ({
+      id:        m.id?.id || "",
+      body:      m.body || "",
+      fromMe:    m.fromMe,
+      author:    m.author || m.from || "",
+      timestamp: m.timestamp,
+      type:      m.type,
+      hasMedia:  m.hasMedia,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── إرسال رسالة لمجموعة ───────────────────────────────────────────────────
 app.post("/api/send-group", async (req, res) => {
   const { groupId, message, botId = null } = req.body;
