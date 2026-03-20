@@ -229,6 +229,8 @@
   </select>
   <button class="tbtn tbtn-green" onclick="refresh()">🔄 تحديث</button>
   <button class="tbtn tbtn-teal"  onclick="exportCSV()">⬇️ تصدير</button>
+  <button class="tbtn" id="btnSelAll" onclick="toggleSelectAll()" style="background:#e3f2fd;color:#1565c0">☑️ تحديد الكل</button>
+  <button class="tbtn" id="btnDelSel" onclick="deleteSelected()" disabled style="background:#ffebee;color:#c62828">🗑️ حذف (<span id="selCount">0</span>)</button>
 </div>
 
 <!-- Table -->
@@ -237,7 +239,7 @@
     <table>
       <thead>
         <tr>
-          <th>#</th>
+          <th style="width:36px"><input type="checkbox" id="chkAll" onclick="toggleSelectAll()" style="width:16px;height:16px;cursor:pointer;accent-color:#25d366"></th>
           <th>الاسم</th>
           <th>الهاتف</th>
           <th>الاتجاه</th>
@@ -265,6 +267,7 @@
   let allMessages    = [];
   let unansweredList = [];
   let activeTab      = "all";
+  let selectedIds    = new Set();
 
   const urlPhone = new URLSearchParams(window.location.search).get("phone") || "";
   if (urlPhone) document.getElementById("searchPhone").value = urlPhone;
@@ -323,6 +326,8 @@
 
   async function loadMessages(offset = 0) {
     currentOffset = offset;
+    selectedIds.clear();
+    updateSelUI();
     const phone = document.getElementById("searchPhone").value.trim();
     let url = `/api/messages?limit=${LIMIT}&offset=${offset}`;
     if (phone) url += `&phone=${encodeURIComponent(phone)}`;
@@ -364,8 +369,9 @@
         ? `<span class="badge badge-no-reply" style="margin-top:3px;display:inline-flex">⚠️ لم يُرد</span>`
         : "";
 
-      return `<tr${rowClass}>
-        <td style="color:var(--muted);font-size:.78rem">${currentOffset + i + 1}</td>
+      const chk = selectedIds.has(m.id) ? " checked" : "";
+      return `<tr${rowClass} id="row-${m.id}">
+        <td><input type="checkbox" class="row-cb" data-id="${m.id}"${chk} onclick="toggleRow(${m.id})" style="width:16px;height:16px;cursor:pointer;accent-color:#25d366"></td>
         <td><b>${escHtml(m.name || m.phone || "—")}</b>${noReplyBadge ? "<br>" + noReplyBadge : ""}</td>
         <td><span class="phone-tag">+${m.phone}</span></td>
         <td>${dirBadge}</td>
@@ -414,6 +420,53 @@
     }
     if (cur<pages-1) html += `<button class="page-btn" onclick="loadMessages(${(cur+1)*LIMIT})">التالي ▶</button>`;
     pg.innerHTML = html;
+  }
+
+  /* ── Select / Delete ── */
+  function toggleRow(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    updateSelUI();
+  }
+
+  function toggleSelectAll() {
+    const visible = filterList();
+    const allSelected = visible.every(m => selectedIds.has(m.id));
+    if (allSelected) visible.forEach(m => selectedIds.delete(m.id));
+    else             visible.forEach(m => selectedIds.add(m.id));
+    // sync checkboxes
+    document.querySelectorAll(".row-cb").forEach(cb => {
+      const id = parseInt(cb.dataset.id);
+      cb.checked = selectedIds.has(id);
+    });
+    updateSelUI();
+  }
+
+  function updateSelUI() {
+    const n = selectedIds.size;
+    document.getElementById("selCount").textContent = n;
+    document.getElementById("btnDelSel").disabled   = n === 0;
+    const visible = filterList();
+    const allSel  = visible.length > 0 && visible.every(m => selectedIds.has(m.id));
+    const chkAll  = document.getElementById("chkAll");
+    if (chkAll) { chkAll.checked = allSel; chkAll.indeterminate = !allSel && n > 0; }
+    document.getElementById("btnSelAll").textContent = allSel ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
+  }
+
+  async function deleteSelected() {
+    const n = selectedIds.size;
+    if (!n) return;
+    if (!confirm(`حذف ${n} رسالة نهائياً؟`)) return;
+    let done = 0;
+    for (const id of [...selectedIds]) {
+      try {
+        const r = await fetch(`/api/messages/${id}`, { method: "DELETE" });
+        if ((await r.json()).ok) { done++; selectedIds.delete(id); }
+      } catch {}
+    }
+    showToast(`✅ تم حذف ${done} رسالة`);
+    updateSelUI();
+    await refresh();
   }
 
   /* ── Export CSV ── */
