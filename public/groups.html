@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مجموعات واتساب</title>
+  <style>
+    :root {
+      --green:#25d366; --teal:#128c7e; --dark:#075e54;
+      --red:#e53935; --bg:#f0f2f5; --card:#fff; --border:#e8edf2;
+      --text:#1a1a2e; --muted:#8696a0;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);direction:rtl}
+
+    header{
+      background:linear-gradient(135deg,var(--dark),var(--teal));
+      color:white;padding:0 24px;height:58px;
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:0 2px 10px rgba(0,0,0,.18);position:sticky;top:0;z-index:50;
+    }
+    .hdr-left{display:flex;align-items:center;gap:10px}
+    .hdr-icon{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    header h1{font-size:1.1rem;font-weight:700}
+    .nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:.82rem;padding:5px 10px;border-radius:8px;transition:all .2s}
+    .nav-links a:hover,.nav-links a.active{background:rgba(255,255,255,.2);color:white}
+    .nav-links a.logout{background:rgba(255,60,60,.2);color:#ffcdd2}
+
+    /* Stats */
+    .stats{display:flex;gap:14px;padding:18px 24px 0;flex-wrap:wrap}
+    .stat-card{
+      background:var(--card);border-radius:13px;padding:16px 20px;
+      flex:1;min-width:120px;box-shadow:0 1px 6px rgba(0,0,0,.07);
+      display:flex;align-items:center;gap:12px;border:1px solid var(--border);
+    }
+    .sc-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+    .sc-icon.green{background:#e8f5e9} .sc-icon.blue{background:#e3f2fd} .sc-icon.purple{background:#f3e5f5}
+    .sc-body .num{font-size:1.6rem;font-weight:800;color:var(--dark);line-height:1}
+    .sc-body .lbl{font-size:.74rem;color:var(--muted);margin-top:2px}
+
+    /* Toolbar */
+    .toolbar{padding:14px 24px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .search-input{
+      flex:1;min-width:180px;padding:9px 14px;
+      border:1.5px solid var(--border);border-radius:10px;
+      font-size:.88rem;outline:none;direction:rtl;background:var(--card);transition:border-color .2s;
+    }
+    .search-input:focus{border-color:var(--teal)}
+    .btn{padding:9px 16px;border:none;border-radius:10px;cursor:pointer;font-size:.83rem;font-weight:600;transition:all .18s;white-space:nowrap}
+    .btn:hover{filter:brightness(1.08)}
+    .btn-teal{background:var(--teal);color:white}
+    .btn-green{background:var(--green);color:white}
+    .btn-purple{background:#7b1fa2;color:white}
+
+    /* Toggle switch */
+    .toggle-wrap{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px 14px;border-radius:10px;border:1.5px solid var(--border)}
+    .toggle-wrap label{font-size:.83rem;font-weight:600;color:var(--text);cursor:pointer}
+    .switch{position:relative;width:44px;height:24px;display:inline-block;flex-shrink:0}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s}
+    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+    input:checked + .slider{background:var(--green)}
+    input:checked + .slider:before{transform:translateX(20px)}
+
+    /* Groups list */
+    .groups-wrap{padding:10px 24px 32px}
+    .group-card{
+      background:var(--card);border-radius:14px;padding:16px 20px;
+      margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);
+      border:1.5px solid var(--border);display:flex;align-items:center;gap:14px;
+      transition:box-shadow .18s;
+    }
+    .group-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+    .group-avatar{
+      width:50px;height:50px;border-radius:50%;
+      background:linear-gradient(135deg,var(--teal),var(--green));
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.3rem;color:white;flex-shrink:0;font-weight:700;
+    }
+    .group-info{flex:1;min-width:0}
+    .group-name{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .group-meta{font-size:.78rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .group-meta .badge{background:#e8f5e9;color:#2e7d32;padding:1px 8px;border-radius:6px;font-size:.74rem;font-weight:600}
+    .group-last{font-size:.78rem;color:var(--muted);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .group-actions{display:flex;gap:8px;flex-shrink:0}
+    .action-btn{padding:6px 13px;border:none;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:600;transition:all .18s}
+    .action-btn:hover{filter:brightness(1.1)}
+    .ab-send{background:#e8f5e9;color:#2e7d32}
+    .ab-info{background:#e3f2fd;color:#1565c0}
+
+    /* Send modal */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
+    .overlay.open{display:flex}
+    .modal{background:var(--card);border-radius:16px;padding:26px;width:90%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+    .modal h3{font-size:1rem;color:var(--dark);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .modal-close{position:absolute;top:16px;left:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted)}
+    .modal{position:relative}
+    textarea{width:100%;min-height:110px;padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;resize:vertical;outline:none;direction:rtl;font-family:inherit;transition:border-color .2s}
+    textarea:focus{border-color:var(--teal)}
+    .modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+    .mbtn{padding:9px 20px;border:none;border-radius:9px;cursor:pointer;font-size:.85rem;font-weight:600}
+    .mbtn-cancel{background:#f0f2f5;color:var(--text)}
+    .mbtn-green{background:var(--green);color:white}
+
+    .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:.95rem}
+    .bot-tag{background:#f3e5f5;color:#7b1fa2;padding:1px 7px;border-radius:5px;font-size:.72rem;font-weight:600}
+
+    #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(26,26,46,.92);color:white;padding:11px 24px;border-radius:50px;font-size:.88rem;opacity:0;transition:all .3s;pointer-events:none;z-index:999}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @media(max-width:768px){
+      header{flex-direction:column;align-items:flex-start;gap:8px;padding:12px 16px;height:auto}
+      .nav-links{display:flex;flex-wrap:wrap;gap:4px}
+      .nav-links a{font-size:.75rem;padding:4px 8px}
+      .group-card{flex-wrap:wrap}
+      .group-actions{width:100%;justify-content:flex-end}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="hdr-icon">👥</div>
+    <h1>مجموعات واتساب</h1>
+  </div>
+  <nav class="nav-links">
+    <a href="/">🏠</a>
+    <a href="/messages">💬 الرسائل</a>
+    <a href="/chat">🗨️ الشات</a>
+    <a href="/groups" class="active">👥 المجموعات</a>
+    <a href="/images">📸 الصور</a>
+    <a href="/qr">📲 QR</a>
+    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">🚪 خروج</a>
+  </nav>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="sc-icon green">👥</div><div class="sc-body"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي المجموعات</div></div></div>
+  <div class="stat-card"><div class="sc-icon blue">👤</div><div class="sc-body"><div class="num" id="sMembers">—</div><div class="lbl">إجمالي الأعضاء</div></div></div>
+  <div class="stat-card"><div class="sc-icon purple">🤖</div><div class="sc-body"><div class="num" id="sBotStatus">—</div><div class="lbl">ردود البوت في المجموعات</div></div></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-input" id="searchGroup" placeholder="🔍 ابحث باسم المجموعة...">
+  <div class="toggle-wrap">
+    <label for="toggleBot">🤖 البوت في المجموعات</label>
+    <label class="switch">
+      <input type="checkbox" id="toggleBot" onchange="toggleBotGroups(this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <button class="btn btn-teal" onclick="load()">🔄 تحديث</button>
+</div>
+
+<!-- Groups -->
+<div class="groups-wrap" id="groupsWrap">
+  <div class="empty">⏳ جاري التحميل...</div>
+</div>
+
+<!-- Send Modal -->
+<div class="overlay" id="sendOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSend()">✕</button>
+    <h3>📤 إرسال رسالة للمجموعة</h3>
+    <div id="sendGroupName" style="font-size:.85rem;color:var(--muted);margin-bottom:12px;font-weight:600"></div>
+    <textarea id="sendMsg" placeholder="اكتب الرسالة..."></textarea>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeSend()">إلغاء</button>
+      <button class="mbtn mbtn-green" onclick="doSend()">📤 إرسال</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let allGroups = [];
+  let sendGroupId = null;
+  let sendBotId   = null;
+
+  /* ── Load ── */
+  async function load() {
+    document.getElementById("groupsWrap").innerHTML = '<div class="empty">⏳ جاري التحميل...</div>';
+    try {
+      const [groups, status] = await Promise.all([
+        fetch("/api/wa-groups").then(r => r.json()),
+        fetch("/api/groups-status").then(r => r.json()),
+      ]);
+      allGroups = groups;
+      document.getElementById("toggleBot").checked = status.respondToGroups;
+      document.getElementById("sBotStatus").textContent = status.respondToGroups ? "✅ مفعّل" : "❌ معطّل";
+      document.getElementById("sTotal").textContent   = groups.length;
+      document.getElementById("sMembers").textContent = groups.reduce((s, g) => s + (g.participants || 0), 0);
+      render(groups);
+    } catch { showToast("❌ خطأ في التحميل"); }
+  }
+
+  /* ── Render ── */
+  function render(list) {
+    const wrap = document.getElementById("groupsWrap");
+    if (!list.length) {
+      wrap.innerHTML = '<div class="empty">لا توجد مجموعات متصلة 📭<br><small>تأكد أن البوت متصل وفيه مجموعات</small></div>';
+      return;
+    }
+    wrap.innerHTML = list.map(g => {
+      const initial = (g.name || "?")[0].toUpperCase();
+      const time    = g.lastSeen ? new Date(g.lastSeen).toLocaleString("ar-MA") : "—";
+      return `
+        <div class="group-card">
+          <div class="group-avatar">${initial}</div>
+          <div class="group-info">
+            <div class="group-name" title="${escHtml(g.name)}">${escHtml(g.name)}</div>
+            <div class="group-meta">
+              <span class="badge">👤 ${g.participants} عضو</span>
+              <span class="bot-tag">🤖 ${g.botId}</span>
+              <span>${time}</span>
+            </div>
+            ${g.lastMessage ? `<div class="group-last">💬 ${escHtml(g.lastMessage)}</div>` : ""}
+          </div>
+          <div class="group-actions">
+            <button class="action-btn ab-send" onclick="openSend('${escHtml(g.id)}','${escHtml(g.name)}','${g.botId}')">📤 إرسال</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  /* ── Search ── */
+  document.getElementById("searchGroup").addEventListener("input", function() {
+    const q = this.value.trim().toLowerCase();
+    render(q ? allGroups.filter(g => g.name.toLowerCase().includes(q)) : allGroups);
+  });
+
+  /* ── Toggle bot in groups ── */
+  async function toggleBotGroups(enabled) {
+    try {
+      await fetch("/api/groups-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      document.getElementById("sBotStatus").textContent = enabled ? "✅ مفعّل" : "❌ معطّل";
+      showToast(enabled ? "✅ البوت سيرد في المجموعات" : "⛔ البوت لن يرد في المجموعات");
+    } catch { showToast("❌ خطأ"); }
+  }
+
+  /* ── Send modal ── */
+  function openSend(groupId, groupName, botId) {
+    sendGroupId = groupId;
+    sendBotId   = botId;
+    document.getElementById("sendGroupName").textContent = "📌 " + groupName;
+    document.getElementById("sendMsg").value = "";
+    document.getElementById("sendOverlay").classList.add("open");
+    setTimeout(() => document.getElementById("sendMsg").focus(), 100);
+  }
+  function closeSend() {
+    document.getElementById("sendOverlay").classList.remove("open");
+    sendGroupId = null;
+  }
+  document.getElementById("sendOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("sendOverlay")) closeSend();
+  });
+
+  async function doSend() {
+    const msg = document.getElementById("sendMsg").value.trim();
+    if (!msg) return showToast("⚠️ اكتب رسالة أولاً");
+    try {
+      const d = await fetch("/api/send-group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: sendGroupId, message: msg, botId: sendBotId }),
+      }).then(r => r.json());
+      if (d.ok) { showToast("✅ تم الإرسال"); closeSend(); }
+      else       showToast("❌ " + (d.error || "فشل الإرسال"));
+    } catch { showToast("❌ خطأ في الاتصال"); }
+  }
+
+  /* ── Helpers ── */
+  function escHtml(s) {
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  load();
+  setInterval(load, 60000);
+</script>
+</body>
+</html>

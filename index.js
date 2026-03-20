@@ -1131,6 +1131,59 @@ app.get("/api/deleted-phones", async (_req, res) => {
   } catch { res.json([]); }
 });
 
+// ── جلب المجموعات من واتساب ───────────────────────────────────────────────
+app.get("/api/wa-groups", async (_req, res) => {
+  const connectedBots = [...bots.entries()].filter(([,b]) => b.botConnected);
+  if (!connectedBots.length) return res.json([]);
+  const groups = [];
+  const seen   = new Set();
+  for (const [botId, bot] of connectedBots) {
+    let chats = [];
+    try { chats = await bot.client.getChats(); } catch { continue; }
+    for (const c of chats) {
+      if (!c.isGroup) continue;
+      const gid = c.id._serialized || c.id.toString();
+      if (seen.has(gid)) continue;
+      seen.add(gid);
+      const lastMsg  = c.lastMessage;
+      const lastSeen = lastMsg ? new Date(lastMsg.timestamp * 1000).toISOString() : null;
+      groups.push({
+        id:           gid,
+        name:         c.name || gid,
+        participants: c.participants?.length || 0,
+        lastMessage:  lastMsg?.body || "",
+        lastSeen,
+        botId,
+      });
+    }
+  }
+  groups.sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0));
+  res.json(groups);
+});
+
+// ── إرسال رسالة لمجموعة ───────────────────────────────────────────────────
+app.post("/api/send-group", async (req, res) => {
+  const { groupId, message, botId = null } = req.body;
+  if (!groupId || !message) return res.status(400).json({ error: "groupId و message مطلوبان" });
+  try {
+    await botSend(groupId, message, {}, botId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── تفعيل/تعطيل الرد التلقائي في المجموعات ──────────────────────────────
+app.post("/api/groups-toggle", (req, res) => {
+  const { enabled } = req.body;
+  config.respondToGroups = !!enabled;
+  res.json({ ok: true, respondToGroups: config.respondToGroups });
+});
+
+app.get("/api/groups-status", (_req, res) => {
+  res.json({ respondToGroups: config.respondToGroups });
+});
+
 // ── جلب كل المحادثات من جميع البوتات المتصلة (للشريط الجانبي) ────────────
 app.get("/api/wa-chats", async (_req, res) => {
   const connectedBots = [...bots.values()].filter(b => b.botConnected);
