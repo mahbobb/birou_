@@ -169,18 +169,58 @@
 <div class="toolbar">
   <input class="search-input" id="searchGroup" placeholder="🔍 ابحث باسم المجموعة...">
   <div class="toggle-wrap">
-    <label for="toggleBot">🤖 البوت في المجموعات</label>
+    <label for="toggleBot">🤖 رد تلقائي</label>
     <label class="switch">
-      <input type="checkbox" id="toggleBot" onchange="toggleBotGroups(this.checked)">
+      <input type="checkbox" id="toggleBot" onchange="toggleBotGroups({enabled:this.checked})">
       <span class="slider"></span>
     </label>
   </div>
+  <div class="toggle-wrap" id="mentionWrap" style="opacity:.5;pointer-events:none">
+    <label for="toggleMention">@ عند الإشارة فقط</label>
+    <label class="switch">
+      <input type="checkbox" id="toggleMention" onchange="toggleBotGroups({mentionOnly:this.checked})">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <button class="btn btn-purple" onclick="openBroadcast()">📢 إعلان للكل</button>
   <button class="btn btn-teal" onclick="load()">🔄 تحديث</button>
 </div>
 
 <!-- Groups -->
 <div class="groups-wrap" id="groupsWrap">
   <div class="empty">⏳ جاري التحميل...</div>
+</div>
+
+<!-- Broadcast Modal -->
+<div class="overlay" id="broadcastOverlay">
+  <div class="modal" style="max-width:500px">
+    <button class="modal-close" onclick="closeBroadcast()">✕</button>
+    <h3>📢 إعلان لجميع المجموعات</h3>
+    <label style="font-size:.78rem;color:var(--muted);font-weight:600;display:block;margin-bottom:5px">📝 نص الرسالة (اختياري مع صورة)</label>
+    <textarea id="bcGrpMsg" style="min-height:90px" placeholder="اكتب نص الإعلان..."></textarea>
+    <label style="font-size:.78rem;color:var(--muted);font-weight:600;display:block;margin:10px 0 5px">🖼 صورة مرفقة (اختياري)</label>
+    <div id="bcGrpImgArea" style="border:2px dashed var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('bcGrpImgInput').click()">
+      <input type="file" id="bcGrpImgInput" accept="image/*" style="display:none" onchange="previewGrpImg(this)">
+      <div id="bcGrpImgPlaceholder" style="color:var(--muted);font-size:.82rem">📎 اضغط لإضافة صورة</div>
+      <img id="bcGrpImgPreview" src="" style="display:none;max-height:130px;max-width:100%;border-radius:8px;object-fit:contain">
+      <button id="bcGrpImgRemove" onclick="removeGrpImg(event)" style="display:none;position:absolute;top:6px;left:6px;background:#e53935;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px">✕</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.82rem;cursor:pointer">
+      <input type="checkbox" id="bcGrpDry" style="width:15px;height:15px"> معاينة فقط (بدون إرسال)
+    </label>
+    <div id="bcGrpSpinner" style="display:none;text-align:center;padding:10px;color:var(--muted)">⏳ جاري الإرسال...</div>
+    <div id="bcGrpResult" style="max-height:150px;overflow-y:auto;font-size:.78rem;padding:8px;background:#f8f9fa;border-radius:8px;margin-top:8px;display:none;white-space:pre-wrap;direction:ltr"></div>
+    <div id="bcGrpSummary" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <span id="bcGrpSent"  style="background:#e8f5e9;color:#2e7d32;padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:700"></span>
+      <span id="bcGrpFail"  style="background:#ffebee;color:#c62828;padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:700"></span>
+      <span id="bcGrpTotal" style="background:#e3f2fd;color:#1565c0;padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:700"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeBroadcast()">إغلاق</button>
+      <button class="mbtn" id="bcGrpStopBtn" onclick="stopGrpBroadcast()" style="display:none;background:#e53935;color:#fff">⏹ وقف</button>
+      <button class="mbtn mbtn-green" id="bcGrpSendBtn" onclick="runGrpBroadcast()">📢 إرسال للكل</button>
+    </div>
+  </div>
 </div>
 
 <!-- Chat View Modal -->
@@ -244,8 +284,7 @@
         fetch("/api/groups-status").then(r => r.json()),
       ]);
       allGroups = groups;
-      document.getElementById("toggleBot").checked = status.respondToGroups;
-      document.getElementById("sBotStatus").textContent = status.respondToGroups ? "✅ مفعّل" : "❌ معطّل";
+      updateBotStatusUI(status.respondToGroups, status.mentionOnly);
       document.getElementById("sTotal").textContent   = groups.length;
       document.getElementById("sMembers").textContent = groups.reduce((s, g) => s + (g.participants || 0), 0);
       render(groups);
@@ -289,16 +328,125 @@
   });
 
   /* ── Toggle bot in groups ── */
-  async function toggleBotGroups(enabled) {
+  async function toggleBotGroups(opts) {
     try {
-      await fetch("/api/groups-toggle", {
+      const d = await fetch("/api/groups-toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled }),
-      });
-      document.getElementById("sBotStatus").textContent = enabled ? "✅ مفعّل" : "❌ معطّل";
-      showToast(enabled ? "✅ البوت سيرد في المجموعات" : "⛔ البوت لن يرد في المجموعات");
+        body: JSON.stringify(opts),
+      }).then(r => r.json());
+      updateBotStatusUI(d.respondToGroups, d.mentionOnly);
     } catch { showToast("❌ خطأ"); }
+  }
+
+  function updateBotStatusUI(enabled, mentionOnly) {
+    document.getElementById("toggleBot").checked    = enabled;
+    document.getElementById("toggleMention").checked = mentionOnly;
+    const mWrap = document.getElementById("mentionWrap");
+    mWrap.style.opacity        = enabled ? "1" : ".5";
+    mWrap.style.pointerEvents  = enabled ? "auto" : "none";
+    document.getElementById("sBotStatus").textContent = !enabled ? "❌ معطّل" : (mentionOnly ? "@ إشارة فقط" : "✅ يرد للكل");
+  }
+
+  /* ── Broadcast to groups ── */
+  let _bcGrpImg = null, _bcGrpMime = null;
+
+  function previewGrpImg(input) {
+    const file = input.files[0]; if (!file) return;
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1200; let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      _bcGrpImg = c.toDataURL("image/jpeg", 0.8); _bcGrpMime = "image/jpeg";
+      URL.revokeObjectURL(url);
+      document.getElementById("bcGrpImgPreview").src             = _bcGrpImg;
+      document.getElementById("bcGrpImgPreview").style.display   = "block";
+      document.getElementById("bcGrpImgPlaceholder").style.display = "none";
+      document.getElementById("bcGrpImgRemove").style.display    = "block";
+      document.getElementById("bcGrpImgArea").style.borderColor  = "var(--green)";
+    }; img.src = url;
+  }
+
+  function removeGrpImg(e) {
+    e.stopPropagation(); _bcGrpImg = null; _bcGrpMime = null;
+    document.getElementById("bcGrpImgInput").value               = "";
+    document.getElementById("bcGrpImgPreview").style.display     = "none";
+    document.getElementById("bcGrpImgPlaceholder").style.display = "block";
+    document.getElementById("bcGrpImgRemove").style.display      = "none";
+    document.getElementById("bcGrpImgArea").style.borderColor    = "";
+  }
+
+  function openBroadcast() {
+    _bcGrpImg = null; _bcGrpMime = null;
+    document.getElementById("bcGrpMsg").value             = "";
+    document.getElementById("bcGrpDry").checked           = false;
+    document.getElementById("bcGrpSpinner").style.display = "none";
+    document.getElementById("bcGrpResult").style.display  = "none";
+    document.getElementById("bcGrpSummary").style.display = "none";
+    document.getElementById("bcGrpStopBtn").style.display = "none";
+    document.getElementById("bcGrpSendBtn").disabled      = false;
+    removeGrpImg({ stopPropagation: () => {} });
+    document.getElementById("broadcastOverlay").classList.add("open");
+  }
+  function closeBroadcast() { document.getElementById("broadcastOverlay").classList.remove("open"); }
+  document.getElementById("broadcastOverlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("broadcastOverlay")) closeBroadcast();
+  });
+
+  async function stopGrpBroadcast() {
+    document.getElementById("bcGrpStopBtn").disabled = true;
+    await fetch("/api/broadcast-groups/stop", { method: "POST" });
+  }
+
+  async function runGrpBroadcast() {
+    const msg    = document.getElementById("bcGrpMsg").value.trim();
+    const dryRun = document.getElementById("bcGrpDry").checked;
+    if (!msg && !_bcGrpImg) return showToast("⚠️ اكتب رسالة أو أضف صورة");
+
+    const sendBtn  = document.getElementById("bcGrpSendBtn");
+    const stopBtn  = document.getElementById("bcGrpStopBtn");
+    sendBtn.disabled = true; stopBtn.style.display = "inline-flex"; stopBtn.disabled = false;
+    document.getElementById("bcGrpSpinner").style.display = "block";
+    document.getElementById("bcGrpResult").style.display  = "none";
+    document.getElementById("bcGrpSummary").style.display = "none";
+
+    const payload = { message: msg, dryRun };
+    if (_bcGrpImg) { payload.imageBase64 = _bcGrpImg; payload.imageMime = _bcGrpMime; }
+
+    try {
+      const d = await fetch("/api/broadcast-groups", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(r => r.json());
+
+      document.getElementById("bcGrpSpinner").style.display = "none";
+      stopBtn.style.display = "none"; sendBtn.disabled = false;
+
+      if (!d.ok) { showToast("❌ " + (d.error || "خطأ")); return; }
+
+      const lines = d.results.map(r => {
+        const icon = r.status === "sent" ? "✅" : r.status === "dry-run" ? "👁" : r.status === "stopped" ? "⏹" : "❌";
+        return `${icon} ${r.name}${r.error ? " — " + r.error : ""}`;
+      }).join("\n");
+
+      const res = document.getElementById("bcGrpResult");
+      res.textContent = lines || "لا توجد مجموعات";
+      res.style.display = "block";
+
+      const summary = document.getElementById("bcGrpSummary");
+      document.getElementById("bcGrpSent").textContent  = `✅ ${d.sent} تم`;
+      document.getElementById("bcGrpFail").textContent  = `❌ ${d.failed} فشل`;
+      document.getElementById("bcGrpTotal").textContent = `📊 ${d.total} مجموع`;
+      summary.style.display = "flex";
+
+      showToast(d.cancelled ? `⏹ توقف: ${d.sent}/${d.total}` : `✅ أُرسل لـ ${d.sent} مجموعة`);
+    } catch {
+      document.getElementById("bcGrpSpinner").style.display = "none";
+      stopBtn.style.display = "none"; sendBtn.disabled = false;
+      showToast("❌ فشل الاتصال");
+    }
   }
 
   /* ── Chat view ── */

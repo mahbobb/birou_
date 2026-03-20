@@ -30,8 +30,9 @@ if (AI_PROVIDER === "openai" && !process.env.OPENAI_API_KEY) {
 // ─── الإعدادات ────────────────────────────────────────────────────────────
 
 const config = {
-  respondToPrivate: process.env.RESPOND_TO_PRIVATE !== "false",
-  respondToGroups:  process.env.RESPOND_TO_GROUPS === "true",
+  respondToPrivate:         process.env.RESPOND_TO_PRIVATE !== "false",
+  respondToGroups:          process.env.RESPOND_TO_GROUPS === "true",
+  respondGroupsMentionOnly: false, // رد فقط عند الإشارة @
   delayMin:         parseInt(process.env.RESPONSE_DELAY_MIN) || 1000,
   delayMax:         parseInt(process.env.RESPONSE_DELAY_MAX) || 3000,
   pauseKeyword:     process.env.PAUSE_KEYWORD  || "!pause",
@@ -280,6 +281,15 @@ async function handleIncoming(message, botId) {
     if (config.ignoredNumbers.includes(senderNumber))      return;
     if (chat.isGroup && !config.respondToGroups)           return;
     if (!chat.isGroup && !config.respondToPrivate)         return;
+    // رد فقط عند الإشارة @ في المجموعات
+    if (chat.isGroup && config.respondGroupsMentionOnly) {
+      const botPhone = bots.get(botId)?.botPhone || "";
+      const mentioned = (message.mentionedIds || []).some(id =>
+        String(id).replace(/\D/g,"").endsWith(botPhone.slice(-9))
+      );
+      const bodyMention = botPhone && message.body?.includes(botPhone.slice(-9));
+      if (!mentioned && !bodyMention) return;
+    }
     if (botPaused || pausedChats.has(chat.id._serialized)) return;
 
     // ─── معالجة الوسائط (صور + صوت) ─────────────────────────────────────────
@@ -1245,13 +1255,85 @@ app.post("/api/send-group", async (req, res) => {
 
 // ── تفعيل/تعطيل الرد التلقائي في المجموعات ──────────────────────────────
 app.post("/api/groups-toggle", (req, res) => {
-  const { enabled } = req.body;
-  config.respondToGroups = !!enabled;
-  res.json({ ok: true, respondToGroups: config.respondToGroups });
+  const { enabled, mentionOnly } = req.body;
+  if (typeof enabled     !== "undefined") config.respondToGroups          = !!enabled;
+  if (typeof mentionOnly !== "undefined") config.respondGroupsMentionOnly = !!mentionOnly;
+  res.json({ ok: true, respondToGroups: config.respondToGroups, mentionOnly: config.respondGroupsMentionOnly });
 });
 
 app.get("/api/groups-status", (_req, res) => {
-  res.json({ respondToGroups: config.respondToGroups });
+  res.json({ respondToGroups: config.respondToGroups, mentionOnly: config.respondGroupsMentionOnly });
+});
+
+// ── Broadcast لجميع المجموعات ─────────────────────────────────────────────
+let groupBroadcastCancelled = false;
+app.post("/api/broadcast-groups/stop", (_req, res) => {
+  groupBroadcastCancelled = true;
+  res.json({ ok: true });
+});
+
+app.post("/api/broadcast-groups", async (req, res) => {
+  const { message, imageBase64, imageMime, botId = null, dryRun = false } = req.body;
+  if (!message && !imageBase64) return res.status(400).json({ error: "message أو image مطلوب" });
+
+  let media = null;
+  if (imageBase64 && imageMime) {
+    try { media = new MessageMedia(imageMime, imageBase64.replace(/^data:[^;]+;base64,/, ""), "ad"); }
+    catch { return res.status(400).json({ error: "صورة غير صالحة" }); }
+  }
+
+  // جمع كل المجموعات من جميع البوتات
+  const groupsSeen = new Set();
+  const groupsList = [];
+  for (const [bid, bot] of bots) {
+    if (!bot.botConnected) continue;
+    try {
+      const chats = await Promise.race([
+        bot.client.getChats(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("to")), 15000)),
+      ]);
+      for (const c of chats) {
+        try {
+          if (!c.isGroup) continue;
+          const gid = c.id?._serialized || String(c.id || "");
+          if (!gid || groupsSeen.has(gid)) continue;
+          groupsSeen.add(gid);
+          groupsList.push({ gid, name: c.name || gid, botId: bid });
+        } catch {}
+      }
+    } catch {}
+  }
+
+  if (!groupsList.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0, results: [] });
+
+  groupBroadcastCancelled = false;
+  const results = [];
+  let sent = 0, failed = 0;
+
+  for (const { gid, name, botId: gBotId } of groupsList) {
+    if (groupBroadcastCancelled) { results.push({ name, status: "stopped" }); continue; }
+    if (dryRun) { results.push({ name, status: "dry-run" }); continue; }
+    try {
+      const bot = getActiveBot(gBotId) || getActiveBot(botId);
+      if (!bot) throw new Error("لا يوجد بوت");
+      if (media) {
+        const opts = message ? { caption: message } : {};
+        const s = await bot.client.sendMessage(gid, media, opts);
+        if (s?.id?._serialized) bot.botMsgIds.add(s.id._serialized);
+      } else {
+        await botSend(gid, message, {}, gBotId);
+      }
+      results.push({ name, status: "sent" });
+      sent++;
+      await new Promise(r => setTimeout(r, 3000));
+    } catch (err) {
+      results.push({ name, status: "failed", error: err.message });
+      failed++;
+    }
+  }
+
+  const stopped = results.filter(r => r.status === "stopped").length;
+  res.json({ ok: true, sent, failed, stopped, total: groupsList.length, results, cancelled: groupBroadcastCancelled });
 });
 
 // ── جلب كل المحادثات من جميع البوتات المتصلة (للشريط الجانبي) ────────────
