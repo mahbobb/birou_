@@ -1175,35 +1175,40 @@ app.get("/api/wa-groups", async (_req, res) => {
 app.get("/api/group-messages", async (req, res) => {
   const groupId = req.query.groupId;
   const limit   = Math.min(parseInt(req.query.limit) || 50, 200);
-  const botId   = req.query.botId || null;
   if (!groupId) return res.status(400).json({ error: "groupId مطلوب" });
 
-  const bot = getActiveBot(botId);
-  if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
+  const connectedBots = [...bots.values()].filter(b => b.botConnected);
+  if (!connectedBots.length) return res.status(503).json({ error: "لا يوجد بوت متصل" });
 
   try {
-    // نحاول getChatById أولاً، وإذا فشل نبحث في getChats
     let chat = null;
-    try {
-      chat = await Promise.race([
-        bot.client.getChatById(groupId),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000)),
-      ]);
-    } catch {}
 
-    if (!chat) {
-      // بحث بديل عبر قائمة الـ chats
-      const allChats = await Promise.race([
-        bot.client.getChats(),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
-      ]);
-      chat = allChats.find(c => {
-        const cid = c.id?._serialized || String(c.id || "");
-        return cid === groupId;
-      });
+    // نبحث في جميع البوتات المتصلة حتى نجد المجموعة
+    for (const bot of connectedBots) {
+      // محاولة 1: getChatById
+      try {
+        const c = await Promise.race([
+          bot.client.getChatById(groupId),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("to")), 8000)),
+        ]);
+        if (c) { chat = c; break; }
+      } catch {}
+
+      // محاولة 2: getChats + filter
+      try {
+        const all = await Promise.race([
+          bot.client.getChats(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("to")), 15000)),
+        ]);
+        const found = all.find(c => {
+          const cid = c.id?._serialized || String(c.id || "");
+          return cid === groupId;
+        });
+        if (found) { chat = found; break; }
+      } catch {}
     }
 
-    if (!chat) return res.status(404).json({ error: "المجموعة غير موجودة في قائمة البوت" });
+    if (!chat) return res.status(404).json({ error: "المجموعة غير موجودة — تأكد أن البوت عضو فيها" });
 
     const msgs = await Promise.race([
       chat.fetchMessages({ limit }),
