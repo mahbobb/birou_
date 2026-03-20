@@ -1139,22 +1139,32 @@ app.get("/api/wa-groups", async (_req, res) => {
   const seen   = new Set();
   for (const [botId, bot] of connectedBots) {
     let chats = [];
-    try { chats = await bot.client.getChats(); } catch { continue; }
+    try {
+      chats = await Promise.race([
+        bot.client.getChats(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
+      ]);
+    } catch { continue; }
     for (const c of chats) {
-      if (!c.isGroup) continue;
-      const gid = c.id._serialized || c.id.toString();
-      if (seen.has(gid)) continue;
-      seen.add(gid);
-      const lastMsg  = c.lastMessage;
-      const lastSeen = lastMsg ? new Date(lastMsg.timestamp * 1000).toISOString() : null;
-      groups.push({
-        id:           gid,
-        name:         c.name || gid,
-        participants: c.participants?.length || 0,
-        lastMessage:  lastMsg?.body || "",
-        lastSeen,
-        botId,
-      });
+      try {
+        if (!c.isGroup) continue;
+        const gid = (c.id && c.id._serialized) ? c.id._serialized : String(c.id || "");
+        if (!gid || seen.has(gid)) continue;
+        seen.add(gid);
+        const lastMsg  = c.lastMessage;
+        const lastSeen = lastMsg?.timestamp ? new Date(lastMsg.timestamp * 1000).toISOString() : null;
+        // participants قد لا تكون محملة — نتجاهل الخطأ
+        let participantCount = 0;
+        try { participantCount = Array.isArray(c.participants) ? c.participants.length : 0; } catch {}
+        groups.push({
+          id:           gid,
+          name:         c.name || gid,
+          participants: participantCount,
+          lastMessage:  lastMsg?.body || "",
+          lastSeen,
+          botId,
+        });
+      } catch { /* تجاهل chat مكسور */ }
     }
   }
   groups.sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0));
