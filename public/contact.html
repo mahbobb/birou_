@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تواصل معنا</title>
+  <style>
+    :root {
+      --green:  #25d366;
+      --teal:   #128c7e;
+      --dark:   #075e54;
+      --bg:     #f0f2f5;
+      --card:   #ffffff;
+      --border: #e8edf2;
+      --text:   #1a1a2e;
+      --muted:  #8696a0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      direction: rtl;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: linear-gradient(135deg, var(--dark), var(--teal));
+      color: white;
+      text-align: center;
+      padding: 40px 24px 60px;
+      position: relative;
+    }
+    .page-header .wa-icon {
+      width: 72px; height: 72px;
+      background: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .page-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+    .page-header p  { font-size: 0.95rem; opacity: 0.85; }
+
+    /* ── Wave divider ── */
+    .wave {
+      display: block;
+      width: 100%;
+      height: 40px;
+      margin-top: -1px;
+    }
+
+    /* ── Card ── */
+    .container {
+      max-width: 520px;
+      margin: -30px auto 40px;
+      padding: 0 20px;
+      flex: 1;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      font-family: inherit;
+      direction: rtl;
+      background: #fafafa;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      color: var(--text);
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: var(--teal);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(18,140,126,0.1);
+    }
+    .form-group textarea { min-height: 110px; resize: vertical; }
+
+    /* ── Send button ── */
+    .btn-send {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--green), var(--teal));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(37,211,102,0.35);
+      margin-top: 8px;
+    }
+    .btn-send:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(37,211,102,0.45);
+    }
+    .btn-send:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Status messages ── */
+    .alert {
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      margin-top: 16px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .alert.show { display: flex; }
+    .alert.success { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+    .alert.error   { background: #fce4ec; border: 1px solid #f8bbd9; color: #c62828; }
+
+    /* ── Success state ── */
+    .success-view {
+      text-align: center;
+      padding: 20px 0;
+      display: none;
+    }
+    .success-view .check {
+      width: 80px; height: 80px;
+      background: #e8f5e9;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 20px;
+      animation: popIn 0.4s ease;
+    }
+    @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+    .success-view h2 { font-size: 1.2rem; color: var(--dark); margin-bottom: 8px; }
+    .success-view p  { font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; }
+    .btn-again {
+      padding: 10px 28px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-again:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* ── Footer ── */
+    .page-footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 28px 20px; }
+      .page-header { padding: 32px 16px 50px; }
+      .page-header h1 { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="wa-icon">💬</div>
+  <h1 id="headerTitle">أرسل لنا رسالة</h1>
+  <p id="headerSub">سنرد عليك في أقرب وقت ممكن عبر واتساب</p>
+</div>
+
+<svg class="wave" viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <path d="M0,20 C360,60 1080,-20 1440,20 L1440,0 L0,0 Z" fill="#075e54"/>
+</svg>
+
+<div class="container">
+  <div class="card">
+
+    <!-- Form view -->
+    <div id="formView">
+      <div class="form-group">
+        <label>الاسم *</label>
+        <input type="text" id="fName" placeholder="اسمك الكريم..." maxlength="80">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف (اختياري)</label>
+        <input type="tel" id="fPhone" placeholder="06XXXXXXXX" maxlength="20" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label>رسالتك *</label>
+        <textarea id="fMessage" placeholder="اكتب رسالتك هنا..." maxlength="500"></textarea>
+        <div style="font-size:0.72rem;color:var(--muted);text-align:left;margin-top:4px">
+          <span id="charCount">0</span>/500
+        </div>
+      </div>
+
+      <div class="alert success" id="alertOk">
+        <span>✅</span><span>تم إرسال رسالتك بنجاح!</span>
+      </div>
+      <div class="alert error" id="alertErr">
+        <span>❌</span><span id="alertErrMsg">حدث خطأ — حاول لاحقاً</span>
+      </div>
+
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+        <span>📤</span><span>إرسال الرسالة</span>
+      </button>
+    </div>
+
+    <!-- Success view -->
+    <div class="success-view" id="successView">
+      <div class="check">✅</div>
+      <h2>تم استلام رسالتك!</h2>
+      <p>شكراً لتواصلك معنا — سنرد عليك عبر واتساب في أقرب وقت</p>
+      <button class="btn-again" onclick="resetForm()">إرسال رسالة أخرى</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="page-footer">
+  مدعوم بواتساب بوت
+</div>
+
+<script>
+  // Update char counter
+  document.getElementById("fMessage").addEventListener("input", () => {
+    document.getElementById("charCount").textContent =
+      document.getElementById("fMessage").value.length;
+  });
+
+  async function sendMessage() {
+    const name    = document.getElementById("fName").value.trim();
+    const phone   = document.getElementById("fPhone").value.trim();
+    const message = document.getElementById("fMessage").value.trim();
+
+    hideAlerts();
+
+    if (!name)    return showError("الاسم مطلوب");
+    if (!message) return showError("الرسالة مطلوبة");
+
+    const btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span><span>جاري الإرسال...</span>';
+
+    try {
+      const res = await fetch("/api/contact", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ name, phone, message }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError(data.error || "فشل الإرسال — حاول لاحقاً");
+      } else {
+        // Show success screen
+        document.getElementById("formView").style.display = "none";
+        document.getElementById("successView").style.display = "block";
+      }
+    } catch {
+      showError("تعذر الاتصال بالسيرفر — تحقق من اتصالك");
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>📤</span><span>إرسال الرسالة</span>';
+  }
+
+  function resetForm() {
+    document.getElementById("fName").value    = "";
+    document.getElementById("fPhone").value   = "";
+    document.getElementById("fMessage").value = "";
+    document.getElementById("charCount").textContent = "0";
+    hideAlerts();
+    document.getElementById("formView").style.display  = "block";
+    document.getElementById("successView").style.display = "none";
+  }
+
+  function showError(msg) {
+    document.getElementById("alertErrMsg").textContent = msg;
+    document.getElementById("alertErr").classList.add("show");
+  }
+  function hideAlerts() {
+    document.getElementById("alertOk").classList.remove("show");
+    document.getElementById("alertErr").classList.remove("show");
+  }
+</script>
+</body>
+</html>

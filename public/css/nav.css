@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════════════
+   SHARED NAV — Light Header + Dark Sidebar + Footer
+   ═══════════════════════════════════════════════ */
+
+/* ── Light Header ── */
+.app-header {
+  background: linear-gradient(135deg, #075e54, #128c7e);
+  color: white;
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,.18);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.app-header .hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-header .hdr-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.app-header h1 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.app-header .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.app-header .nav-links a {
+  color: rgba(255,255,255,.85);
+  text-decoration: none;
+  font-size: .8rem;
+  padding: 5px 9px;
+  border-radius: 8px;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.app-header .nav-links a:hover,
+.app-header .nav-links a.active {
+  background: rgba(255,255,255,.2);
+  color: white;
+}
+.app-header .nav-links a.nav-logout {
+  background: rgba(255,60,60,.2);
+  color: #ffcdd2;
+}
+
+/* ── Dark Left-Nav (WhatsApp Web style) ── */
+.app-left-nav {
+  width: 58px;
+  background: #202c33;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-left: 1px solid #2a3942;
+  flex-shrink: 0;
+}
+.app-left-nav .ln-top,
+.app-left-nav .ln-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.app-left-nav .ln-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #8696a0;
+  text-decoration: none;
+  transition: all .2s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  position: relative;
+}
+.app-left-nav .ln-icon:hover { background: #2a3942; color: #e9edef; }
+.app-left-nav .ln-icon.active { color: #e9edef; }
+.app-left-nav .ln-icon.ln-logout { color: #e53935 !important; }
+.app-left-nav .ln-sep {
+  width: 28px;
+  height: 1px;
+  background: #2a3942;
+  margin: 4px 0;
+}
+.ln-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: #25d366;
+  color: white;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ── Footer ── */
+.app-footer {
+  background: #075e54;
+  color: rgba(255,255,255,.6);
+  text-align: center;
+  padding: 12px 24px;
+  font-size: .75rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.app-footer a {
+  color: rgba(255,255,255,.7);
+  text-decoration: none;
+}
+.app-footer a:hover { color: white; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    height: auto;
+  }
+  .app-header .nav-links { gap: 2px; }
+  .app-header .nav-links a { font-size: .72rem; padding: 4px 7px; }
+  .app-left-nav { display: none; }
+}

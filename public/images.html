@@ -217,19 +217,7 @@
 </head>
 <body>
 
-<header>
-  <h1>📸 صور الزبائن</h1>
-  <nav class="nav-links">
-    <a href="/">🏠 الرئيسية</a>
-    <a href="/messages">💬 الرسائل</a>
-    <a href="/responses">📋 الردود</a>
-    <a href="/images" class="active">📸 الصور</a>
-    <a href="/notes">📝 الملاحظات</a>
-    <a href="/qr">📲 QR</a>
-    <a href="/sync">🔄 مزامنة</a>
-    <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")" style="background:rgba(255,80,80,0.25)">🚪 خروج</a>
-  </nav>
-</header>
+<header id="app-header"></header>
 
 <!-- Stats -->
 <div class="stats">
@@ -567,5 +555,7 @@
     load();
   });
 </script>
+<footer id="app-footer"></footer>
+<script src="/js/nav.js"></script>
 </body>
 </html>

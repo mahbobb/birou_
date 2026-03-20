@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة التحكم — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
   <style>
     :root {
       --green:  #25d366;
@@ -420,9 +421,13 @@
     </button>
 
     <div class="sb-section">التواصل</div>
+    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات</span></a>
     <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
     <a class="sb-link" href="/groups"><span class="ico">👥</span><span>المجموعات</span></a>
+    <a class="sb-link" href="/grp-chat"><span class="ico">💬</span><span>رسائل المجموعات</span></a>
     <a class="sb-link" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
+    <a class="sb-link" href="/facebook"><span class="ico">📘</span><span>فيسبوك</span></a>
+    <a class="sb-link" href="/widget"><span class="ico">🌐</span><span>ويدجت الموقع</span></a>
 
     <div class="sb-section">الوسائط</div>
     <a class="sb-link" href="/images"><span class="ico">📸</span><span>الصور</span></a>
@@ -446,7 +451,7 @@
         <div class="role">Admin</div>
       </div>
     </div>
-    <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")">
+    <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">
       <span>🚪</span><span>خروج</span>
     </button>
   </div>
@@ -611,6 +616,7 @@
     </div>
   </div>
 
+  <footer id="app-footer"></footer>
 </div><!-- /main -->
 
 <!-- Send Modal -->
@@ -1103,6 +1109,7 @@
   loadData();
   setInterval(loadData, 30000);
 </script>
+<script src="/js/nav.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const _sock = io();

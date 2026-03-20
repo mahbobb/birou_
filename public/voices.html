@@ -368,23 +368,7 @@
 <body>
 
 <!-- Header -->
-<header>
-  <div class="header-left">
-    <div class="header-icon">🎤</div>
-    <h1>الرسائل الصوتية</h1>
-  </div>
-  <nav class="nav-links">
-    <a href="/">🏠</a>
-    <a href="/messages">💬 الرسائل</a>
-    <a href="/images">📸 الصور</a>
-    <a href="/voices" class="active">🎤 الصوتيات</a>
-    <a href="/videos">🎬 الفيديوهات</a>
-    <a href="/notes">📝 الملاحظات</a>
-    <a href="/qr">📲 QR</a>
-    <a href="/sync">🔄 مزامنة</a>
-    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")">🚪 خروج</a>
-  </nav>
-</header>
+<header id="app-header"></header>
 
 <!-- Stats -->
 <div class="stats-row">
@@ -901,5 +885,7 @@
     load();
   });
 </script>
+<footer id="app-footer"></footer>
+<script src="/js/nav.js"></script>
 </body>
 </html>

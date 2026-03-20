@@ -674,7 +674,7 @@ function parseCookies(header = "") {
 }
 
 function requireAuth(req, res, next) {
-  const pub = ["/login", "/login.html", "/api/login", "/webhook"];
+  const pub = ["/login", "/login.html", "/api/login", "/webhook", "/contact", "/api/contact"];
   if (pub.some(p => req.path === p || req.path.startsWith("/webhook"))) return next();
   const cookies = parseCookies(req.headers.cookie);
   if (validTokens.has(cookies.auth_token)) return next();
@@ -1893,6 +1893,55 @@ app.post("/api/notes/upload-image", (req, res) => {
 
 app.get("/notes", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "notes.html"));
+});
+
+// ─── Public Contact Widget (no auth) ──────────────────────────────────────
+
+// Rate limit: 5 messages per hour per IP
+const _contactRL = new Map();
+
+app.get("/contact", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "contact.html"));
+});
+
+app.get("/widget", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "widget.html"));
+});
+
+app.post("/api/contact", async (req, res) => {
+  // Rate limiting
+  const ip  = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+  const now = Date.now();
+  let rl = _contactRL.get(ip);
+  if (!rl || now > rl.resetAt) { rl = { count: 0, resetAt: now + 3600000 }; _contactRL.set(ip, rl); }
+  if (rl.count >= 5) return res.status(429).json({ error: "تجاوزت الحد المسموح — حاول بعد ساعة" });
+  rl.count++;
+
+  const { name, phone, message } = req.body;
+  if (!name    || name.trim().length    < 1) return res.status(400).json({ error: "الاسم مطلوب" });
+  if (!message || message.trim().length < 2) return res.status(400).json({ error: "الرسالة مطلوبة" });
+
+  const ownerPhone = process.env.OWNER_PHONE;
+  if (!ownerPhone) return res.status(503).json({ error: "لم يتم إعداد رقم المستلم (OWNER_PHONE)" });
+
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "البوت غير متصل حالياً — حاول لاحقاً" });
+
+  const sName = String(name    || "").trim().substring(0, 80);
+  const sPhone= String(phone   || "—").trim().substring(0, 25);
+  const sMsg  = String(message || "").trim().substring(0, 500);
+  const ts    = new Date().toLocaleString("ar-MA", { timeZone: "Africa/Casablanca" });
+
+  const text = `🔔 *رسالة جديدة من الموقع*\n\n👤 الاسم: ${sName}\n📞 الرقم: ${sPhone}\n🕐 الوقت: ${ts}\n\n💬 الرسالة:\n${sMsg}`;
+
+  try {
+    const outPhone = normalizeOutPhone(cleanPhone(ownerPhone));
+    await botSend(outPhone + "@c.us", text);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[contact-widget]", err.message);
+    res.status(500).json({ error: "فشل الإرسال — حاول لاحقاً" });
+  }
 });
 
 // Dashboard HTML

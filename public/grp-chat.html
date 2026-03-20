@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>رسائل المجموعات — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
+  <link rel="stylesheet" href="/css/grp-chat.css">
+</head>
+<body>
+
+<div id="app-nav"></div>
+
+<!-- Sidebar: group list -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-title">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color:var(--teal)"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      رسائل المجموعات
+      <span class="cnt" id="grpCount">0</span>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.367 4.366c1-1 2.214-1.5 3.637-1.5s2.637.5 3.634 1.497c.997.997 1.497 2.212 1.497 3.637a5.33 5.33 0 0 1-.338 1.867 5.35 5.35 0 0 1-.815 1.45l4.38 4.381a.877.877 0 0 1-1.242 1.237l-4.38-4.385a5.36 5.36 0 0 1-1.45.815A5.33 5.33 0 0 1 8.004 13.13c-1.423 0-2.637-.5-3.637-1.497C3.367 10.633 2.87 9.42 2.87 8c0-1.423.498-2.637 1.497-3.634ZM8 4.63c-.938 0-1.731.327-2.387.982C4.957 6.27 4.63 7.062 4.63 8s.327 1.731.983 2.387c.656.656 1.449.983 2.387.983s1.731-.327 2.387-.983C11.043 9.731 11.37 8.938 11.37 8s-.327-1.73-.983-2.388C9.731 4.957 8.938 4.63 8 4.63Z"/></svg>
+      <input class="search-box" id="searchGrp" type="text" placeholder="ابحث في المجموعات...">
+    </div>
+  </div>
+  <div class="groups-list" id="groupsList">
+    <div class="empty-list">⏳ جاري التحميل...</div>
+  </div>
+</div>
+
+<!-- Chat panel -->
+<div class="chat-panel" id="chatPanel">
+
+  <!-- No selection -->
+  <div class="no-selection" id="noSel">
+    <svg viewBox="0 0 80 80" width="80" height="80" fill="none">
+      <circle cx="40" cy="40" r="38" stroke="#2a3942" stroke-width="4"/>
+      <path d="M28 32h24M28 40h18M28 48h12" stroke="#2a3942" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="56" cy="56" r="14" fill="#128c7e" opacity=".6"/>
+      <path d="M52 56h8M56 52v8" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <h3>اختر مجموعة لعرض رسائلها</h3>
+    <p>اختر من القائمة على اليسار</p>
+  </div>
+
+  <!-- Active chat -->
+  <div id="chatView" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div class="chat-header">
+      <button class="back-btn" onclick="backToList()">‹</button>
+      <div class="ch-avatar" id="chAvatar">؟</div>
+      <div class="ch-info">
+        <div class="ch-name" id="chName">—</div>
+        <div class="ch-sub" id="chSub">—</div>
+      </div>
+      <div class="ch-actions">
+        <select class="ha-select" id="msgLimit" onchange="loadMsgs()">
+          <option value="30">30</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+        </select>
+        <button class="ha-btn" onclick="loadMsgs()">🔄 تحديث</button>
+        <button class="ha-btn" onclick="openSendModal()" style="background:rgba(18,140,126,.2);color:var(--green)">📤 إرسال</button>
+      </div>
+    </div>
+    <div class="messages-wrap" id="msgsWrap">
+      <div class="msg-spinner">⏳ جاري التحميل...</div>
+    </div>
+    <div class="input-bar">
+      <textarea id="msgInput" placeholder="اكتب رسالة للمجموعة..." rows="1"
+        oninput="autoResize(this)"></textarea>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Quick send modal -->
+<div id="sendModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg-panel);border-radius:14px;padding:24px;width:90%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:.95rem;font-weight:700;margin-bottom:12px;color:var(--text)">📤 إرسال لـ <span id="smName" style="color:var(--green)"></span></div>
+    <textarea id="smInput" style="width:100%;min-height:100px;background:var(--bg-input);border:none;border-radius:10px;padding:10px 13px;color:var(--text);font-size:.88rem;resize:vertical;outline:none;direction:rtl;font-family:inherit" placeholder="اكتب الرسالة..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button onclick="closeSendModal()" style="padding:8px 18px;background:var(--bg-input);border:none;border-radius:8px;color:var(--muted);cursor:pointer;font-size:.85rem">إلغاء</button>
+      <button onclick="doSendModal()" style="padding:8px 18px;background:var(--teal);border:none;border-radius:8px;color:white;cursor:pointer;font-size:.85rem;font-weight:600">📤 إرسال</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/nav.js"></script>
+<script src="/js/grp-chat.js"></script>
+</body>
+</html>

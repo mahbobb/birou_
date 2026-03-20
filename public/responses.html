@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة الردود — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
   <style>
     :root {
       --green: #25d366; --teal: #128c7e; --dark: #075e54;
@@ -166,35 +167,7 @@
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<aside class="sidebar" id="mainSidebar">
-  <div class="sb-brand">
-    <div class="brand-row">
-      <div class="brand-icon">🤖</div>
-      <div><h2>واتساب بوت</h2></div>
-    </div>
-  </div>
-  <nav class="sb-nav">
-    <div class="sb-section">الرئيسية</div>
-    <a class="sb-link" href="/"><span class="ico">📊</span><span>لوحة التحكم</span></a>
-    <div class="sb-section">التواصل</div>
-    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات</span></a>
-    <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
-    <a class="sb-link active" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
-    <div class="sb-section">الوسائط</div>
-    <a class="sb-link" href="/images"><span class="ico">📸</span><span>الصور</span></a>
-    <a class="sb-link" href="/voices"><span class="ico">🎤</span><span>الصوتيات</span></a>
-    <a class="sb-link" href="/videos"><span class="ico">🎬</span><span>الفيديوهات</span></a>
-    <div class="sb-section">الإعدادات</div>
-    <a class="sb-link" href="/notes"><span class="ico">📝</span><span>الملاحظات</span></a>
-    <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
-    <a class="sb-link" href="/sync"><span class="ico">🔄</span><span>المزامنة</span></a>
-  </nav>
-  <div class="sb-bottom">
-    <button class="sb-logout" onclick="doLogout()">
-      <span>🚪</span><span>خروج</span>
-    </button>
-  </div>
-</aside>
+<aside class="sidebar" id="app-sidebar"></aside>
 
 <div class="main">
   <div class="topbar">
@@ -380,15 +353,16 @@
 
   /* ── Mobile sidebar ── */
   function toggleSidebar() {
-    document.getElementById("mainSidebar").classList.toggle("mobile-open");
+    document.getElementById("app-sidebar").classList.toggle("mobile-open");
     document.getElementById("sidebarOverlay").classList.toggle("open");
   }
   function closeSidebar() {
-    document.getElementById("mainSidebar").classList.remove("mobile-open");
+    document.getElementById("app-sidebar").classList.remove("mobile-open");
     document.getElementById("sidebarOverlay").classList.remove("open");
   }
 
   loadResponses();
 </script>
+<script src="/js/nav.js"></script>
 </body>
 </html>

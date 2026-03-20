@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Facebook Messenger — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
   <style>
     :root {
       --fb:     #1877f2;
@@ -179,21 +180,7 @@
 </head>
 <body>
 
-<header>
-  <div class="hdr-left">
-    <div class="hdr-icon">📘</div>
-    <h1>Facebook Messenger</h1>
-  </div>
-  <nav class="nav-links">
-    <a href="/">🏠</a>
-    <a href="/messages">💬 الرسائل</a>
-    <a href="/chat">🗨️ الشات</a>
-    <a href="/notes">📝 الملاحظات</a>
-    <a href="/qr">📲 QR</a>
-    <a href="/facebook" class="active">📘 Facebook</a>
-    <a href="#" class="logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href="/login")">🚪 خروج</a>
-  </nav>
-</header>
+<header id="app-header"></header>
 
 <div class="page-wrap">
 
@@ -488,5 +475,7 @@
 
   loadStatus();
 </script>
+<footer id="app-footer"></footer>
+<script src="/js/nav.js"></script>
 </body>
 </html>

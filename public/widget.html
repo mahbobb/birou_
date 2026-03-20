@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ويدجت الرسائل — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+
+    .container { max-width: 760px; margin: 40px auto; padding: 0 20px; }
+
+    .card {
+      background: white; border-radius: 16px; padding: 28px 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1.05rem; font-weight: 700; color: #075e54;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── Status banner ── */
+    .status-banner {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 20px; border-radius: 14px; margin-bottom: 20px;
+    }
+    .status-banner.ok    { background: #e8f5e9; border: 1.5px solid #c8e6c9; }
+    .status-banner.warn  { background: #fff3e0; border: 1.5px solid #ffe0b2; }
+    .status-banner.error { background: #fce4ec; border: 1.5px solid #f8bbd9; }
+    .status-banner .sico { font-size: 1.8rem; }
+    .status-banner h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .status-banner p  { font-size: 0.82rem; color: #555; }
+
+    /* ── Link card ── */
+    .link-box {
+      background: #f8f9fa; border: 1.5px solid #e0e0e0;
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .link-box input {
+      flex: 1; border: none; background: none; font-size: 0.88rem;
+      color: #075e54; font-family: monospace; outline: none; direction: ltr;
+    }
+    .copy-btn {
+      padding: 6px 14px; background: #075e54; color: white;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .copy-btn:hover { background: #128c7e; }
+
+    /* ── Code block ── */
+    .code-wrap {
+      background: #1e1e2e; border-radius: 12px; padding: 18px;
+      position: relative; margin-bottom: 14px;
+    }
+    .code-wrap pre {
+      color: #a6e3a1; font-size: 0.82rem; font-family: monospace;
+      white-space: pre-wrap; word-break: break-all; direction: ltr; text-align: left;
+    }
+    .copy-code-btn {
+      position: absolute; top: 10px; left: 10px;
+      padding: 4px 12px; background: rgba(255,255,255,0.12); color: #cdd6f4;
+      border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s;
+    }
+    .copy-code-btn:hover { background: rgba(255,255,255,0.22); }
+
+    /* ── Settings form ── */
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; font-size: 0.8rem; color: #888; font-weight: 600; margin-bottom: 5px; }
+    .form-row input {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e8edf2;
+      border-radius: 10px; font-size: 0.9rem; outline: none; font-family: inherit;
+      background: #fafafa; transition: border-color 0.2s; direction: ltr;
+    }
+    .form-row input:focus { border-color: #128c7e; background: white; }
+    .form-hint { font-size: 0.75rem; color: #aaa; margin-top: 4px; }
+
+    .btn-save {
+      padding: 10px 28px; background: #25d366; color: white;
+      border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-save:hover { background: #1db954; }
+
+    /* ── Preview iframe ── */
+    .preview-wrap {
+      border-radius: 14px; overflow: hidden;
+      border: 2px solid #e0f2f1; height: 560px; position: relative;
+    }
+    .preview-wrap iframe { width: 100%; height: 100%; border: none; }
+    .preview-label {
+      font-size: 0.78rem; color: #888; text-align: center; margin-bottom: 8px;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: rgba(26,26,46,.92); color: white; padding: 11px 24px;
+      border-radius: 50px; font-size: .88rem; opacity: 0; transition: all .3s;
+      pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .container { margin: 20px auto; }
+      .card { padding: 20px 16px; }
+      .preview-wrap { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="app-header"></header>
+
+<div class="container">
+
+  <!-- Status -->
+  <div class="status-banner" id="statusBanner">
+    <div class="sico">⏳</div>
+    <div><h3>جاري التحقق...</h3><p>يتم فحص حالة الإعداد</p></div>
+  </div>
+
+  <!-- Direct link card -->
+  <div class="card">
+    <h2>🔗 رابط صفحة التواصل</h2>
+    <p style="font-size:0.85rem;color:#666;margin-bottom:14px">
+      شارك هذا الرابط على موقعك الـ Hostinger حتى يستطيع الزوار إرسال رسائل إليك عبر واتساب
+    </p>
+    <div class="link-box">
+      <input type="text" id="contactLink" readonly>
+      <button class="copy-btn" onclick="copyLink()">نسخ</button>
+    </div>
+    <a id="previewLink" href="/contact" target="_blank"
+       style="font-size:0.82rem;color:#128c7e;text-decoration:none">
+      ← افتح الصفحة في نافذة جديدة
+    </a>
+  </div>
+
+  <!-- Hostinger embed code -->
+  <div class="card">
+    <h2>🌐 كود الإضافة لموقع Hostinger</h2>
+    <p style="font-size:0.85rem;color:#666;margin-bottom:16px">
+      الخيار الأول: <b>زر عائم</b> — أضف هذا الكود في آخر صفحة HTML قبل <code style="background:#f0f2f5;padding:1px 6px;border-radius:4px">&lt;/body&gt;</code>
+    </p>
+    <div class="code-wrap" id="floatCodeWrap">
+      <button class="copy-code-btn" onclick="copyCode('floatCode')">📋 نسخ</button>
+      <pre id="floatCode"></pre>
+    </div>
+
+    <p style="font-size:0.85rem;color:#666;margin-bottom:10px;margin-top:18px">
+      الخيار الثاني: <b>إطار مدمج (iframe)</b> — ضعه في أي مكان من صفحتك
+    </p>
+    <div class="code-wrap" id="iframeCodeWrap">
+      <button class="copy-code-btn" onclick="copyCode('iframeCode')">📋 نسخ</button>
+      <pre id="iframeCode"></pre>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <h2>⚙️ الإعدادات</h2>
+    <div class="form-row">
+      <label>رقم واتساب المستلم (OWNER_PHONE)</label>
+      <input type="text" id="ownerPhone" placeholder="212XXXXXXXXX" dir="ltr" readonly>
+      <div class="form-hint">
+        هذا الرقم يستلم رسائل الزوار — يُعدَّل في ملف <code>.env</code> على السيرفر:
+        <code>OWNER_PHONE=212XXXXXXXXX</code>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:8px">
+      <label>عدد الرسائل المرسلة هذا الساعة</label>
+      <input type="text" id="sentCount" value="—" readonly>
+    </div>
+  </div>
+
+  <!-- Live preview -->
+  <div class="card">
+    <h2>👁️ معاينة صفحة التواصل</h2>
+    <div class="preview-label">معاينة مباشرة للصفحة كما يراها الزوار</div>
+    <div class="preview-wrap">
+      <iframe src="/contact" title="معاينة صفحة التواصل"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/nav.js"></script>
+<script>
+  const origin = location.origin;
+  const contactUrl = origin + "/contact";
+
+  // Set link
+  document.getElementById("contactLink").value = contactUrl;
+  document.getElementById("previewLink").href  = contactUrl;
+
+  // Generate embed codes
+  document.getElementById("floatCode").textContent =
+`<!-- واتساب بوت — زر تواصل عائم -->
+<script>
+(function(){
+  var btn = document.createElement('a');
+  btn.href = '${contactUrl}';
+  btn.target = '_blank';
+  btn.style.cssText = 'position:fixed;bottom:24px;left:24px;z-index:9999;' +
+    'background:#25d366;color:white;border-radius:50%;width:58px;height:58px;' +
+    'display:flex;align-items:center;justify-content:center;' +
+    'font-size:28px;box-shadow:0 4px 20px rgba(37,211,102,.5);text-decoration:none;';
+  btn.innerHTML = '💬';
+  btn.title = 'تواصل معنا';
+  document.body.appendChild(btn);
+})();
+<\/script>`;
+
+  document.getElementById("iframeCode").textContent =
+`<!-- واتساب بوت — صفحة تواصل مدمجة -->
+<iframe
+  src="${contactUrl}"
+  width="100%"
+  height="600"
+  style="border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.12)"
+  title="تواصل معنا">
+</iframe>`;
+
+  // Load status
+  async function loadStatus() {
+    try {
+      const qr = await fetch("/api/qr").then(r => r.json());
+      const connected = Object.values(qr).some(b => b.connected);
+      const owner = "—"; // OWNER_PHONE only visible server-side
+
+      document.getElementById("ownerPhone").value =
+        "مُعيَّن في .env (OWNER_PHONE)";
+
+      const banner = document.getElementById("statusBanner");
+      if (connected) {
+        banner.className = "status-banner ok";
+        banner.innerHTML = `
+          <div class="sico">✅</div>
+          <div><h3>البوت متصل — الويدجت جاهز للعمل</h3>
+          <p>الزوار يستطيعون الآن إرسال رسائل إليك عبر الصفحة</p></div>`;
+      } else {
+        banner.className = "status-banner warn";
+        banner.innerHTML = `
+          <div class="sico">⚠️</div>
+          <div><h3>البوت غير متصل</h3>
+          <p>اربط واتساب من صفحة QR حتى يتمكن الزوار من إرسال الرسائل</p></div>`;
+      }
+    } catch {}
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(contactUrl)
+      .then(() => showToast("✅ تم نسخ الرابط"))
+      .catch(() => showToast("❌ فشل النسخ"));
+  }
+
+  function copyCode(id) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("✅ تم نسخ الكود"))
+      .catch(() => showToast("❌ فشل النسخ"));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadStatus();
+</script>
+</body>
+</html>
