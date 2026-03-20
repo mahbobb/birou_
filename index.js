@@ -1409,8 +1409,11 @@ app.post("/api/wa-sync-media", async (req, res) => {
             new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
           ]);
           for (const c of chats) {
+            const cid = c.id?._serialized || "";
+            // فقط محادثات خاصة @c.us أو @lid — تجاهل @g.us و@broadcast وغيرها
+            if (!cid.endsWith("@c.us") && !cid.endsWith("@lid")) continue;
             if (c.isGroup || c.isBroadcast) continue;
-            const phone = normalizePhone(c.id._serialized);
+            const phone = normalizePhone(cid);
             if (!phone || phone.length < 7) continue;
             if (seenPhones.has(phone)) continue;
             seenPhones.add(phone);
