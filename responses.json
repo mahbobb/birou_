@@ -1,5 +1,5 @@
 {
-  "autoReplyEnabled": false,
+  "autoReplyEnabled": true,
   "responses": [
     {
       "shortOnly": true,
@@ -38,7 +38,7 @@
         "wach labas",
         "لاباس"
       ],
-      "reply": "مرحبا بك 😊 أنا مساعد سمير من أبراج إيمو. كيف يمكنني مساعدتك؟ شقق مفروشة للكراء اليومي بمراكش."
+      "reply": "مرحبا بك 😊  شقق مفروشة للكراء اليومي بمراكش."
     },
     {
       "keywords": [
