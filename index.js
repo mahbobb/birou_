@@ -1389,8 +1389,8 @@ app.get("/api/wa-chats", async (_req, res) => {
 
 // ── مزامنة الوسائط القديمة من واتساب ─────────────────────────────────────
 app.post("/api/wa-sync-media", async (req, res) => {
-  const activeBot = getActiveBot();
-  if (!activeBot) return res.status(503).json({ error: "البوت غير متصل بواتساب" });
+  const connectedBots = [...bots.values()].filter(b => b.botConnected);
+  if (!connectedBots.length) return res.status(503).json({ error: "البوت غير متصل بواتساب" });
   if (mediaSyncStatus.running) return res.json({ ok: true, message: "المزامنة جارية بالفعل", status: mediaSyncStatus });
 
   const msgLimit = parseInt(req.body?.limit) || 3000;
@@ -1399,17 +1399,36 @@ app.post("/api/wa-sync-media", async (req, res) => {
 
   (async () => {
     try {
-      const chats        = await activeBot.client.getChats();
-      const privateChats = chats.filter(c => !c.isGroup);
-      mediaSyncStatus.total = privateChats.length;
+      // جمع كل المحادثات من جميع البوتات مع إزالة التكرار
+      const seenPhones = new Set();
+      const allChats   = [];
+      for (const bot of connectedBots) {
+        try {
+          const chats = await Promise.race([
+            bot.client.getChats(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
+          ]);
+          for (const c of chats) {
+            if (c.isGroup || c.isBroadcast) continue;
+            const phone = normalizePhone(c.id._serialized);
+            if (!phone || phone.length < 7) continue;
+            if (seenPhones.has(phone)) continue;
+            seenPhones.add(phone);
+            allChats.push(c);
+          }
+        } catch { /* bot timeout — skip */ }
+      }
+      mediaSyncStatus.total = allChats.length;
 
-      for (const chat of privateChats) {
+      for (const chat of allChats) {
         const phone = normalizePhone(chat.id._serialized);
-        if (!phone || phone.length < 7) { mediaSyncStatus.done++; continue; }
         const chatName = chat.name || phone;
         mediaSyncStatus.currentChat = `${chatName} (${phone})`;
 
         try {
+          // سجّل الكونتكت في DB أولاً
+          await registerContact(phone, chatName, "");
+
           const msgs = await chat.fetchMessages({ limit: msgLimit });
           for (const msg of msgs) {
             try {
@@ -1422,7 +1441,6 @@ app.post("/api/wa-sync-media", async (req, res) => {
               if (!msg.hasMedia) {
                 const body = (msg.body || "").trim();
                 if (!body) continue;
-                // INSERT IGNORE على wa_msg_id يمنع التكرار تلقائياً
                 await saveMessage(phone, senderName, dir, body,
                   msg.fromMe ? "manual" : "user", msgTs, waMsgId);
                 mediaSyncStatus.saved++;
@@ -1432,7 +1450,6 @@ app.post("/api/wa-sync-media", async (req, res) => {
               // ── وسائط: صور وفيديو فقط ──────────────────────────────────
               if (!["image", "video"].includes(msg.type)) continue;
 
-              // تحقق أولي بـwa_msg_id (أسرع من البحث في DB)
               const exists = await checkMessageExists(phone, dir, msgTs);
               if (exists) continue;
 
