@@ -1182,11 +1182,28 @@ app.get("/api/group-messages", async (req, res) => {
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
 
   try {
-    const chat = await Promise.race([
-      bot.client.getChatById(groupId),
-      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
-    ]);
-    if (!chat) return res.status(404).json({ error: "المجموعة غير موجودة" });
+    // نحاول getChatById أولاً، وإذا فشل نبحث في getChats
+    let chat = null;
+    try {
+      chat = await Promise.race([
+        bot.client.getChatById(groupId),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000)),
+      ]);
+    } catch {}
+
+    if (!chat) {
+      // بحث بديل عبر قائمة الـ chats
+      const allChats = await Promise.race([
+        bot.client.getChats(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+      ]);
+      chat = allChats.find(c => {
+        const cid = c.id?._serialized || String(c.id || "");
+        return cid === groupId;
+      });
+    }
+
+    if (!chat) return res.status(404).json({ error: "المجموعة غير موجودة في قائمة البوت" });
 
     const msgs = await Promise.race([
       chat.fetchMessages({ limit }),
