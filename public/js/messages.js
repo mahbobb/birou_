@@ -19,9 +19,7 @@ async function loadMessages(scrollToBottom = false) {
   try {
     const isFullLoad = lastMessageId === 0 || scrollToBottom;
     const phone = encodeURIComponent(selectedPhone);
-    const url = isFullLoad
-      ? `/api/wa-history?phone=${phone}&limit=100`
-      : `/api/messages?phone=${phone}&limit=100`;
+    const url = `/api/messages?phone=${phone}&limit=100`;
 
     if (isFullLoad) {
       wrap.innerHTML = `

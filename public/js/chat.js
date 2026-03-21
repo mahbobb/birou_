@@ -859,6 +859,31 @@ function startCall(callType) {
 }
 
 // ─────────────────────────────────────────
+// SYNC FROM WHATSAPP (on-demand)
+// ─────────────────────────────────────────
+async function syncWaHistory() {
+  if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  const btn = document.getElementById("syncWaBtn");
+  if (btn) btn.textContent = "⏳";
+  try {
+    const res = await fetch(`/api/wa-history?phone=${encodeURIComponent(selectedPhone)}&limit=100`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await res.json();
+    lastMessageId = 0;
+    lastDateRendered = "";
+    socketSeenId.clear();
+    socketSeenSig.clear();
+    await loadMessages(true);
+    if (typeof showToast === "function") showToast("✅ تمت المزامنة");
+  } catch (err) {
+    console.error("syncWaHistory error:", err);
+    if (typeof showToast === "function") showToast("❌ فشلت المزامنة من واتساب");
+  } finally {
+    if (btn) btn.textContent = "🔄";
+  }
+}
+
+// ─────────────────────────────────────────
 // PASTE IMAGE FROM CLIPBOARD
 // ─────────────────────────────────────────
 document.getElementById("msgInput").addEventListener("paste", e => {
