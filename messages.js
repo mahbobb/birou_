@@ -113,8 +113,8 @@ async function getMessageStats() {
   try {
     const [[{ total }]]    = await pool.query(`SELECT COUNT(*) AS total    FROM messages`);
     const [[{ today }]]    = await pool.query(`SELECT COUNT(*) AS today    FROM messages WHERE DATE(created_at) = CURDATE()`);
-    const [[{ incoming }]] = await pool.query(`SELECT COUNT(*) AS incoming FROM messages WHERE direction='incoming'`);
-    const [[{ outgoing }]] = await pool.query(`SELECT COUNT(*) AS outgoing FROM messages WHERE direction='outgoing'`);
+    const [[{ incoming }]] = await pool.query(`SELECT COUNT(*) AS incoming FROM messages WHERE direction='in'`);
+    const [[{ outgoing }]] = await pool.query(`SELECT COUNT(*) AS outgoing FROM messages WHERE direction='out'`);
     return { total, today, incoming, outgoing };
   } catch { return { total: 0, today: 0, incoming: 0, outgoing: 0 }; }
 }
@@ -132,7 +132,7 @@ async function getUnansweredContacts() {
         m.created_at                           AS lastAt
       FROM messages m
       LEFT JOIN contacts c ON c.phone = m.contact
-      WHERE m.direction = 'incoming'
+      WHERE m.direction = 'in'
         AND m.created_at = (
           SELECT MAX(m2.created_at) FROM messages m2
           WHERE m2.contact = m.contact
@@ -140,7 +140,7 @@ async function getUnansweredContacts() {
         AND NOT EXISTS (
           SELECT 1 FROM messages m3
           WHERE m3.contact = m.contact
-            AND m3.direction = 'outgoing'
+            AND m3.direction = 'out'
             AND m3.created_at > m.created_at
         )
       ORDER BY m.created_at DESC
