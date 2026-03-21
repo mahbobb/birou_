@@ -1532,7 +1532,10 @@ app.get("/api/wa-history", async (req, res) => {
       }
     }
     if (!waChat) return res.json(dbMsgs);
-    const waMsgs = await waChat.fetchMessages({ limit: parseInt(limit) });
+    const waMsgs = await Promise.race([
+      waChat.fetchMessages({ limit: Math.min(parseInt(limit), 100) }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 12000)),
+    ]);
 
     if (!waMsgs.length) return res.json(dbMsgs);
 
