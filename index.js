@@ -836,8 +836,11 @@ app.post("/api/restart-bot/:id", async (req, res) => {
   }
 });
 
-app.get("/api/contacts", async (_req, res) => {
-  const list = await getAllContacts();
+app.get("/api/contacts", async (req, res) => {
+  const limit  = Math.min(parseInt(req.query.limit  || "200"), 500);
+  const offset = parseInt(req.query.offset || "0");
+  const search = (req.query.search || "").trim().substring(0, 50);
+  const list = await getAllContacts({ limit, offset, search });
   res.json(list);
 });
 

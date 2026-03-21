@@ -54,21 +54,35 @@ async function getStats() {
 
 // ─── قائمة جميع الزبائن ───────────────────────────────────────────────────
 
-async function getAllContacts() {
+async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
   try {
+    const where = search
+      ? `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0) AND (c.name LIKE ? OR c.phone LIKE ?)`
+      : `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0)`;
+    const params = search
+      ? [`%${search}%`, `%${search}%`, limit, offset]
+      : [limit, offset];
+
     const [rows] = await pool.query(`
       SELECT c.phone, c.name,
              c.first_seen     AS firstSeen,
              c.last_seen      AS lastSeen,
              c.last_message   AS lastMessage,
              c.total_messages AS totalMessages,
-             (SELECT direction FROM messages
-               WHERE contact = c.phone
-               ORDER BY created_at DESC LIMIT 1) AS lastDirection
+             m.direction      AS lastDirection
         FROM contacts c
-       WHERE (c.is_deleted IS NULL OR c.is_deleted = 0)
+        LEFT JOIN (
+          SELECT contact, direction
+            FROM messages m1
+           WHERE created_at = (
+             SELECT MAX(m2.created_at) FROM messages m2 WHERE m2.contact = m1.contact
+           )
+          GROUP BY contact
+        ) m ON m.contact = c.phone
+        ${where}
        ORDER BY c.last_seen DESC
-    `);
+       LIMIT ? OFFSET ?
+    `, params);
     return rows;
   } catch (err) {
     console.error("❌ خطأ في جلب الزبائن:", err.message);
