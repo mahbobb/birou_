@@ -7,8 +7,11 @@ const pool = mysql.createPool({
   password:           process.env.DB_PASSWORD || "",
   database:           process.env.DB_NAME     || "whatsapp_bot",
   waitForConnections: true,
-  connectionLimit:    10,
+  connectionLimit:    20,
+  queueLimit:         0,
   charset:            "utf8mb4",
+  enableKeepAlive:    true,
+  keepAliveInitialDelay: 10000,
 });
 
 // ─── إنشاء الجداول مع UNIQUE constraints ─────────────────────────────────
