@@ -680,7 +680,7 @@ function parseCookies(header = "") {
 }
 
 function requireAuth(req, res, next) {
-  const pub = ["/login", "/login.html", "/api/login", "/webhook", "/contact", "/api/contact"];
+  const pub = ["/login", "/login.html", "/api/login", "/webhook", "/contact", "/api/contact", "/api/chat-widget"];
   if (pub.some(p => req.path === p || req.path.startsWith("/webhook"))) return next();
   const cookies = parseCookies(req.headers.cookie);
   if (validTokens.has(cookies.auth_token)) return next();
@@ -2005,6 +2005,58 @@ app.post("/api/contact", async (req, res) => {
   } catch (err) {
     console.error("[contact-widget]", err.message);
     res.status(500).json({ error: "فشل الإرسال — حاول لاحقاً" });
+  }
+});
+
+// ── Chat Widget API (عام — بدون auth) ────────────────────────────────────
+const _chatWidgetRL = new Map();
+app.post("/api/chat-widget", async (req, res) => {
+  const ip  = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+  const now = Date.now();
+  let rl = _chatWidgetRL.get(ip);
+  if (!rl || now > rl.resetAt) { rl = { count: 0, resetAt: now + 3600000 }; _chatWidgetRL.set(ip, rl); }
+  if (rl.count >= 30) return res.status(429).json({ reply: "كلمنا مباشرة على 0680040002 📞" });
+  rl.count++;
+
+  const { name, message } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: "message مطلوب" });
+
+  const sName = String(name || "زبون").trim().substring(0, 60);
+  const sMsg  = String(message).trim().substring(0, 500);
+
+  try {
+    const { generateResponse } = require("./claude");
+    const { findCustomResponse } = require("./customResponses");
+
+    // جرب الردود المبرمجة أولاً
+    const custom = findCustomResponse(sMsg);
+    if (custom?.text) {
+      // أرسل إشعار للمالك في الخلفية
+      const ownerPhone = process.env.OWNER_PHONE;
+      const bot = getActiveBot();
+      if (ownerPhone && bot) {
+        const ts = new Date().toLocaleString("ar-MA", { timeZone: "Africa/Casablanca" });
+        const outPhone = normalizeOutPhone(cleanPhone(ownerPhone));
+        botSend(outPhone + "@c.us", `💬 *محادثة موقع*\n👤 ${sName}\n🕐 ${ts}\n\n📩 ${sMsg}\n🤖 ${custom.text}`).catch(() => {});
+      }
+      return res.json({ reply: custom.text, source: "custom" });
+    }
+
+    // ذكاء اصطناعي
+    const reply = await generateResponse(`widget_${ip}`, sName, sMsg);
+
+    // إشعار للمالك
+    const ownerPhone = process.env.OWNER_PHONE;
+    const bot = getActiveBot();
+    if (ownerPhone && bot) {
+      const ts = new Date().toLocaleString("ar-MA", { timeZone: "Africa/Casablanca" });
+      const outPhone = normalizeOutPhone(cleanPhone(ownerPhone));
+      botSend(outPhone + "@c.us", `💬 *محادثة موقع*\n👤 ${sName}\n🕐 ${ts}\n\n📩 ${sMsg}\n🤖 ${reply}`).catch(() => {});
+    }
+
+    res.json({ reply, source: "ai" });
+  } catch {
+    res.json({ reply: "شكراً لتواصلك! للرد السريع كلمنا على واتساب: 0680040002 😊", source: "fallback" });
   }
 });
 
