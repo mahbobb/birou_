@@ -178,6 +178,37 @@
 
   <div class="content">
 
+    <!-- رد جماعي على غير المردود عليهم -->
+    <div class="card" style="border-right: 4px solid #ff9800;">
+      <h2>📢 رد جماعي على غير المردود عليهم</h2>
+      <p style="font-size:0.85rem;color:#666;margin-bottom:14px">
+        يُرسل الرسالة تلقائياً لجميع الزبائن الذين لم يتلقوا رداً بعد آخر رسالتهم — مع تأخير بين كل رسالة لتجنب الحظر.
+      </p>
+      <div class="form-group">
+        <label>نص الرسالة *</label>
+        <textarea class="form-textarea" id="bulkMsg" placeholder="مثال: مرحبا، ماذا تريد؟ نحن هنا لمساعدتك 😊" style="min-height:80px"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:1;min-width:140px">
+          <label>تأخير بين الرسائل (ثانية)</label>
+          <input class="form-input" type="number" id="bulkDelay" value="4" min="2" max="30" style="width:100%">
+        </div>
+        <div id="bulkCount" style="font-size:0.85rem;color:#888;padding-top:18px">
+          — غير مردود عليهم: <b id="bulkCountNum">...</b>
+        </div>
+      </div>
+      <div id="bulkProgress" style="display:none;margin-bottom:12px">
+        <div style="background:#e8e8e8;border-radius:8px;height:12px;overflow:hidden;margin-bottom:6px">
+          <div id="bulkBar" style="height:100%;background:linear-gradient(90deg,#25d366,#128c7e);transition:width 0.4s;width:0"></div>
+        </div>
+        <div id="bulkProgressText" style="font-size:0.82rem;color:#555"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-green" id="bulkBtn" onclick="startBulkReply()">📤 ابدأ الإرسال</button>
+        <button class="btn btn-reset" onclick="loadBulkCount()">🔄 تحديث العدد</button>
+      </div>
+    </div>
+
     <!-- الرد الافتراضي -->
     <div class="card">
       <h2>💬 الرد الافتراضي</h2>
@@ -362,6 +393,59 @@
   }
 
   loadResponses();
+  loadBulkCount();
+
+  /* ── Bulk Reply ── */
+  async function loadBulkCount() {
+    try {
+      const list = await fetch("/api/messages/unanswered").then(r => r.json());
+      document.getElementById("bulkCountNum").textContent = list.length;
+    } catch { document.getElementById("bulkCountNum").textContent = "—"; }
+  }
+
+  async function startBulkReply() {
+    const msg   = document.getElementById("bulkMsg").value.trim();
+    const delay = parseInt(document.getElementById("bulkDelay").value) || 4;
+    if (!msg) return showToast("❌ اكتب نص الرسالة أولاً");
+
+    const btn = document.getElementById("bulkBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري الإرسال...";
+    document.getElementById("bulkProgress").style.display = "block";
+
+    try {
+      const res  = await fetch("/api/bulk-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, delay })
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast("❌ " + (data.error || "فشل")); return; }
+
+      // poll progress
+      const poll = setInterval(async () => {
+        try {
+          const st = await fetch("/api/bulk-reply/status").then(r => r.json());
+          const pct = st.total > 0 ? Math.round(st.done / st.total * 100) : 0;
+          document.getElementById("bulkBar").style.width = pct + "%";
+          document.getElementById("bulkProgressText").textContent =
+            `${st.done} / ${st.total} — نجح: ${st.ok} — فشل: ${st.fail}`;
+          if (!st.running) {
+            clearInterval(poll);
+            btn.disabled = false;
+            btn.textContent = "📤 ابدأ الإرسال";
+            showToast(`✅ اكتمل — أُرسلت ${st.ok} رسالة`);
+            loadBulkCount();
+          }
+        } catch { clearInterval(poll); }
+      }, 1500);
+
+    } catch {
+      showToast("❌ خطأ في الاتصال");
+      btn.disabled = false;
+      btn.textContent = "📤 ابدأ الإرسال";
+    }
+  }
 </script>
 <script src="/js/nav.js"></script>
 </body>

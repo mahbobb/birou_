@@ -1663,6 +1663,44 @@ app.get("/api/messages/unanswered", async (_req, res) => {
   res.json(list);
 });
 
+// ── رد جماعي على غير المردود عليهم ────────────────────────────────────────
+let bulkReplyStatus = { running: false, done: 0, total: 0, ok: 0, fail: 0 };
+
+app.post("/api/bulk-reply", async (req, res) => {
+  if (bulkReplyStatus.running) return res.json({ ok: true, message: "الإرسال جاري بالفعل" });
+  const { message, delay = 4 } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: "message مطلوب" });
+
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
+
+  const list = await getUnansweredContacts();
+  if (!list.length) return res.json({ ok: true, message: "لا يوجد أحد غير مردود عليه" });
+
+  bulkReplyStatus = { running: true, done: 0, total: list.length, ok: 0, fail: 0 };
+  res.json({ ok: true, message: `سيتم الإرسال لـ ${list.length} جهة اتصال` });
+
+  (async () => {
+    const delayMs = Math.max(2, parseInt(delay)) * 1000;
+    for (const contact of list) {
+      try {
+        const phone = contact.phone;
+        const chatId = phone.includes("@") ? phone : `${phone}@c.us`;
+        await bot.client.sendMessage(chatId, message);
+        await saveMessage(phone, "أنت", "out", message, "manual", Date.now(), null);
+        bulkReplyStatus.ok++;
+      } catch { bulkReplyStatus.fail++; }
+      bulkReplyStatus.done++;
+      if (bulkReplyStatus.done < bulkReplyStatus.total) await sleep(delayMs);
+    }
+    bulkReplyStatus.running = false;
+  })();
+});
+
+app.get("/api/bulk-reply/status", (_req, res) => {
+  res.json(bulkReplyStatus);
+});
+
 // ── CRUD الردود المبرمجة ───────────────────────────────────────────────────
 const RESPONSES_FILE = path.join(__dirname, "responses.json");
 
