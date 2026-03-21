@@ -2042,8 +2042,11 @@ app.post("/api/chat-widget", async (req, res) => {
       return res.json({ reply: custom.text, source: "custom" });
     }
 
-    // ذكاء اصطناعي
-    const reply = await generateResponse(`widget_${ip}`, sName, sMsg);
+    // ذكاء اصطناعي مع timeout 15 ثانية
+    const reply = await Promise.race([
+      generateResponse(`widget_${ip}`, sName, sMsg),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+    ]);
 
     // إشعار للمالك
     const ownerPhone = process.env.OWNER_PHONE;
