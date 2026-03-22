@@ -1078,8 +1078,9 @@ app.post("/api/send-voice", async (req, res) => {
     }
 
     const media = MessageMedia.fromFilePath(sendPath);
-    await botSend(jid, media, { sendAudioAsVoice: true }, botId);
-    await saveMessage(key, "أنت", "out", fileUrl, "manual");
+    const sentMsg = await botSend(jid, media, { sendAudioAsVoice: true }, botId);
+    const waId = sentMsg?.id?._serialized || null;
+    await saveMessage(key, "أنت", "out", fileUrl, "manual", null, waId);
     emitMessage(key, { phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true, url: fileUrl });
   } catch (err) {
