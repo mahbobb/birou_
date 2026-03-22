@@ -47,7 +47,7 @@ async function saveMessage(phone, _name, direction, body, source, createdAt = nu
       );
     }
   } catch (err) {
-    console.error("❌ خطأ في حفظ الرسالة:", err.message);
+    console.error("❌ خطأ في حفظ الرسالة:", err.message || err.code || String(err));
   }
 }
 

@@ -35,7 +35,7 @@ async function registerContact(phone, name, message) {
     );
     return true;
   } catch (err) {
-    console.error("❌ خطأ في تسجيل الزبون:", err.message);
+    console.error("❌ خطأ في تسجيل الزبون:", err.message || err.code || String(err));
     return false;
   }
 }
@@ -85,7 +85,7 @@ async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
     `, params);
     return rows;
   } catch (err) {
-    console.error("❌ خطأ في جلب الزبائن:", err.message);
+    console.error("❌ خطأ في جلب الزبائن:", err.message || err.code || String(err));
     return [];
   }
 }
