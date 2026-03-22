@@ -44,7 +44,7 @@ async function getVideos({ phone, search, limit = 50, offset = 0 } = {}) {
     const off   = parseInt(offset);
     const conds = [];
     const vals  = [];
-    if (phone)  { conds.push(`phone = ?`);                    vals.push(phone); }
+    if (phone)  { const last9 = String(phone).replace(/\D/g,"").slice(-9); conds.push(`RIGHT(phone,9) = ?`); vals.push(last9); }
     if (search) { conds.push(`(name LIKE ? OR note LIKE ?)`); vals.push(`%${search}%`, `%${search}%`); }
     const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
     const [rows] = await pool.query(

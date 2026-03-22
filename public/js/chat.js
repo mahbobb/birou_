@@ -651,7 +651,7 @@ async function loadVoicesPanel(){
     grid.innerHTML = list.map(v => {
       const src  = `/uploads/voices/${escHtml(v.filename)}`
       const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})
-      const dir  = v.direction === "outgoing" ? "📤" : "📥"
+      const dir  = v.direction === "out" ? "📤" : "📥"
       return `<div class="voice-item">
         <div class="voice-item-meta">${dir} ${date}</div>
         <audio controls src="${src}" preload="none" style="width:100%;max-width:320px;height:36px;"></audio>

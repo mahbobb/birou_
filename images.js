@@ -40,9 +40,10 @@ async function saveImage(phone, name, media, createdAt = null) {
 async function getImages({ phone, limit = 50, offset = 0 } = {}) {
   try {
     if (phone) {
+      const last9 = String(phone).replace(/\D/g, "").slice(-9);
       const [rows] = await pool.query(
-        `SELECT * FROM images WHERE phone = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        [phone, parseInt(limit), parseInt(offset)]
+        `SELECT * FROM images WHERE RIGHT(phone,9) = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [last9, parseInt(limit), parseInt(offset)]
       );
       return rows;
     }
