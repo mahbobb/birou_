@@ -2,6 +2,8 @@
 let allContacts = [];
 let activeTab   = "all";
 let contactsSig = "";
+let currentPage = 1;
+const PAGE_SIZE  = 50;
 
 // ── Load & merge contacts from DB + WhatsApp ──────────────────────────────
 async function loadContacts() {
@@ -110,7 +112,8 @@ function setTab(tab) {
 }
 
 // ── Filter + render ───────────────────────────────────────────────────────
-function applyFilter() {
+function applyFilter(resetPage = true) {
+  if (resetPage) currentPage = 1;
   const q = document.getElementById("searchContact").value.trim().toLowerCase();
   let list = activeTab === "unread"
     ? allContacts.filter(c => c.lastDirection === "in")
@@ -118,19 +121,71 @@ function applyFilter() {
   if (q) list = list.filter(c =>
     (c.name || "").toLowerCase().includes(q) || (c.phone || "").includes(q)
   );
-  renderContacts(list);
+  // dedup
+  const seen = new Set();
+  list = list.filter(c => {
+    const k = normalizeKey(c.phone);
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = list.slice(start, start + PAGE_SIZE);
+  renderContacts(page);
+  renderPagination(list.length, totalPages);
+}
+
+function renderPagination(total, totalPages) {
+  let el = document.getElementById("contactsPagination");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "contactsPagination";
+    el.className = "contacts-pagination";
+    const sidebar = document.getElementById("contactsList");
+    sidebar.parentNode.insertBefore(el, sidebar.nextSibling);
+  }
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+
+  const pages = [];
+  // always show first
+  pages.push(1);
+  // show window around current
+  for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    pages.push(i);
+  }
+  // always show last
+  if (totalPages > 1) pages.push(totalPages);
+  // dedupe
+  const unique = [...new Set(pages)];
+
+  let html = "";
+  // prev arrow
+  if (currentPage > 1) {
+    html += `<button class="pg-btn pg-arrow" onclick="goPage(${currentPage - 1})">&#8249;</button>`;
+  }
+  let prev = 0;
+  for (const p of unique) {
+    if (p - prev > 1) html += `<span class="pg-dots">…</span>`;
+    html += `<button class="pg-btn${p === currentPage ? " pg-active" : ""}" onclick="goPage(${p})">${p}</button>`;
+    prev = p;
+  }
+  // next arrow
+  if (currentPage < totalPages) {
+    html += `<button class="pg-btn pg-arrow" onclick="goPage(${currentPage + 1})">&#8250;</button>`;
+  }
+  el.innerHTML = html;
+}
+
+function goPage(p) {
+  currentPage = p;
+  applyFilter(false);
+  document.getElementById("contactsList").scrollTop = 0;
 }
 
 function renderContacts(list) {
   const el = document.getElementById("contactsList");
-  const renderedKeys = new Set();
-  list = list.filter(c => {
-    const key = normalizeKey(c.phone);
-    if (!key || renderedKeys.has(key)) return false;
-    renderedKeys.add(key);
-    return true;
-  });
-
   if (!list.length) {
     el.innerHTML = `<div class="empty-contacts">${
       activeTab === "unread" ? "✅ لا توجد محادثات تنتظر رداً" : "لا توجد محادثات بعد"

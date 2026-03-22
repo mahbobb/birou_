@@ -850,6 +850,25 @@ body {
 .voice-item-meta { font-size: 0.72rem; color: #8696a0; }
 .voice-item audio { border-radius: 8px; outline: none; }
 
+/* ══════════ CONTACTS PAGINATION ══════════ */
+.contacts-pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 6px; background: #111b21;
+  border-top: 1px solid #2a3942; flex-shrink: 0;
+}
+.pg-btn {
+  min-width: 32px; height: 32px; padding: 0 6px;
+  border: none; border-radius: 50%; cursor: pointer;
+  font-size: 0.82rem; font-weight: 500;
+  background: transparent; color: #8696a0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.pg-btn:hover { background: #2a3942; color: #e9edef; }
+.pg-btn.pg-active { background: #00a884; color: #fff; font-weight: 700; }
+.pg-btn.pg-arrow { font-size: 1.2rem; border-radius: 50%; }
+.pg-dots { color: #8696a0; font-size: 0.85rem; padding: 0 2px; line-height: 32px; }
+
 /* Chat View */
 #chatView { display: none; flex-direction: column; flex: 1; overflow: hidden; position: relative; }
 #chatView.open { display: flex; }
