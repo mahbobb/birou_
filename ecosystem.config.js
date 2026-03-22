@@ -4,9 +4,10 @@ module.exports = {
     script: "index.js",
     watch: false,
     autorestart: true,
-    max_restarts: 10,
-    restart_delay: 5000,
+    max_restarts: 20,
+    restart_delay: 8000,
     min_uptime: "30s",
+    exp_backoff_restart_delay: 100,
     env: {
       NODE_ENV: "production",
       UV_THREADPOOL_SIZE: "8",
@@ -17,5 +18,7 @@ module.exports = {
     out_file:   "logs/out.log",
     merge_logs: true,
     max_memory_restart: "1200M",
+    kill_timeout: 5000,
+    listen_timeout: 10000,
   }],
 };
