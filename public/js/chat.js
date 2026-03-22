@@ -558,107 +558,145 @@ function setViewTab(tab) {
 }
 
 // ─────────────────────────────────────────
+// MEDIA PAGINATION STATE
+// ─────────────────────────────────────────
+const MEDIA_PAGE_SIZE = { imgs: 30, vids: 20, auds: 15 };
+const mediaPage = { imgs: 1, vids: 1, auds: 1 };
+const mediaData = { imgs: [], vids: [], auds: [] };
+
+function renderMediaPagination(type, total) {
+  const pageSize  = MEDIA_PAGE_SIZE[type];
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  const cur = mediaPage[type];
+  let el = document.getElementById(`pg_${type}`);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = `pg_${type}`;
+    el.className = "media-pg";
+    document.getElementById(`${type}Panel`).appendChild(el);
+  }
+  if (totalPages <= 1) { el.innerHTML = ""; return; }
+  const unique = buildPageList(cur, totalPages);
+  let html = cur > 1 ? `<button class="pg-btn pg-arrow" onclick="goMediaPage('${type}',${cur-1})">&#8249;</button>` : "";
+  let prev = 0;
+  for (const p of unique) {
+    if (p - prev > 1) html += `<span class="pg-dots">…</span>`;
+    html += `<button class="pg-btn${p===cur?" pg-active":""}" onclick="goMediaPage('${type}',${p})">${p}</button>`;
+    prev = p;
+  }
+  if (cur < totalPages) html += `<button class="pg-btn pg-arrow" onclick="goMediaPage('${type}',${cur+1})">&#8250;</button>`;
+  el.innerHTML = html;
+}
+
+function buildPageList(cur, total) {
+  const s = new Set([1]);
+  for (let i = Math.max(2, cur-1); i <= Math.min(total-1, cur+1); i++) s.add(i);
+  s.add(total);
+  return [...s];
+}
+
+function goMediaPage(type, p) {
+  mediaPage[type] = p;
+  renderMediaPage(type);
+  document.getElementById(`${type}Panel`).scrollTop = 0;
+}
+
+function renderMediaPage(type) {
+  const pageSize = MEDIA_PAGE_SIZE[type];
+  const cur  = mediaPage[type];
+  const data = mediaData[type];
+  const page = data.slice((cur - 1) * pageSize, cur * pageSize);
+  const grid = document.getElementById(`${type}Grid`);
+
+  if (!page.length) {
+    const labels = { imgs:"📷 لا توجد صور", vids:"🎬 لا توجد فيديوهات", auds:"🎤 لا توجد رسائل صوتية" };
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">${labels[type]}</div>`;
+    renderMediaPagination(type, 0);
+    return;
+  }
+
+  if (type === "imgs") {
+    grid.innerHTML = page.map(img => {
+      const src  = `/uploads/images/${escHtml(img.filename)}`;
+      const note = img.note ? `<span class="m-note">${escHtml(img.note)}</span>` : "";
+      const date = new Date(img.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
+      return `<div class="media-thumb" onclick="openLightbox('${src}')" title="${date}">
+        <img src="${src}" loading="lazy">${note}
+      </div>`;
+    }).join("");
+  } else if (type === "vids") {
+    grid.innerHTML = page.map(v => {
+      const src  = `/uploads/videos/${escHtml(v.filename)}`;
+      const note = v.note ? `<span class="m-note">${escHtml(v.note)}</span>` : "";
+      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
+      return `<div class="media-thumb" title="${date}" onclick="openVideoModal('${src}')">
+        <video src="${src}" preload="metadata"></video>
+        <span class="m-play">▶️</span>${note}
+      </div>`;
+    }).join("");
+  } else {
+    grid.innerHTML = page.map(v => {
+      const src  = `/uploads/voices/${escHtml(v.filename)}`;
+      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+      const dir  = v.direction === "out" ? "📤" : "📥";
+      return `<div class="voice-item">
+        <div class="voice-item-meta">${dir} ${date}</div>
+        <audio controls src="${src}" preload="none" style="width:100%;max-width:320px;height:36px;"></audio>
+      </div>`;
+    }).join("");
+  }
+
+  renderMediaPagination(type, data.length);
+}
+
+// ─────────────────────────────────────────
 // IMAGES PANEL
 // ─────────────────────────────────────────
-async function loadImagesPanel(){
-
-if(!selectedPhone) return
-
-const grid = document.getElementById("imgsGrid")
-grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`
-
-try{
-
-const res = await fetch(`/api/images?phone=${encodeURIComponent(selectedPhone)}&limit=200`)
-const imgs = await res.json()
-
-if(!imgs.length){
-grid.innerHTML=`<div class="media-empty" style="grid-column:1/-1">📷 لا توجد صور لهذا الزبون</div>`
-return
-}
-
-grid.innerHTML = imgs.map(img=>{
-const src = `/uploads/images/${escHtml(img.filename)}`
-const note = img.note ? `<span class="m-note">${escHtml(img.note)}</span>` : ""
-const date = new Date(img.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"})
-return `<div class="media-thumb" onclick="openLightbox('${src}')" title="${date}">
-  <img src="${src}" loading="lazy">
-  ${note}
-</div>`
-}).join("")
-
-}catch{
-
-grid.innerHTML=`<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصور</div>`
-
-}
-
+async function loadImagesPanel() {
+  if (!selectedPhone) return;
+  mediaPage.imgs = 1;
+  const grid = document.getElementById("imgsGrid");
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  try {
+    const res = await fetch(`/api/images?phone=${encodeURIComponent(selectedPhone)}&limit=500`);
+    mediaData.imgs = await res.json();
+    renderMediaPage("imgs");
+  } catch {
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصور</div>`;
+  }
 }
 
 // ─────────────────────────────────────────
 // VIDEOS PANEL
 // ─────────────────────────────────────────
-async function loadVideosPanel(){
-
-if(!selectedPhone) return
-
-const grid = document.getElementById("vidsGrid")
-grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`
-
-try{
-
-const res = await fetch(`/api/videos?phone=${encodeURIComponent(selectedPhone)}&limit=100`)
-const vids = await res.json()
-
-if(!vids.length){
-grid.innerHTML=`<div class="media-empty" style="grid-column:1/-1">🎬 لا توجد فيديوهات لهذا الزبون</div>`
-return
-}
-
-grid.innerHTML = vids.map(v=>{
-const src = `/uploads/videos/${escHtml(v.filename)}`
-const note = v.note ? `<span class="m-note">${escHtml(v.note)}</span>` : ""
-const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"})
-return `<div class="media-thumb" title="${date}" onclick="openVideoModal('${src}')">
-  <video src="${src}" preload="metadata"></video>
-  <span class="m-play">▶️</span>
-  ${note}
-</div>`
-}).join("")
-
-}catch{
-
-grid.innerHTML=`<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الفيديوهات</div>`
-
-}
-
+async function loadVideosPanel() {
+  if (!selectedPhone) return;
+  mediaPage.vids = 1;
+  const grid = document.getElementById("vidsGrid");
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  try {
+    const res = await fetch(`/api/videos?phone=${encodeURIComponent(selectedPhone)}&limit=200`);
+    mediaData.vids = await res.json();
+    renderMediaPage("vids");
+  } catch {
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الفيديوهات</div>`;
+  }
 }
 
 // ─────────────────────────────────────────
 // VOICES PANEL
 // ─────────────────────────────────────────
-async function loadVoicesPanel(){
-  if(!selectedPhone) return
-  const grid = document.getElementById("audsGrid")
-  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`
-  try{
-    const res  = await fetch(`/api/voices?phone=${encodeURIComponent(selectedPhone)}&limit=200`)
-    const list = await res.json()
-    if(!list.length){
-      grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">🎤 لا توجد رسائل صوتية</div>`
-      return
-    }
-    grid.innerHTML = list.map(v => {
-      const src  = `/uploads/voices/${escHtml(v.filename)}`
-      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})
-      const dir  = v.direction === "out" ? "📤" : "📥"
-      return `<div class="voice-item">
-        <div class="voice-item-meta">${dir} ${date}</div>
-        <audio controls src="${src}" preload="none" style="width:100%;max-width:320px;height:36px;"></audio>
-      </div>`
-    }).join("")
-  }catch{
-    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصوتيات</div>`
+async function loadVoicesPanel() {
+  if (!selectedPhone) return;
+  mediaPage.auds = 1;
+  const grid = document.getElementById("audsGrid");
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  try {
+    const res  = await fetch(`/api/voices?phone=${encodeURIComponent(selectedPhone)}&limit=500`);
+    mediaData.auds = await res.json();
+    renderMediaPage("auds");
+  } catch {
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصوتيات</div>`;
   }
 }
 

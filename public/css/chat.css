@@ -837,6 +837,10 @@ body {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .media-empty { text-align: center; padding: 60px 20px; color: #8696a0; font-size: 0.85rem; }
+.media-pg {
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 6px; flex-shrink: 0;
+}
 
 /* ── Voice list in panel ── */
 #audsGrid {
