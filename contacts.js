@@ -73,11 +73,8 @@ async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
         FROM contacts c
         LEFT JOIN (
           SELECT contact, direction
-            FROM messages m1
-           WHERE created_at = (
-             SELECT MAX(m2.created_at) FROM messages m2 WHERE m2.contact = m1.contact
-           )
-          GROUP BY contact
+            FROM messages
+           WHERE id IN (SELECT MAX(id) FROM messages GROUP BY contact)
         ) m ON m.contact = c.phone
         ${where}
        ORDER BY c.last_seen DESC
