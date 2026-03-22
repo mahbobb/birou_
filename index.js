@@ -432,6 +432,9 @@ async function handleIncoming(message, botId) {
 
 // ─── رسائل المدير اليدوية (من الهاتف مباشرة) ─────────────────────────────
 
+// منع تكرار معالجة نفس رسالة الصادرة
+const _processedOutIds = new Set();
+
 async function handleOutgoing(message, botId) {
   try {
     if (!message.fromMe) return;
@@ -439,10 +442,19 @@ async function handleOutgoing(message, botId) {
     if (message.timestamp < BOT_START_TIME) return;
     if (message.type === "revoked") return;
 
+    // منع التكرار: نفس الرسالة تصل مرتين في بعض الأحيان
+    const msgSerial = message.id._serialized;
+    if (_processedOutIds.has(msgSerial)) return;
+    _processedOutIds.add(msgSerial);
+    if (_processedOutIds.size > 500) {
+      const first = _processedOutIds.values().next().value;
+      _processedOutIds.delete(first);
+    }
+
     // تجاهل الرسائل التي أرسلها البوت تلقائياً (تم تتبعها بـ botMsgIds)
     const bot = bots.get(botId);
-    if (bot.botMsgIds.has(message.id._serialized)) {
-      bot.botMsgIds.delete(message.id._serialized);
+    if (bot.botMsgIds.has(msgSerial)) {
+      bot.botMsgIds.delete(msgSerial);
       return;
     }
 
