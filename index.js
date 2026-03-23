@@ -7,6 +7,7 @@ const express = require("express");
 const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
+const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
@@ -789,6 +790,64 @@ app.post("/api/facebook/test-message", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Messenger Bulk Reply ───────────────────────────────────────────────────
+
+app.get("/api/messenger/contacts", async (req, res) => {
+  const { limit = 200, offset = 0, unanswered = "0" } = req.query;
+  const list = await getMessengerContacts({
+    limit: parseInt(limit), offset: parseInt(offset),
+    onlyUnanswered: unanswered === "1"
+  });
+  res.json(list);
+});
+
+app.get("/api/messenger/count", async (_req, res) => {
+  const n = await countUnanswered();
+  res.json({ count: n });
+});
+
+let messengerBulkStatus = { running: false, done: 0, total: 0, ok: 0, fail: 0 };
+
+app.post("/api/messenger/bulk-reply", async (req, res) => {
+  if (messengerBulkStatus.running) return res.json({ ok: true, message: "الإرسال جاري" });
+  const { message, delay = 4, onlyUnanswered = true } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: "الرسالة مطلوبة" });
+
+  const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  if (!token) return res.status(503).json({ error: "FACEBOOK_PAGE_ACCESS_TOKEN غير مضبوط" });
+
+  const contacts = await getMessengerContacts({ limit: 500, onlyUnanswered });
+  if (!contacts.length) return res.json({ ok: true, message: "لا توجد محادثات", count: 0 });
+
+  messengerBulkStatus = { running: true, done: 0, total: contacts.length, ok: 0, fail: 0 };
+  res.json({ ok: true, total: contacts.length });
+
+  (async () => {
+    const axios = require("axios");
+    for (const c of contacts) {
+      try {
+        await axios.post(
+          "https://graph.facebook.com/v19.0/me/messages",
+          { recipient: { id: c.fb_id }, message: { text: message }, messaging_type: "RESPONSE" },
+          { params: { access_token: token }, timeout: 10000 }
+        );
+        await saveMessengerContact(c.fb_id, c.name, message, "out");
+        messengerBulkStatus.ok++;
+        console.log(`📘 [Bulk Messenger] → ${c.name}: ${message.substring(0,50)}`);
+      } catch (err) {
+        messengerBulkStatus.fail++;
+        console.error(`❌ [Bulk Messenger] فشل ${c.fb_id}:`, err.response?.data?.error?.message || err.message);
+      }
+      messengerBulkStatus.done++;
+      await new Promise(r => setTimeout(r, delay * 1000));
+    }
+    messengerBulkStatus.running = false;
+    console.log(`✅ [Bulk Messenger] انتهى: ${messengerBulkStatus.ok} نجح / ${messengerBulkStatus.fail} فشل`);
+  })();
+});
+
+app.get("/api/messenger/bulk-status", (_req, res) => res.json(messengerBulkStatus));
 
 // ── Dashboard API ──────────────────────────────────────────────────────────
 

@@ -24,8 +24,9 @@
     { href: '/notes',     icon: '📝',  label: 'الملاحظات' },
     { href: '/qr',        icon: '📲',  label: 'QR' },
     { href: '/sync',      icon: '🔄',  label: 'مزامنة' },
-    { href: '/facebook',  icon: '📘',  label: 'فيسبوك' },
-    { href: '/widget',    icon: '🌐',  label: 'ويدجت الموقع' },
+    { href: '/facebook',        icon: '📘',  label: 'فيسبوك' },
+    { href: '/messenger-bulk', icon: '💬',  label: 'رد جماعي Messenger' },
+    { href: '/widget',         icon: '🌐',  label: 'ويدجت الموقع' },
   ];
 
   /* SVG icons for the dark sidebar */

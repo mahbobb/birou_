@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رد جماعي — Messenger</title>
+  <link rel="stylesheet" href="/css/nav.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111b21; color: #e9edef; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; }
+
+    .page-wrap { flex: 1; display: flex; flex-direction: column; padding: 24px; gap: 20px; overflow-y: auto; }
+
+    h1 { font-size: 1.3rem; color: #e9edef; display: flex; align-items: center; gap: 10px; }
+    h1 svg { flex-shrink: 0; }
+
+    /* ── Cards ── */
+    .card { background: #1f2c33; border-radius: 14px; padding: 20px; }
+    .card-title { font-size: 0.8rem; color: #8696a0; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+
+    /* ── Stats row ── */
+    .stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-box { flex: 1; min-width: 120px; background: #2a3942; border-radius: 10px; padding: 14px 16px; text-align: center; }
+    .stat-num { font-size: 1.6rem; font-weight: 700; color: #00a884; }
+    .stat-lbl { font-size: 0.72rem; color: #8696a0; margin-top: 2px; }
+
+    /* ── Compose ── */
+    .compose-area { display: flex; flex-direction: column; gap: 12px; }
+    textarea {
+      width: 100%; min-height: 110px; background: #2a3942; border: 1px solid #374045;
+      border-radius: 10px; color: #e9edef; font-size: 0.95rem; padding: 12px 14px;
+      resize: vertical; outline: none; font-family: inherit;
+    }
+    textarea:focus { border-color: #00a884; }
+    textarea::placeholder { color: #8696a0; }
+
+    .options-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .opt-group { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #8696a0; }
+    .opt-group input[type=number] {
+      width: 64px; background: #2a3942; border: 1px solid #374045;
+      border-radius: 8px; color: #e9edef; padding: 6px 8px; font-size: 0.85rem; outline: none;
+    }
+    .opt-group input[type=checkbox] { accent-color: #00a884; width: 16px; height: 16px; cursor: pointer; }
+
+    .btn-send {
+      align-self: flex-start; background: #00a884; color: #fff;
+      border: none; border-radius: 10px; padding: 11px 28px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background .15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-send:hover:not(:disabled) { background: #02b990; }
+    .btn-send:disabled { background: #374045; color: #8696a0; cursor: not-allowed; }
+
+    /* ── Progress ── */
+    .progress-wrap { display: none; flex-direction: column; gap: 10px; }
+    .progress-wrap.show { display: flex; }
+    .prog-bar-bg { background: #2a3942; border-radius: 99px; height: 8px; overflow: hidden; }
+    .prog-bar-fill { height: 100%; background: #00a884; border-radius: 99px; transition: width .4s; width: 0%; }
+    .prog-text { font-size: 0.82rem; color: #8696a0; display: flex; justify-content: space-between; }
+    .prog-status { font-size: 0.85rem; color: #e9edef; }
+
+    /* ── Contacts table ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    thead th { text-align: right; padding: 10px 12px; color: #8696a0; font-weight: 500; border-bottom: 1px solid #2a3942; }
+    tbody tr:hover { background: #2a3942; }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid #1a2530; color: #ccc; vertical-align: middle; }
+    .dir-in  { color: #f28b82; font-size: 0.78rem; }
+    .dir-out { color: #00a884; font-size: 0.78rem; }
+    .empty-tbl { text-align: center; color: #8696a0; padding: 40px; font-size: 0.88rem; }
+
+    /* ── Pagination ── */
+    .tbl-pg { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 12px 0 4px; }
+    .tpg-btn { min-width: 32px; height: 32px; border: none; border-radius: 50%; background: transparent; color: #8696a0; font-size: 0.82rem; cursor: pointer; transition: background .15s; }
+    .tpg-btn:hover { background: #2a3942; color: #e9edef; }
+    .tpg-btn.active { background: #00a884; color: #fff; font-weight: 700; }
+    .tpg-dots { color: #8696a0; font-size: 0.85rem; padding: 0 2px; }
+
+    /* ── Toast ── */
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+      background:#2a3942; color:#e9edef; padding:10px 20px; border-radius:10px;
+      font-size:.88rem; transition:transform .3s; z-index:999; white-space:nowrap; }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<div id="app-nav"></div>
+
+<div class="page-wrap">
+
+  <h1>
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="#0084ff"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.879 1.392 5.452 3.573 7.17V22l3.261-1.793a10.7 10.7 0 0 0 3.166.48c5.523 0 10-4.145 10-9.243S17.523 2 12 2z"/></svg>
+    رد جماعي — Messenger
+  </h1>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-title">إحصائيات</div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="statTotal">—</div>
+        <div class="stat-lbl">إجمالي المحادثات</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#f28b82" id="statUnread">—</div>
+        <div class="stat-lbl">بدون رد</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#00a884" id="statAnswered">—</div>
+        <div class="stat-lbl">تم الرد</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compose -->
+  <div class="card">
+    <div class="card-title">إرسال رسالة جماعية</div>
+    <div class="compose-area">
+      <textarea id="msgText" placeholder="اكتب رسالتك هنا..."></textarea>
+
+      <div class="options-row">
+        <div class="opt-group">
+          <label>تأخير بين كل رسالة:</label>
+          <input type="number" id="delayInput" value="4" min="2" max="30"> ثانية
+        </div>
+        <div class="opt-group">
+          <input type="checkbox" id="chkUnanswered" checked>
+          <label for="chkUnanswered">الغير مجاب عليهم فقط</label>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill"></div></div>
+        <div class="prog-text">
+          <span id="progLabel">0 / 0</span>
+          <span id="progOkFail">✅ 0 &nbsp; ❌ 0</span>
+        </div>
+        <div class="prog-status" id="progStatus">جاري الإرسال...</div>
+      </div>
+
+      <button class="btn-send" id="btnSend" onclick="startBulk()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        إرسال للجميع
+      </button>
+    </div>
+  </div>
+
+  <!-- Contacts table -->
+  <div class="card">
+    <div class="card-title">قائمة محادثات Messenger</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>آخر رسالة</th>
+            <th>الحالة</th>
+            <th>التاريخ</th>
+          </tr>
+        </thead>
+        <tbody id="contactsTbody">
+          <tr><td colspan="4" class="empty-tbl">⏳ جاري التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-pg" id="tblPg"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/nav.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let allMsgrContacts = [];
+let msgrPage = 1;
+const MSGS_PER_PAGE = 20;
+let pollInterval = null;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  loadContacts();
+  loadCount();
+});
+
+// ── Load contacts ──────────────────────────────────────────────────────────
+async function loadContacts() {
+  try {
+    const res  = await fetch("/api/messenger/contacts?limit=500");
+    allMsgrContacts = await res.json();
+    renderTable();
+    updateStats();
+  } catch {
+    document.getElementById("contactsTbody").innerHTML =
+      `<tr><td colspan="4" class="empty-tbl">❌ خطأ في تحميل البيانات</td></tr>`;
+  }
+}
+
+async function loadCount() {
+  try {
+    const r = await fetch("/api/messenger/count");
+    const d = await r.json();
+    document.getElementById("statUnread").textContent = d.count;
+  } catch {}
+}
+
+function updateStats() {
+  const total    = allMsgrContacts.length;
+  const unanswered = allMsgrContacts.filter(c => c.direction === "in").length;
+  document.getElementById("statTotal").textContent    = total;
+  document.getElementById("statUnread").textContent   = unanswered;
+  document.getElementById("statAnswered").textContent = total - unanswered;
+}
+
+// ── Render table ───────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("contactsTbody");
+  const total = allMsgrContacts.length;
+  if (!total) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-tbl">📭 لا توجد محادثات Messenger بعد</td></tr>`;
+    document.getElementById("tblPg").innerHTML = "";
+    return;
+  }
+
+  const totalPages = Math.ceil(total / MSGS_PER_PAGE);
+  if (msgrPage > totalPages) msgrPage = totalPages;
+  const page = allMsgrContacts.slice((msgrPage - 1) * MSGS_PER_PAGE, msgrPage * MSGS_PER_PAGE);
+
+  tbody.innerHTML = page.map(c => {
+    const date = new Date(c.last_seen).toLocaleDateString("ar-MA", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+    const dir  = c.direction === "out"
+      ? `<span class="dir-out">✅ تم الرد</span>`
+      : `<span class="dir-in">💬 بدون رد</span>`;
+    const msg  = escHtml((c.last_message || "").substring(0, 60));
+    return `<tr>
+      <td>${escHtml(c.name)}</td>
+      <td>${msg}</td>
+      <td>${dir}</td>
+      <td style="white-space:nowrap;font-size:0.78rem;color:#8696a0">${date}</td>
+    </tr>`;
+  }).join("");
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById("tblPg");
+  if (totalPages <= 1) { pg.innerHTML = ""; return; }
+  const pages = buildPages(msgrPage, totalPages);
+  let html = msgrPage > 1 ? `<button class="tpg-btn" onclick="goMsgrPage(${msgrPage-1})">&#8249;</button>` : "";
+  let prev = 0;
+  for (const p of pages) {
+    if (p - prev > 1) html += `<span class="tpg-dots">…</span>`;
+    html += `<button class="tpg-btn${p===msgrPage?" active":""}" onclick="goMsgrPage(${p})">${p}</button>`;
+    prev = p;
+  }
+  if (msgrPage < totalPages) html += `<button class="tpg-btn" onclick="goMsgrPage(${msgrPage+1})">&#8250;</button>`;
+  pg.innerHTML = html;
+}
+
+function buildPages(cur, total) {
+  const s = new Set([1]);
+  for (let i = Math.max(2, cur-1); i <= Math.min(total-1, cur+1); i++) s.add(i);
+  s.add(total);
+  return [...s];
+}
+
+function goMsgrPage(p) { msgrPage = p; renderTable(); }
+
+// ── Bulk send ──────────────────────────────────────────────────────────────
+async function startBulk() {
+  const msg   = document.getElementById("msgText").value.trim();
+  const delay = parseInt(document.getElementById("delayInput").value) || 4;
+  const only  = document.getElementById("chkUnanswered").checked;
+
+  if (!msg) return showToast("⚠️ اكتب رسالة أولاً");
+
+  const btn = document.getElementById("btnSend");
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch("/api/messenger/bulk-reply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, delay, onlyUnanswered: only }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast("❌ " + (data.error || "فشل")); btn.disabled = false; return; }
+    if (data.total === 0) { showToast("ℹ️ " + data.message); btn.disabled = false; return; }
+
+    document.getElementById("progressWrap").classList.add("show");
+    pollProgress(data.total);
+  } catch { showToast("❌ خطأ في الاتصال"); btn.disabled = false; }
+}
+
+function pollProgress(total) {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    try {
+      const r = await fetch("/api/messenger/bulk-status");
+      const s = await r.json();
+      const pct = total > 0 ? Math.round((s.done / total) * 100) : 0;
+      document.getElementById("progFill").style.width  = pct + "%";
+      document.getElementById("progLabel").textContent = `${s.done} / ${total}`;
+      document.getElementById("progOkFail").innerHTML  = `✅ ${s.ok} &nbsp; ❌ ${s.fail}`;
+      document.getElementById("progStatus").textContent = s.running ? "جاري الإرسال..." : "✅ اكتمل الإرسال";
+      if (!s.running) {
+        clearInterval(pollInterval);
+        document.getElementById("btnSend").disabled = false;
+        showToast(`✅ تم الإرسال: ${s.ok} نجح، ${s.fail} فشل`);
+        loadContacts();
+      }
+    } catch {}
+  }, 2000);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3500);
+}
+</script>
+</body>
+</html>

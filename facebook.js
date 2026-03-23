@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { generateResponse } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
+const { saveMessengerContact } = require("./messenger");
 
 const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "my_verify_token";
@@ -48,18 +49,23 @@ async function handleWebhook(req, res) {
       console.log(`\n📘 [Messenger] رسالة من ${senderId}: ${messageText}`);
 
       try {
+        const userName = await getUserName(senderId);
+        // حفظ الزبون كـ "in" (لم يُرد عليه بعد)
+        await saveMessengerContact(senderId, userName, messageText, "in");
+
         await sendTyping(senderId);
         const { text: customText } = findCustomResponse(messageText);
         let response = customText;
         let source   = "📋 مبرمج";
 
         if (!response) {
-          const userName = await getUserName(senderId);
           response = await generateResponse(`fb_${senderId}`, userName, messageText);
           source   = "🤖 IA";
         }
 
         await sendMessage(senderId, response);
+        // تحديث الاتجاه لـ "out" بعد الرد
+        await saveMessengerContact(senderId, userName, response, "out");
         console.log(`✅ [Messenger][${source}] → ${senderId}: ${response.substring(0, 60)}...`);
       } catch (error) {
         console.error(`❌ [Messenger] خطأ:`, error.message);
