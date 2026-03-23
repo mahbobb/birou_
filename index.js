@@ -818,7 +818,7 @@ app.post("/api/messenger/bulk-reply", async (req, res) => {
   if (!token) return res.status(503).json({ error: "FACEBOOK_PAGE_ACCESS_TOKEN غير مضبوط" });
 
   const contacts = await getMessengerContacts({ limit: 500, onlyUnanswered });
-  if (!contacts.length) return res.json({ ok: true, message: "لا توجد محادثات", count: 0 });
+  if (!contacts.length) return res.json({ ok: true, message: "لا توجد محادثات Messenger", total: 0 });
 
   messengerBulkStatus = { running: true, done: 0, total: contacts.length, ok: 0, fail: 0 };
   res.json({ ok: true, total: contacts.length });
