@@ -105,11 +105,21 @@ async function loadMsgs() {
       const author = !m.fromMe && m.author
         ? `<div class="b-author">${esc(m.author.replace(/@.+/,""))}</div>` : "";
       let body;
-      if (m.hasMedia && m.type === "image" && m.serialId) {
+      if (m.hasMedia && m.serialId && (m.type === "image" || m.type === "sticker")) {
         const src = `/api/group-media?serialId=${encodeURIComponent(m.serialId)}`;
         body = `<div class="b-img-wrap" onclick="openGrpLightbox(this,'${encodeURIComponent(m.serialId)}')">
           <img src="${src}" loading="lazy" onerror="this.parentElement.innerHTML='🖼️ صورة'">
         </div>`;
+      } else if (m.hasMedia && m.serialId && (m.type === "video" || m.type === "gif")) {
+        const src = `/api/group-media?serialId=${encodeURIComponent(m.serialId)}`;
+        body = `<video src="${src}" controls preload="metadata" playsinline
+          style="max-width:260px;max-height:200px;border-radius:8px;display:block;background:#000"
+          onerror="this.outerHTML='🎬 فيديو'"></video>`;
+      } else if (m.hasMedia && m.serialId && (m.type === "ptt" || m.type === "audio")) {
+        const src = `/api/group-media?serialId=${encodeURIComponent(m.serialId)}`;
+        body = `<audio src="${src}" controls preload="metadata"
+          style="max-width:240px;border-radius:8px"
+          onerror="this.outerHTML='🎤 رسالة صوتية'"></audio>`;
       } else if (m.hasMedia) {
         body = `<span class="b-media">${mediaIcons[m.type] || "📎 وسائط"}</span>`;
       } else {

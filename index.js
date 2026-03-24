@@ -323,62 +323,90 @@ async function handleIncoming(message, botId) {
     }
     if (botPaused || pausedChats.has(chat.id._serialized)) return;
 
-    // ─── معالجة الوسائط (صور + صوت) ─────────────────────────────────────────
+    // ─── معالجة الوسائط (صور + صوت + فيديو + ملفات) ──────────────────────────
     if (message.hasMedia) {
-      const media = await message.downloadMedia();
-      if (!media) return;
+      // تحديد نوع الوسائط من type حتى قبل التحميل
+      const mType = message.type; // image, ptt, audio, video, document, sticker, gif
+      const fallbackEmoji = mType === "ptt" || mType === "audio" ? "🎤 رسالة صوتية"
+                          : mType === "video"                    ? "🎬 فيديو"
+                          : mType === "image"                    ? "📷 صورة"
+                          : mType === "sticker"                  ? "🎭 ملصق"
+                          : mType === "document"                 ? "📄 مستند"
+                                                                 : "📎 ملف";
 
-      // صورة
-      if (media.mimetype && media.mimetype.startsWith("image/")) {
-        await registerContact(senderNumber, name, "📷 صورة");
+      await registerContact(senderNumber, name, fallbackEmoji);
+
+      // تحميل الوسائط مع timeout 25 ثانية
+      let media = null;
+      try {
+        media = await Promise.race([
+          message.downloadMedia(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("download timeout")), 25000)),
+        ]);
+      } catch (dlErr) {
+        console.warn(`⚠️ [${botId}] فشل تحميل الوسائط من ${name}: ${dlErr.message}`);
+      }
+
+      // إذا فشل التحميل — نحفظ رسالة بالإيموجي فقط
+      if (!media?.data) {
+        await saveMessage(senderNumber, name, "in", fallbackEmoji, "user", null, message.id._serialized);
+        emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: fallbackEmoji, source: "user", created_at: new Date().toISOString() });
+        return;
+      }
+
+      const mime = media.mimetype || "";
+
+      // ── صورة ──────────────────────────────────────────────────────────────
+      if (mime.startsWith("image/") && mType !== "sticker") {
         const imgFile = await saveImage(senderNumber, name, media);
-        const imgUrl  = imgFile ? `/uploads/images/${imgFile}` : "📷 صورة";
+        const imgUrl  = imgFile ? `/uploads/images/${imgFile}` : fallbackEmoji;
         await saveMessage(senderNumber, name, "in", imgUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: imgUrl, source: "user", created_at: new Date().toISOString() });
         if (imgFile) io.emit("new_media", { type: "image", phone: key, name, url: imgUrl });
         if (autoReplyEnabled) {
-          const imgReply = "📸 وصلتنا صورتك، شكرا! إذا عندك أي سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, imgReply, botId);
-          await saveMessage(senderNumber, "البوت", "out", imgReply, "default");
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: imgReply, source: "default", created_at: new Date().toISOString() });
+          const r = "📸 وصلتنا صورتك، شكرا! إذا عندك أي سؤال على الشقق كلمنا على 0680040002 😊";
+          await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
 
-      // رسالة صوتية أو ملف صوتي
-      if ((media.mimetype && media.mimetype.startsWith("audio/")) || message.type === "ptt") {
-        await registerContact(senderNumber, name, "🎤 رسالة صوتية");
+      // ── صوت / ptt ─────────────────────────────────────────────────────────
+      if (mime.startsWith("audio/") || mType === "ptt" || mType === "audio") {
         const voiceFile = await saveVoice(senderNumber, name, media);
-        const voiceUrl  = voiceFile ? `/uploads/voices/${voiceFile}` : "🎤 رسالة صوتية";
+        const voiceUrl  = voiceFile ? `/uploads/voices/${voiceFile}` : fallbackEmoji;
         await saveMessage(senderNumber, name, "in", voiceUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: voiceUrl, source: "user", created_at: new Date().toISOString() });
         if (voiceFile) io.emit("new_media", { type: "voice", phone: key, name, url: voiceUrl });
         if (autoReplyEnabled) {
-          const audioReply = "🎤 وصلتنا رسالتك الصوتية! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, audioReply, botId);
-          await saveMessage(senderNumber, "البوت", "out", audioReply, "default");
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: audioReply, source: "default", created_at: new Date().toISOString() });
+          const r = "🎤 وصلتنا رسالتك الصوتية! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
+          await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
 
-      // فيديو
-      if ((media.mimetype && media.mimetype.startsWith("video/")) || message.type === "video") {
-        await registerContact(senderNumber, name, "🎬 فيديو");
+      // ── فيديو ─────────────────────────────────────────────────────────────
+      if (mime.startsWith("video/") || mType === "video" || mType === "gif") {
         const videoFile = await saveVideo(senderNumber, name, media);
-        const videoUrl  = videoFile ? `/uploads/videos/${videoFile}` : "🎬 فيديو";
+        const videoUrl  = videoFile ? `/uploads/videos/${videoFile}` : fallbackEmoji;
         await saveMessage(senderNumber, name, "in", videoUrl, "user", null, message.id._serialized);
         emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: videoUrl, source: "user", created_at: new Date().toISOString() });
         if (videoFile) io.emit("new_media", { type: "video", phone: key, name, url: videoUrl });
         if (autoReplyEnabled) {
-          const videoReply = "🎬 وصلنا الفيديو ديالك، شكرا! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, videoReply, botId);
-          await saveMessage(senderNumber, "البوت", "out", videoReply, "default");
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: videoReply, source: "default", created_at: new Date().toISOString() });
+          const r = "🎬 وصلنا الفيديو ديالك، شكرا! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
+          await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
 
+      // ── ملفات أخرى (document, sticker, ...) ──────────────────────────────
+      await saveMessage(senderNumber, name, "in", fallbackEmoji, "user", null, message.id._serialized);
+      emitMessage(key, { waMsgId: message.id._serialized, phone: key, name, direction: "in", body: fallbackEmoji, source: "user", created_at: new Date().toISOString() });
       return;
     }
 
@@ -509,32 +537,40 @@ async function handleOutgoing(message, botId) {
     const outKey = phoneKey(recipientPhone); // مفتاح 9 أرقام — يجب أن يتطابق مع غرفة socket
     await registerContact(recipientPhone, recipientName, body || "📎 وسائط");
 
-    // معالجة الوسائط
+    // معالجة الوسائط الصادرة
     if (message.hasMedia) {
+      const mType = message.type;
+      const fallback = mType === "ptt" || mType === "audio" ? "🎤 رسالة صوتية"
+                     : mType === "video"                    ? "🎬 فيديو"
+                     : mType === "image"                    ? "📷 صورة"
+                     : mType === "sticker"                  ? "🎭 ملصق"
+                     : mType === "document"                 ? "📄 مستند"
+                                                            : "📎 ملف";
+      let outBody = fallback;
       try {
-        const media = await message.downloadMedia();
-        if (media) {
-          const waMsgId = message.id._serialized;
-          let outBody = "📎 ملف";
-          if (media.mimetype?.startsWith("image/")) {
-            const imgFile = await saveImage(recipientPhone, recipientName, media);
-            outBody = imgFile ? `/uploads/images/${imgFile}` : "📷 صورة";
-            await saveMessage(recipientPhone, "أنت", "out", outBody, "manual", null, waMsgId);
-          } else if (media.mimetype?.startsWith("audio/") || message.type === "ptt") {
-            const vf = await saveVoice(recipientPhone, recipientName, media);
-            outBody = vf ? `/uploads/voices/${vf}` : "🎤 رسالة صوتية";
-            await saveMessage(recipientPhone, "أنت", "out", outBody, "manual", null, waMsgId);
-          } else if (media.mimetype?.startsWith("video/") || message.type === "video") {
-            const vf = await saveVideo(recipientPhone, recipientName, media);
-            outBody = vf ? `/uploads/videos/${vf}` : "🎬 فيديو";
-            await saveMessage(recipientPhone, "أنت", "out", outBody, "manual", null, waMsgId);
-          } else {
-            await saveMessage(recipientPhone, "أنت", "out", outBody, "manual", null, waMsgId);
+        const media = await Promise.race([
+          message.downloadMedia(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 25000)),
+        ]);
+        if (media?.data) {
+          const mime = media.mimetype || "";
+          if (mime.startsWith("image/") && mType !== "sticker") {
+            const f = await saveImage(recipientPhone, recipientName, media);
+            outBody = f ? `/uploads/images/${f}` : fallback;
+          } else if (mime.startsWith("audio/") || mType === "ptt" || mType === "audio") {
+            const f = await saveVoice(recipientPhone, recipientName, media);
+            outBody = f ? `/uploads/voices/${f}` : fallback;
+          } else if (mime.startsWith("video/") || mType === "video" || mType === "gif") {
+            const f = await saveVideo(recipientPhone, recipientName, media);
+            outBody = f ? `/uploads/videos/${f}` : fallback;
           }
-          emitMessage(outKey, { waMsgId: message.id._serialized, phone: outKey, name: "أنت", direction: "out", body: outBody, source: "manual", created_at: new Date().toISOString() });
         }
-      } catch {}
-      console.log(`📤 [${botId}] [يدوي/وسائط] → ${recipientName} (${recipientPhone})`);
+      } catch (dlErr) {
+        console.warn(`⚠️ [${botId}] فشل تحميل وسائط صادرة: ${dlErr.message}`);
+      }
+      await saveMessage(recipientPhone, "أنت", "out", outBody, "manual", null, message.id._serialized);
+      emitMessage(outKey, { waMsgId: message.id._serialized, phone: outKey, name: "أنت", direction: "out", body: outBody, source: "manual", created_at: new Date().toISOString() });
+      console.log(`📤 [${botId}] [يدوي/وسائط] → ${recipientName} (${recipientPhone}): ${outBody}`);
       return;
     }
 
@@ -1403,9 +1439,14 @@ app.get("/api/group-media", async (req, res) => {
   const { serialId } = req.query;
   if (!serialId) return res.status(400).json({ error: "serialId مطلوب" });
 
-  // تحقق من الكاش أولاً
-  const cacheFile = path.join(IDS_DIR, `..`, `images`, `grp_${serialId.replace(/[^a-z0-9]/gi,"_")}.jpg`);
-  if (fs.existsSync(cacheFile)) return res.sendFile(cacheFile);
+  // تحقق من الكاش أولاً (صور + فيديو + صوت)
+  const safeId = serialId.replace(/[^a-z0-9]/gi, "_");
+  for (const [sub, exts] of [["images",["jpg","jpeg","png","webp"]],["videos",["mp4","3gpp","3gp"]],["voices",["ogg","mp3","opus","aac"]]]) {
+    for (const ext of exts) {
+      const cf = path.join(__dirname, "public", "uploads", sub, `grp_${safeId}.${ext}`);
+      if (fs.existsSync(cf)) return res.sendFile(cf);
+    }
+  }
 
   const connectedBots = [...bots.values()].filter(b => b.botConnected);
   if (!connectedBots.length) return res.status(503).json({ error: "لا يوجد بوت متصل" });
@@ -1428,12 +1469,20 @@ app.get("/api/group-media", async (req, res) => {
       } catch {}
     }
 
-    if (!media?.data) return res.status(404).json({ error: "لا يمكن تحميل الصورة" });
+    if (!media?.data) return res.status(404).json({ error: "لا يمكن تحميل الوسائط" });
 
-    const ext = (media.mimetype || "image/jpeg").split("/")[1].split(";")[0] || "jpg";
-    const dest = path.join(__dirname, "public", "uploads", "images", `grp_${serialId.replace(/[^a-z0-9]/gi,"_")}.${ext}`);
-    const raw  = media.data.includes(",") ? media.data.split(",")[1] : media.data;
+    const mime    = media.mimetype || "application/octet-stream";
+    const mimeBase = mime.split(";")[0].trim();
+    const ext     = mimeBase.split("/")[1] || "bin";
+    const subDir  = mimeBase.startsWith("image/") ? "images"
+                  : mimeBase.startsWith("video/") ? "videos"
+                  : mimeBase.startsWith("audio/") ? "voices"
+                  : "images";
+    const safe    = serialId.replace(/[^a-z0-9]/gi, "_");
+    const dest    = path.join(__dirname, "public", "uploads", subDir, `grp_${safe}.${ext}`);
+    const raw     = media.data.includes(",") ? media.data.split(",")[1] : media.data;
     fs.writeFileSync(dest, Buffer.from(raw, "base64"));
+    res.setHeader("Content-Type", mimeBase);
     res.sendFile(dest);
   } catch (err) {
     res.status(500).json({ error: err.message });

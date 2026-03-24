@@ -194,7 +194,12 @@ function renderSingleMessage(m) {
       </div>`;
   } else if (isVideoPath(body)) {
     const safe = escAttr(body);
-    content = `<video src="${safe}" controls preload="metadata"></video>`;
+    content = `
+      <div class="vid-wrap">
+        <video src="${safe}" controls preload="metadata" playsinline
+          style="max-width:280px;max-height:220px;border-radius:8px;display:block;background:#000;outline:none">
+        </video>
+      </div>`;
   } else if (isVoicePath(body)) {
     const safe = escAttr(body);
     const apId = buildAudioId(m.id);
