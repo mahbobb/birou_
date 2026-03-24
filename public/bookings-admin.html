@@ -61,6 +61,27 @@
     #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#2a3942; color:#e9edef; padding:10px 20px; border-radius:10px; font-size:.88rem; transition:transform .3s; z-index:999; white-space:nowrap; }
     #toast.show { transform:translateX(-50%) translateY(0); }
 
+    /* Edit modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; align-items:center; justify-content:center; padding:16px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#1f2c33; border-radius:16px; width:100%; max-width:500px; padding:28px; display:flex; flex-direction:column; gap:16px; max-height:90vh; overflow-y:auto; }
+    .modal h2 { font-size:1.05rem; color:#e9edef; }
+    .modal label { font-size:0.78rem; color:#8696a0; margin-bottom:4px; display:block; }
+    .modal input, .modal select, .modal textarea {
+      width:100%; background:#2a3942; border:1.5px solid #374045; border-radius:9px;
+      color:#e9edef; padding:9px 12px; font-size:0.88rem; outline:none;
+    }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color:#00a884; }
+    .modal-row { display:flex; gap:12px; }
+    .modal-row > div { flex:1; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:4px; }
+    .mbtn { padding:9px 22px; border:none; border-radius:9px; font-size:0.88rem; font-weight:600; cursor:pointer; }
+    .mbtn-save   { background:#00a884; color:#fff; }
+    .mbtn-cancel { background:#374045; color:#e9edef; }
+    .mbtn:hover { opacity:.85; }
+    .act-edit { background:#2a3942; color:#8696a0; border:1px solid #374045; }
+    .act-edit:hover { color:#e9edef; border-color:#8696a0; }
+
     /* Embed info box */
     .embed-box { background: #2a3942; border-radius: 10px; padding: 14px 16px; }
     .embed-box code { display: block; background: #111b21; border-radius: 8px; padding: 12px; font-size: 0.8rem; color: #00a884; overflow-x: auto; white-space: pre; margin-top: 10px; }
@@ -151,6 +172,31 @@
     </div>
   </div>
 
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2>✏️ تعديل الحجز <span id="editModalId" style="color:#8696a0"></span></h2>
+    <div class="modal-row">
+      <div><label>الاسم</label><input id="edt_name" type="text"></div>
+      <div><label>الهاتف</label><input id="edt_phone" type="tel" dir="ltr"></div>
+    </div>
+    <div><label>الشقة</label><input id="edt_apartment" type="text"></div>
+    <div class="modal-row">
+      <div><label>تاريخ الدخول</label><input id="edt_check_in" type="date"></div>
+      <div><label>تاريخ الخروج</label><input id="edt_check_out" type="date"></div>
+    </div>
+    <div class="modal-row">
+      <div><label>البالغون</label><input id="edt_adults" type="number" min="1" max="20"></div>
+      <div><label>الأطفال</label><input id="edt_children" type="number" min="0" max="20"></div>
+    </div>
+    <div><label>ملاحظة</label><textarea id="edt_message" rows="3" style="resize:vertical"></textarea></div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="mbtn mbtn-save" onclick="saveEdit()">💾 حفظ</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -255,7 +301,59 @@ function buildActions(b) {
   const waMsg = encodeURIComponent(`مرحباً ${b.name}، بخصوص طلب حجز الشقة من ${b.check_in} إلى ${b.check_out}:`);
   const waPhone = b.phone.replace(/\D/g, '');
   btns += `<a class="act-btn act-whatsapp" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬</a>`;
+  btns += `<button class="act-btn act-edit" onclick="openEdit(${b.id})">✏️</button>`;
   return btns;
+}
+
+let editingId = null;
+function openEdit(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!b) return;
+  editingId = id;
+  document.getElementById('editModalId').textContent = '#' + id;
+  document.getElementById('edt_name').value      = b.name || '';
+  document.getElementById('edt_phone').value     = b.phone || '';
+  document.getElementById('edt_apartment').value = b.apartment || '';
+  document.getElementById('edt_check_in').value  = b.check_in?.slice(0,10) || '';
+  document.getElementById('edt_check_out').value = b.check_out?.slice(0,10) || '';
+  document.getElementById('edt_adults').value    = b.adults || 1;
+  document.getElementById('edt_children').value  = b.children || 0;
+  document.getElementById('edt_message').value   = b.message || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  const body = {
+    name:      document.getElementById('edt_name').value.trim(),
+    phone:     document.getElementById('edt_phone').value.trim(),
+    apartment: document.getElementById('edt_apartment').value.trim(),
+    check_in:  document.getElementById('edt_check_in').value,
+    check_out: document.getElementById('edt_check_out').value,
+    adults:    parseInt(document.getElementById('edt_adults').value) || 1,
+    children:  parseInt(document.getElementById('edt_children').value) || 0,
+    message:   document.getElementById('edt_message').value.trim(),
+  };
+  if (!body.name || !body.phone || !body.check_in || !body.check_out)
+    return showToast('⚠️ الاسم والهاتف والتواريخ مطلوبة');
+  const r = await fetch(`/api/bookings/${editingId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (r.ok) {
+    const b = allBookings.find(x => x.id === editingId);
+    if (b) Object.assign(b, body);
+    closeModal();
+    renderTable();
+    showToast('✅ تم حفظ التعديلات');
+  } else {
+    showToast('❌ خطأ في الحفظ');
+  }
 }
 
 async function setStatus(id, status) {

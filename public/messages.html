@@ -359,7 +359,7 @@
         <td><b>${escHtml(m.name || m.phone || "—")}</b>${noReplyBadge ? "<br>" + noReplyBadge : ""}</td>
         <td><span class="phone-tag">+${m.phone}</span></td>
         <td>${dirBadge}</td>
-        <td class="msg-body" title="${escHtml(m.body||"")}">${escHtml((m.body||"").substring(0,50))}</td>
+        <td class="msg-body">${renderBodyCell(m.body)}</td>
         <td>${srcBadge}</td>
         <td class="time">${time}</td>
         <td><a href="/chat?phone=${m.phone}" class="chat-btn">💬 شات</a></td>
@@ -472,6 +472,31 @@
   /* ── Helpers ── */
   function escHtml(s) {
     return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function renderBodyCell(body) {
+    const b = String(body || "").trim();
+    if (/^\/uploads\/images\//i.test(b)) {
+      const safe = escHtml(b);
+      return `<img src="${safe}" loading="lazy" onclick="openLightbox('${safe}')"
+        style="height:54px;width:54px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block">`;
+    }
+    if (/^\/uploads\/voices\//i.test(b)) return `🎤 رسالة صوتية`;
+    if (/^\/uploads\/videos\//i.test(b)) return `🎬 فيديو`;
+    if (/^\/uploads\//i.test(b))         return `📎 ملف`;
+    return escHtml(b.substring(0, 50));
+  }
+
+  function openLightbox(url) {
+    let lb = document.getElementById('msgLightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'msgLightbox';
+      lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+      lb.onclick = () => lb.remove();
+      document.body.appendChild(lb);
+    }
+    lb.innerHTML = `<img src="${escHtml(url)}" style="max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 4px 40px rgba(0,0,0,.6)">`;
   }
 
   function timeAgo(dateStr) {
