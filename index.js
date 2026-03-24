@@ -126,6 +126,61 @@ const CHROMIUM_PATH = findChromium();
 if (CHROMIUM_PATH) console.log(`🌐 Chromium: ${CHROMIUM_PATH}`);
 else console.warn("⚠️  Chromium غير موجود — سيستخدم Puppeteer المدمج");
 
+// ─── استيراد سجل الرسائل من WhatsApp ──────────────────────────────────────
+async function importWhatsAppHistory(client, botId) {
+  try {
+    console.log(`\n📥 [${botId}] جاري استيراد سجل الرسائل من واتساب...`);
+    const chats = await client.getChats();
+    let imported = 0;
+
+    for (const chat of chats) {
+      if (chat.isGroup) continue; // تخطي المجموعات — ثقيلة جداً
+
+      const phone = chat.id.user || "";
+      if (!phone) continue;
+      const name  = chat.name || chat.contact?.pushname || phone;
+
+      try {
+        const messages = await chat.fetchMessages({ limit: 100 });
+        for (const msg of messages) {
+          const waMsgId = msg.id?._serialized;
+          if (!waMsgId) continue;
+
+          const direction = msg.fromMe ? "out" : "in";
+          const sender    = msg.fromMe ? "أنت" : name;
+          const ts        = new Date((msg.timestamp || Date.now() / 1000) * 1000);
+
+          // تحديد محتوى الرسالة
+          let body = msg.body || "";
+          if (!body && msg.hasMedia) {
+            body = msg.type === "image"    ? "📷 صورة"
+                 : msg.type === "video"    ? "🎬 فيديو"
+                 : msg.type === "ptt"      ? "🎤 رسالة صوتية"
+                 : msg.type === "audio"    ? "🎤 رسالة صوتية"
+                 : msg.type === "document" ? "📄 مستند"
+                 : msg.type === "sticker"  ? "🎭 ملصق"
+                                          : "📎 ملف";
+          }
+          if (!body) continue;
+
+          // registerContact + saveMessage (INSERT IGNORE على wa_msg_id)
+          await registerContact(phone, name, body);
+          await saveMessage(phone, sender, direction, body, "import", ts, waMsgId);
+          imported++;
+        }
+      } catch { /* تخطي المحادثة عند خطأ */ }
+
+      await new Promise(r => setTimeout(r, 300)); // تأخير خفيف بين المحادثات
+    }
+
+    console.log(`✅ [${botId}] استيراد مكتمل: ${imported} رسالة محفوظة`);
+    const s = await getStats();
+    console.log(`📋 إجمالي الزبائن: ${s.total}`);
+  } catch (err) {
+    console.error(`❌ [${botId}] فشل الاستيراد:`, err.message);
+  }
+}
+
 function setupClient(botId) {
   const puppeteerOpts = {
     headless: true,
@@ -199,6 +254,12 @@ function setupClient(botId) {
     const stats = await getStats();
     console.log(`\n📋 الزبائن المسجلين: ${stats.total} | اليوم: ${stats.today}`);
     console.log(`\n🟢 [${botId}] في انتظار الرسائل...\n`);
+
+    // ── استيراد سجل الرسائل مرة واحدة عند أول اتصال ────────────────────────
+    if (!bot._historyImported) {
+      bot._historyImported = true;
+      setTimeout(() => importWhatsAppHistory(c, botId), 5000);
+    }
 
     // ── Watchdog: فحص حالة الاتصال كل 45 ثانية — إعادة تشغيل تلقائية إذا تجمّد ──
     if (bot._keepaliveTimer) clearInterval(bot._keepaliveTimer);
