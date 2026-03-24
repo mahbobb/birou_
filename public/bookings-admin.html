@@ -79,8 +79,10 @@
     .mbtn-save   { background:#00a884; color:#fff; }
     .mbtn-cancel { background:#374045; color:#e9edef; }
     .mbtn:hover { opacity:.85; }
-    .act-edit { background:#2a3942; color:#8696a0; border:1px solid #374045; }
+    .act-edit   { background:#2a3942; color:#8696a0; border:1px solid #374045; }
     .act-edit:hover { color:#e9edef; border-color:#8696a0; }
+    .act-delete { background:#2e1010; color:#f28b82; border:1px solid #5c2020; }
+    .act-delete:hover { background:#f28b82; color:#fff; }
 
     /* Embed info box */
     .embed-box { background: #2a3942; border-radius: 10px; padding: 14px 16px; }
@@ -301,7 +303,8 @@ function buildActions(b) {
   const waMsg = encodeURIComponent(`مرحباً ${b.name}، بخصوص طلب حجز الشقة من ${b.check_in} إلى ${b.check_out}:`);
   const waPhone = b.phone.replace(/\D/g, '');
   btns += `<a class="act-btn act-whatsapp" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬</a>`;
-  btns += `<button class="act-btn act-edit" onclick="openEdit(${b.id})">✏️</button>`;
+  btns += `<button class="act-btn act-edit"   onclick="openEdit(${b.id})">✏️</button>`;
+  btns += `<button class="act-btn act-delete" onclick="deleteBooking(${b.id})">🗑</button>`;
   return btns;
 }
 
@@ -353,6 +356,18 @@ async function saveEdit() {
     showToast('✅ تم حفظ التعديلات');
   } else {
     showToast('❌ خطأ في الحفظ');
+  }
+}
+
+async function deleteBooking(id) {
+  const b = allBookings.find(x => x.id === id);
+  if (!confirm(`حذف الحجز #${id} (${b?.name || ''})؟ لا يمكن التراجع.`)) return;
+  const r = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+  if ((await r.json()).ok) {
+    allBookings = allBookings.filter(x => x.id !== id);
+    renderTable();
+    loadStats();
+    showToast('🗑️ تم حذف الحجز');
   }
 }
 

@@ -100,3 +100,23 @@ select.ha-select:focus{color:var(--text)}
   .back-btn{display:block}
   .left-nav{display:none}
 }
+
+
+/* ── Group image bubbles ── */
+.b-img-wrap {
+  cursor: zoom-in;
+  line-height: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 260px;
+}
+.b-img-wrap img {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: opacity .18s;
+}
+.b-img-wrap:hover img { opacity: .85; }

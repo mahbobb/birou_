@@ -8,7 +8,7 @@ const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
-const { createBooking, getBookings, updateBookingStatus, updateBooking, getBookingStats, addIdImages } = require("./bookings");
+const { createBooking, getBookings, updateBookingStatus, updateBooking, deleteBooking, getBookingStats, addIdImages } = require("./bookings");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
@@ -961,6 +961,16 @@ app.patch("/api/bookings/:id/status", async (req, res) => {
   res.json({ ok: true });
 });
 
+// حذف حجز
+app.delete("/api/bookings/:id", async (req, res) => {
+  try {
+    await deleteBooking(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // تعديل بيانات حجز
 app.patch("/api/bookings/:id", async (req, res) => {
   const { name, phone, apartment, check_in, check_out, adults, children, message } = req.body || {};
@@ -1388,6 +1398,48 @@ app.get("/api/wa-groups", async (_req, res) => {
 });
 
 // ── جلب رسائل مجموعة من واتساب ───────────────────────────────────────────
+// ── تحميل صورة من رسالة مجموعة ──────────────────────────────────────────────
+app.get("/api/group-media", async (req, res) => {
+  const { serialId } = req.query;
+  if (!serialId) return res.status(400).json({ error: "serialId مطلوب" });
+
+  // تحقق من الكاش أولاً
+  const cacheFile = path.join(IDS_DIR, `..`, `images`, `grp_${serialId.replace(/[^a-z0-9]/gi,"_")}.jpg`);
+  if (fs.existsSync(cacheFile)) return res.sendFile(cacheFile);
+
+  const connectedBots = [...bots.values()].filter(b => b.botConnected);
+  if (!connectedBots.length) return res.status(503).json({ error: "لا يوجد بوت متصل" });
+
+  try {
+    let media = null;
+    for (const bot of connectedBots) {
+      try {
+        const msg = await Promise.race([
+          bot.client.getMessageById(serialId),
+          new Promise((_, r) => setTimeout(() => r(new Error("to")), 10000)),
+        ]);
+        if (msg?.hasMedia) {
+          media = await Promise.race([
+            msg.downloadMedia(),
+            new Promise((_, r) => setTimeout(() => r(new Error("to")), 15000)),
+          ]);
+          if (media) break;
+        }
+      } catch {}
+    }
+
+    if (!media?.data) return res.status(404).json({ error: "لا يمكن تحميل الصورة" });
+
+    const ext = (media.mimetype || "image/jpeg").split("/")[1].split(";")[0] || "jpg";
+    const dest = path.join(__dirname, "public", "uploads", "images", `grp_${serialId.replace(/[^a-z0-9]/gi,"_")}.${ext}`);
+    const raw  = media.data.includes(",") ? media.data.split(",")[1] : media.data;
+    fs.writeFileSync(dest, Buffer.from(raw, "base64"));
+    res.sendFile(dest);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/group-messages", async (req, res) => {
   const groupId = req.query.groupId;
   const limit   = Math.min(parseInt(req.query.limit) || 50, 200);
@@ -1432,13 +1484,14 @@ app.get("/api/group-messages", async (req, res) => {
     ]);
 
     const result = msgs.map(m => ({
-      id:        m.id?.id || "",
-      body:      m.body || "",
-      fromMe:    m.fromMe,
-      author:    m.author || m.from || "",
-      timestamp: m.timestamp,
-      type:      m.type,
-      hasMedia:  m.hasMedia,
+      id:          m.id?.id || "",
+      serialId:    m.id?._serialized || "",
+      body:        m.body || "",
+      fromMe:      m.fromMe,
+      author:      m.author || m.from || "",
+      timestamp:   m.timestamp,
+      type:        m.type,
+      hasMedia:    m.hasMedia,
     }));
 
     res.json(result);

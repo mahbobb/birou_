@@ -104,9 +104,17 @@ async function loadMsgs() {
 
       const author = !m.fromMe && m.author
         ? `<div class="b-author">${esc(m.author.replace(/@.+/,""))}</div>` : "";
-      const body = m.hasMedia
-        ? `<span class="b-media">${mediaIcons[m.type] || "📎 وسائط"}</span>`
-        : `<span class="b-body">${esc(m.body || "")}</span>`;
+      let body;
+      if (m.hasMedia && m.type === "image" && m.serialId) {
+        const src = `/api/group-media?serialId=${encodeURIComponent(m.serialId)}`;
+        body = `<div class="b-img-wrap" onclick="openGrpLightbox(this,'${encodeURIComponent(m.serialId)}')">
+          <img src="${src}" loading="lazy" onerror="this.parentElement.innerHTML='🖼️ صورة'">
+        </div>`;
+      } else if (m.hasMedia) {
+        body = `<span class="b-media">${mediaIcons[m.type] || "📎 وسائط"}</span>`;
+      } else {
+        body = `<span class="b-body">${esc(m.body || "")}</span>`;
+      }
 
       return `${divider}<div class="bubble ${cls}">${author}${body}<span class="b-time">${timeStr}</span></div>`;
     }).join("");
@@ -194,6 +202,20 @@ function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function openGrpLightbox(el, serialId) {
+  const img = el.querySelector("img");
+  if (!img) return;
+  let lb = document.getElementById("grpLightbox");
+  if (!lb) {
+    lb = document.createElement("div");
+    lb.id = "grpLightbox";
+    lb.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out";
+    lb.onclick = () => lb.remove();
+    document.body.appendChild(lb);
+  }
+  lb.innerHTML = `<img src="/api/group-media?serialId=${serialId}" style="max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 4px 40px rgba(0,0,0,.6)">`;
 }
 
 loadGroups();
