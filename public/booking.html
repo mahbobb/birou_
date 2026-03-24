@@ -89,6 +89,18 @@
     .err-msg { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; color: #b91c1c; font-size: 0.85rem; margin-bottom: 14px; display: none; }
     .err-msg.show { display: block; }
 
+    /* Upload area */
+    .upload-area {
+      border: 2px dashed #c8d3dd; border-radius: 10px; padding: 18px;
+      text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+      background: #fafbfc; min-height: 90px; display: flex; align-items: center; justify-content: center;
+    }
+    .upload-area:hover, .upload-area.drag { border-color: #2563a8; background: #f0f5ff; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; width: 100%; }
+    .prev-item { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; }
+    .prev-item img { width: 100%; height: 100%; object-fit: cover; }
+    .prev-del { position:absolute; top:4px; left:4px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
     .card-footer { padding: 14px 28px 20px; text-align: center; font-size: 0.78rem; color: #aaa; border-top: 1px solid #f0f0f0; }
     .card-footer a { color: #2563a8; text-decoration: none; }
   </style>
@@ -160,6 +172,20 @@
       <textarea id="fMessage" placeholder="أي تفاصيل أو متطلبات خاصة..."></textarea>
     </div>
 
+    <!-- ID Card Upload -->
+    <div class="field">
+      <label>صور البطاقة الوطنية (اختياري — حتى 4 صور)</label>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fIdImages').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <input type="file" id="fIdImages" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+        <div id="uploadPlaceholder">
+          <div style="font-size:2rem;margin-bottom:8px">🪪</div>
+          <div style="font-size:.88rem;color:#555">اضغط لاختيار الصور أو اسحبها هنا</div>
+          <div style="font-size:.75rem;color:#aaa;margin-top:4px">JPG / PNG — حتى 8MB للصورة</div>
+        </div>
+        <div id="previewGrid" class="preview-grid" style="display:none"></div>
+      </div>
+    </div>
+
     <button class="btn-submit" id="btnSubmit" onclick="submitBooking()">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       إرسال طلب الحجز
@@ -182,6 +208,42 @@
 
 <script>
 const counts = { adults: 1, children: 0 };
+let selectedFiles = [];
+
+function handleFiles(fileList) {
+  const newFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+  for (const f of newFiles) {
+    if (selectedFiles.length >= 4) break;
+    selectedFiles.push(f);
+  }
+  renderPreviews();
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+}
+
+function renderPreviews() {
+  const grid = document.getElementById('previewGrid');
+  const ph   = document.getElementById('uploadPlaceholder');
+  if (!selectedFiles.length) { grid.style.display='none'; ph.style.display=''; return; }
+  ph.style.display = 'none';
+  grid.style.display = '';
+  grid.innerHTML = selectedFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="prev-item"><img src="${url}"><button class="prev-del" onclick="removeFile(${i})">✕</button></div>`;
+  }).join('');
+  if (selectedFiles.length < 4) {
+    grid.innerHTML += `<div class="prev-item" style="border:2px dashed #c8d3dd;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafbfc" onclick="document.getElementById('fIdImages').click()"><span style="font-size:1.5rem;color:#aaa">+</span></div>`;
+  }
+}
+
+function removeFile(i) {
+  selectedFiles.splice(i, 1);
+  renderPreviews();
+}
 
 function changeCount(field, delta) {
   counts[field] = Math.max(field === 'adults' ? 1 : 0, counts[field] + delta);
@@ -236,13 +298,15 @@ async function submitBooking() {
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity=".3"/><path d="M12 2v4a8 8 0 0 1 8 8h4A12 12 0 0 0 12 2z"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg> جاري الإرسال...';
 
   try {
-    // كشف عنوان السيرفر تلقائياً
     const apiBase = window.BOOKING_API_URL || (window.location.origin + '/api/bookings');
-    const res  = await fetch(apiBase, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, apartment, check_in, check_out, adults: counts.adults, children: counts.children, message, source: 'abrajeimmo' }),
-    });
+    const fd = new FormData();
+    fd.append('name', name); fd.append('phone', phone);
+    fd.append('apartment', apartment); fd.append('check_in', check_in);
+    fd.append('check_out', check_out); fd.append('adults', counts.adults);
+    fd.append('children', counts.children); fd.append('message', message);
+    fd.append('source', 'abrajeimmo');
+    selectedFiles.forEach(f => fd.append('id_images', f));
+    const res  = await fetch(apiBase, { method: 'POST', body: fd });
     const data = await res.json();
 
     if (!res.ok || data.error) {

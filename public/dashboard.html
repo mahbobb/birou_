@@ -609,10 +609,10 @@
           <tr>
             <th>#</th><th>الاسم</th><th>الهاتف</th><th>الشقة</th>
             <th>الدخول</th><th>الخروج</th><th>الأشخاص</th>
-            <th>الحالة</th><th>التاريخ</th><th>إجراء</th>
+            <th>🪪 البطاقة</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th>
           </tr>
         </thead>
-        <tbody id="bookingsBody"><tr class="empty-row"><td colspan="10">⏳ جاري التحميل...</td></tr></tbody>
+        <tbody id="bookingsBody"><tr class="empty-row"><td colspan="11">⏳ جاري التحميل...</td></tr></tbody>
       </table>
     </div>
     <div id="bookingsPg" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 0"></div>
@@ -1244,6 +1244,10 @@
         actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'pending')">↩ إعادة</button>`;
       }
       actions += `<a class="action-btn ab-send" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬 WA</a>`;
+      let imgs = []; try { imgs = b.id_images ? JSON.parse(b.id_images) : []; } catch {}
+      const idCell = imgs.length
+        ? imgs.map(u => `<a href="${u}" target="_blank"><img src="${u}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #ddd;cursor:zoom-in"></a>`).join('')
+        : `<span style="color:#aaa;font-size:.75rem">—</span>`;
       return `<tr>
         <td style="color:#888">#${b.id}</td>
         <td><div class="contact-cell"><div class="c-avatar" style="background:#128c7e">${esc(b.name).charAt(0)}</div><div class="c-name">${esc(b.name)}</div></div></td>
@@ -1252,6 +1256,7 @@
         <td style="white-space:nowrap">${b.check_in}</td>
         <td style="white-space:nowrap">${b.check_out}<br><span style="color:#999;font-size:.75rem">${nights} ليلة</span></td>
         <td>${persons}</td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">${idCell}</div></td>
         <td>${badge}</td>
         <td style="white-space:nowrap;font-size:.78rem;color:#999">${date}</td>
         <td><div class="actions-cell">${actions}</div></td>

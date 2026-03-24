@@ -122,13 +122,14 @@
             <th>الدخول</th>
             <th>الخروج</th>
             <th>الأشخاص</th>
+            <th>🪪 البطاقة</th>
             <th>الحالة</th>
             <th>التاريخ</th>
             <th>إجراء</th>
           </tr>
         </thead>
         <tbody id="bookingsTbody">
-          <tr><td colspan="10" class="empty-tbl">⏳ جاري التحميل...</td></tr>
+          <tr><td colspan="11" class="empty-tbl">⏳ جاري التحميل...</td></tr>
         </tbody>
       </table>
     </div>
@@ -187,7 +188,7 @@ async function loadBookings() {
     renderTable();
   } catch {
     document.getElementById('bookingsTbody').innerHTML =
-      `<tr><td colspan="10" class="empty-tbl">❌ خطأ في تحميل البيانات</td></tr>`;
+      `<tr><td colspan="11" class="empty-tbl">❌ خطأ في تحميل البيانات</td></tr>`;
   }
 }
 
@@ -207,7 +208,7 @@ function renderTable() {
   const tbody = document.getElementById('bookingsTbody');
 
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty-tbl">📭 لا توجد حجوزات</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="empty-tbl">📭 لا توجد حجوزات</td></tr>`;
     document.getElementById('tblPg').innerHTML = '';
     return;
   }
@@ -218,14 +219,19 @@ function renderTable() {
     const date    = new Date(b.created_at).toLocaleDateString('ar-MA', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
     const badge   = `<span class="badge ${STATUS_BADGE[b.status]}">${STATUS_LABELS[b.status]}</span>`;
     const actions = buildActions(b);
+    const imgs    = parseImages(b.id_images);
+    const idCell  = imgs.length
+      ? imgs.map(u => `<a href="${u}" target="_blank"><img src="${u}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #374045;cursor:zoom-in"></a>`).join('')
+      : `<span style="color:#8696a0;font-size:.75rem">—</span>`;
     return `<tr>
       <td style="color:#8696a0">#${b.id}</td>
       <td>${esc(b.name)}</td>
       <td style="direction:ltr;text-align:right">${esc(b.phone)}</td>
-      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(b.apartment)}">${esc(b.apartment || '—')}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(b.apartment)}">${esc(b.apartment || '—')}</td>
       <td style="white-space:nowrap">${b.check_in}</td>
       <td style="white-space:nowrap">${b.check_out} <span style="color:#8696a0;font-size:.75rem">(${nights}ل)</span></td>
       <td>${persons}</td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">${idCell}</div></td>
       <td>${badge}</td>
       <td style="white-space:nowrap;font-size:.75rem;color:#8696a0">${date}</td>
       <td><div class="action-btns">${actions}</div></td>
@@ -301,6 +307,9 @@ function copyCode(id) {
 
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function parseImages(raw) {
+  try { return raw ? JSON.parse(raw) : []; } catch { return []; }
 }
 
 let toastTimer;

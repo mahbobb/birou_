@@ -8,7 +8,15 @@ const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
-const { createBooking, getBookings, updateBookingStatus, getBookingStats } = require("./bookings");
+const { createBooking, getBookings, updateBookingStatus, getBookingStats, addIdImages } = require("./bookings");
+const multer = require("multer");
+const uploadIds = multer({
+  dest: path.join(__dirname, "public", "uploads", "ids"),
+  limits: { fileSize: 8 * 1024 * 1024, files: 4 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, /^image\/(jpeg|png|webp|jpg)$/.test(file.mimetype));
+  },
+});
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
@@ -861,14 +869,23 @@ app.use("/api/bookings", (req, res, next) => {
   next();
 });
 
-// إنشاء حجز جديد (عام — من نموذج الموقع)
-app.post("/api/bookings", async (req, res) => {
+// إنشاء حجز جديد (عام — من نموذج الموقع) — يدعم multipart/form-data للصور
+app.post("/api/bookings", uploadIds.array("id_images", 4), async (req, res) => {
   const { name, phone, apartment, check_in, check_out, adults, children, message, source } = req.body;
   if (!name?.trim() || !phone?.trim() || !check_in || !check_out)
     return res.status(400).json({ error: "الاسم والهاتف وتواريخ الحجز مطلوبة" });
 
+  // إعادة تسمية الملفات المرفوعة بامتداد صحيح
+  const idImages = [];
+  for (const file of (req.files || [])) {
+    const ext  = file.mimetype.split("/")[1].replace("jpeg","jpg");
+    const dest = path.join(__dirname, "public", "uploads", "ids", `${file.filename}.${ext}`);
+    fs.renameSync(file.path, dest);
+    idImages.push(`/uploads/ids/${file.filename}.${ext}`);
+  }
+
   try {
-    const id = await createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source });
+    const id = await createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source, id_images: idImages });
 
     // إشعار واتساب للمسؤول
     const adminPhone = process.env.ADMIN_PHONE;

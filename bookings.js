@@ -24,14 +24,23 @@ async function initBookingsTable() {
 }
 initBookingsTable().catch(() => {});
 
+// migration: add id_images column if missing
+pool.query(`ALTER TABLE bookings ADD COLUMN id_images TEXT DEFAULT NULL`).catch(() => {});
+
 // ─── إنشاء حجز ──────────────────────────────────────────────────────────────
-async function createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source = "widget" }) {
+async function createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source = "widget", id_images = [] }) {
   const [result] = await pool.query(
-    `INSERT INTO bookings (name, phone, apartment, check_in, check_out, adults, children, message, source)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, phone, apartment || "", check_in, check_out, adults || 1, children || 0, message || "", source]
+    `INSERT INTO bookings (name, phone, apartment, check_in, check_out, adults, children, message, source, id_images)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [name, phone, apartment || "", check_in, check_out, adults || 1, children || 0, message || "", source,
+     id_images.length ? JSON.stringify(id_images) : null]
   );
   return result.insertId;
+}
+
+// ─── تحديث صور البطاقة الوطنية ───────────────────────────────────────────────
+async function addIdImages(id, filenames) {
+  await pool.query(`UPDATE bookings SET id_images = ? WHERE id = ?`, [JSON.stringify(filenames), id]);
 }
 
 // ─── جلب كل الحجوزات ────────────────────────────────────────────────────────
@@ -75,4 +84,4 @@ async function getBookingStats() {
   } catch { return { total: 0, pending: 0, confirmed: 0, cancelled: 0 }; }
 }
 
-module.exports = { createBooking, getBookings, updateBookingStatus, markNotified, getBookingStats };
+module.exports = { createBooking, getBookings, updateBookingStatus, markNotified, getBookingStats, addIdImages };
