@@ -8,7 +8,7 @@ const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
-const { createBooking, getBookings, updateBookingStatus, getBookingStats, addIdImages } = require("./bookings");
+const { createBooking, getBookings, updateBookingStatus, updateBooking, getBookingStats, addIdImages } = require("./bookings");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
@@ -246,6 +246,21 @@ function setupClient(botId) {
 
   c.on("message", msg => handleIncoming(msg, botId));
   c.on("message_create", msg => handleOutgoing(msg, botId));
+
+  // ── رد تلقائي على المكالمات الواردة ────────────────────────────────────────
+  c.on("call", async (call) => {
+    try {
+      await call.reject();
+      const callType = call.isVideo ? "📹 مكالمة فيديو" : "📞 مكالمة صوتية";
+      console.log(`📵 [${botId}] رُفضت ${callType} من: ${call.from}`);
+      await c.sendMessage(
+        call.from,
+        `${callType} — عذراً، البوت لا يستقبل المكالمات.\nللتواصل يرجى إرسال رسالة نصية وسنرد عليك فوراً 😊`
+      );
+    } catch (err) {
+      console.error(`❌ [${botId}] خطأ في رفض المكالمة:`, err.message);
+    }
+  });
 
   c.initialize().catch((err) => {
     console.error(`\n❌ [${botId}] فشل التهيئة:`, err.message || err);
@@ -902,7 +917,11 @@ app.post("/api/bookings", async (req, res) => {
 // رفع صور البطاقة الوطنية لحجز موجود
 app.post("/api/bookings/:id/images", (req, res) => {
   uploadIds.array("id_images", 4)(req, res, async (multerErr) => {
-    if (multerErr || !req.files?.length) return res.json({ ok: true });
+    if (multerErr) {
+      console.error("multer error on image upload:", multerErr.message);
+      return res.status(400).json({ ok: false, error: multerErr.message });
+    }
+    if (!req.files?.length) return res.json({ ok: true });
     try {
       const imgs = [];
       for (const file of req.files) {
@@ -912,8 +931,11 @@ app.post("/api/bookings/:id/images", (req, res) => {
         imgs.push(`/uploads/ids/${file.filename}.${ext}`);
       }
       await addIdImages(req.params.id, imgs);
-      res.json({ ok: true });
-    } catch { res.json({ ok: true }); }
+      res.json({ ok: true, count: imgs.length });
+    } catch (err) {
+      console.error("image save error:", err.message);
+      res.status(500).json({ ok: false, error: err.message });
+    }
   });
 });
 
@@ -937,6 +959,19 @@ app.patch("/api/bookings/:id/status", async (req, res) => {
     return res.status(400).json({ error: "حالة غير صحيحة" });
   await updateBookingStatus(req.params.id, status);
   res.json({ ok: true });
+});
+
+// تعديل بيانات حجز
+app.patch("/api/bookings/:id", async (req, res) => {
+  const { name, phone, apartment, check_in, check_out, adults, children, message } = req.body || {};
+  if (!name?.trim() || !phone?.trim() || !check_in || !check_out)
+    return res.status(400).json({ error: "الاسم والهاتف والتواريخ مطلوبة" });
+  try {
+    await updateBooking(req.params.id, { name, phone, apartment, check_in, check_out, adults, children, message });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Dashboard API ──────────────────────────────────────────────────────────

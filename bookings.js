@@ -64,6 +64,14 @@ async function updateBookingStatus(id, status) {
   await pool.query(`UPDATE bookings SET status = ? WHERE id = ?`, [status, id]);
 }
 
+// ─── تعديل بيانات حجز ────────────────────────────────────────────────────────
+async function updateBooking(id, { name, phone, apartment, check_in, check_out, adults, children, message }) {
+  await pool.query(
+    `UPDATE bookings SET name=?, phone=?, apartment=?, check_in=?, check_out=?, adults=?, children=?, message=? WHERE id=?`,
+    [name, phone, apartment || "", check_in, check_out, adults || 1, children || 0, message || "", id]
+  );
+}
+
 // ─── تحديث حقل notified ──────────────────────────────────────────────────────
 async function markNotified(id) {
   await pool.query(`UPDATE bookings SET notified = 1 WHERE id = ?`, [id]);
@@ -84,4 +92,4 @@ async function getBookingStats() {
   } catch { return { total: 0, pending: 0, confirmed: 0, cancelled: 0 }; }
 }
 
-module.exports = { createBooking, getBookings, updateBookingStatus, markNotified, getBookingStats, addIdImages };
+module.exports = { createBooking, getBookings, updateBookingStatus, updateBooking, markNotified, getBookingStats, addIdImages };
