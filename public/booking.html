@@ -334,7 +334,7 @@ async function submitBooking() {
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity=".3"/><path d="M12 2v4a8 8 0 0 1 8 8h4A12 12 0 0 0 12 2z"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg> جاري الإرسال...';
 
   try {
-    const apiBase = window.BOOKING_API_URL || (window.location.origin.includes('abrajeimmo') ? 'https://abraje.uno/api/bookings' : window.location.origin + '/api/bookings');
+    const apiBase = window.BOOKING_API_URL || (window.location.origin + '/api/bookings').replace('http://', 'https://');
     const fd = new FormData();
     fd.append('name', name); fd.append('phone', phone);
     fd.append('apartment', apartment); fd.append('check_in', check_in);
