@@ -420,6 +420,11 @@
       <span class="badge" id="contactsBadge" style="display:none">0</span>
     </button>
 
+    <button class="sb-link" onclick="showPage('bookings')" id="nav-bookings">
+      <span class="ico">🏢</span><span>الحجوزات</span>
+      <span class="badge" id="bookingsBadge" style="display:none">0</span>
+    </button>
+
     <div class="sb-section">التواصل</div>
     <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات</span></a>
     <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
@@ -500,6 +505,18 @@
         <div class="stat-icon si-red">🤖</div>
         <div class="stat-body"><div class="num" id="statAR" style="font-size:1.2rem">—</div><div class="lbl">الردود التلقائية</div></div>
       </div>
+      <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
+        <div class="stat-icon si-blue">🏢</div>
+        <div class="stat-body"><div class="num" id="statBookingsTotal">—</div><div class="lbl">إجمالي الحجوزات</div></div>
+      </div>
+      <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
+        <div class="stat-icon si-orange">⏳</div>
+        <div class="stat-body"><div class="num" id="statBookingsPending" style="color:#e65100">—</div><div class="lbl">بانتظار التأكيد</div></div>
+      </div>
+      <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
+        <div class="stat-icon si-green">✅</div>
+        <div class="stat-body"><div class="num" id="statBookingsConfirmed">—</div><div class="lbl">حجوزات مؤكدة</div></div>
+      </div>
     </div>
 
     <!-- Bots Status -->
@@ -523,6 +540,9 @@
       <a class="quick-card" href="/notes">       <div class="qico">📝</div><div class="qtxt">الملاحظات</div></a>
       <div class="quick-card" onclick="openBroadcast()" style="cursor:pointer">
         <div class="qico">📢</div><div class="qtxt">إرسال جماعي</div>
+      </div>
+      <div class="quick-card" onclick="showPage('bookings')" style="cursor:pointer">
+        <div class="qico">🏢</div><div class="qtxt">الحجوزات</div>
       </div>
     </div>
 
@@ -548,6 +568,54 @@
         <tbody id="contactsBody"><tr class="empty-row"><td colspan="7">جاري التحميل...</td></tr></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ════ PAGE: BOOKINGS ════ -->
+  <div class="page" id="page-bookings">
+
+    <!-- Stats row -->
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-icon si-blue">🏢</div>
+        <div class="stat-body"><div class="num" id="bsTotal">—</div><div class="lbl">إجمالي الطلبات</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-orange">⏳</div>
+        <div class="stat-body"><div class="num" id="bsPending" style="color:#e65100">—</div><div class="lbl">بانتظار التأكيد</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-green">✅</div>
+        <div class="stat-body"><div class="num" id="bsConfirmed">—</div><div class="lbl">مؤكدة</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-red">✖</div>
+        <div class="stat-body"><div class="num" id="bsCancelled" style="color:#c62828">—</div><div class="lbl">ملغاة</div></div>
+      </div>
+    </div>
+
+    <!-- Filter + refresh -->
+    <div class="table-toolbar">
+      <button class="t-btn" id="bfAll"       onclick="bookFilter(null)"          style="background:#e0f2f1;color:#075e54;font-weight:700">الكل</button>
+      <button class="t-btn" id="bfPending"   onclick="bookFilter('pending')"     style="background:#fff3e0;color:#e65100">بانتظار التأكيد</button>
+      <button class="t-btn" id="bfConfirmed" onclick="bookFilter('confirmed')"   style="background:#e8f5e9;color:#2e7d32">مؤكدة</button>
+      <button class="t-btn" id="bfCancelled" onclick="bookFilter('cancelled')"   style="background:#ffebee;color:#c62828">ملغاة</button>
+      <button class="t-btn t-btn-teal" style="margin-right:auto" onclick="loadBookingsPage()">🔄 تحديث</button>
+      <a class="t-btn t-btn-teal" href="/booking" target="_blank">🔗 نموذج الحجز</a>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>الاسم</th><th>الهاتف</th><th>الشقة</th>
+            <th>الدخول</th><th>الخروج</th><th>الأشخاص</th>
+            <th>الحالة</th><th>التاريخ</th><th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="bookingsBody"><tr class="empty-row"><td colspan="10">⏳ جاري التحميل...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="bookingsPg" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 0"></div>
   </div>
 
   <!-- ════ PAGE: ADMIN ════ -->
@@ -700,7 +768,7 @@
   let selectedPhone = "";
 
   /* ── Page navigation ── */
-  const pages = { overview:"لوحة التحكم", contacts:"الزبائن", admin:"الإدارة" };
+  const pages = { overview:"لوحة التحكم", contacts:"الزبائن", bookings:"الحجوزات", admin:"الإدارة" };
   function showPage(id) {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".sb-link[id^='nav-']").forEach(l => l.classList.remove("active"));
@@ -708,18 +776,20 @@
     const nav = document.getElementById("nav-" + id);
     if (nav) nav.classList.add("active");
     document.getElementById("topbarTitle").textContent = pages[id] || id;
+    if (id === "bookings") loadBookingsPage();
   }
 
   /* ── Data ── */
   async function loadData() {
     try {
-      const [statsR, contactsR, qrR, imgR, voiceR, vidR] = await Promise.all([
+      const [statsR, contactsR, qrR, imgR, voiceR, vidR, bookStatsR] = await Promise.all([
         fetch("/api/stats"),
         fetch("/api/contacts"),
         fetch("/api/qr"),
         fetch("/api/images/stats"),
         fetch("/api/voices/stats"),
         fetch("/api/videos/stats"),
+        fetch("/api/bookings/stats"),
       ]);
       const stats    = await statsR.json();
       allContacts    = await contactsR.json();
@@ -727,6 +797,7 @@
       const imgs     = await imgR.json();
       const voices   = await voiceR.json();
       const videos   = await vidR.json();
+      const bStats   = await bookStatsR.json();
 
       /* Stats */
       document.getElementById("statTotal").textContent  = stats.total;
@@ -737,6 +808,14 @@
 
       const arOn = stats.autoReplyEnabled !== false;
       document.getElementById("statAR").textContent = arOn ? "✅ شغالة" : "❌ مطفأة";
+
+      /* Booking stats */
+      document.getElementById("statBookingsTotal").textContent     = bStats.total     || 0;
+      document.getElementById("statBookingsPending").textContent   = bStats.pending   || 0;
+      document.getElementById("statBookingsConfirmed").textContent = bStats.confirmed || 0;
+      const bBadge = document.getElementById("bookingsBadge");
+      if (bStats.pending > 0) { bBadge.textContent = bStats.pending; bBadge.style.display = ""; }
+      else bBadge.style.display = "none";
 
       /* Sidebar status */
       const connected = stats.botConnected;
@@ -1108,6 +1187,110 @@
 
   loadData();
   setInterval(loadData, 30000);
+
+  /* ════════ BOOKINGS PAGE ════════ */
+  let allBookings = [], bookCurrentFilter = null, bookPage = 1;
+  const BOOK_PAGE_SIZE = 20;
+  const BSTATUS_LABEL = { pending:'بانتظار التأكيد', confirmed:'مؤكد', cancelled:'ملغي' };
+  const BSTATUS_COLOR = { pending:'#e65100', confirmed:'#2e7d32', cancelled:'#c62828' };
+  const BSTATUS_BG    = { pending:'#fff3e0', confirmed:'#e8f5e9', cancelled:'#ffebee' };
+
+  async function loadBookingsPage() {
+    try {
+      const [rows, stats] = await Promise.all([
+        fetch('/api/bookings?limit=500').then(r => r.json()),
+        fetch('/api/bookings/stats').then(r => r.json()),
+      ]);
+      allBookings = rows;
+      document.getElementById('bsTotal').textContent     = stats.total     || 0;
+      document.getElementById('bsPending').textContent   = stats.pending   || 0;
+      document.getElementById('bsConfirmed').textContent = stats.confirmed || 0;
+      document.getElementById('bsCancelled').textContent = stats.cancelled || 0;
+      renderBookingsTable();
+    } catch { showToast('❌ خطأ في تحميل الحجوزات'); }
+  }
+
+  function bookFilter(status) {
+    bookCurrentFilter = status;
+    bookPage = 1;
+    renderBookingsTable();
+  }
+
+  function renderBookingsTable() {
+    const list = bookCurrentFilter ? allBookings.filter(b => b.status === bookCurrentFilter) : allBookings;
+    const totalPages = Math.ceil(list.length / BOOK_PAGE_SIZE) || 1;
+    if (bookPage > totalPages) bookPage = totalPages;
+    const page = list.slice((bookPage-1)*BOOK_PAGE_SIZE, bookPage*BOOK_PAGE_SIZE);
+    const tbody = document.getElementById('bookingsBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">📭 لا توجد حجوزات</td></tr>';
+      document.getElementById('bookingsPg').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = page.map(b => {
+      const nights  = Math.ceil((new Date(b.check_out) - new Date(b.check_in)) / 86400000);
+      const persons = b.adults + (b.children > 0 ? '+' + b.children + '👶' : '');
+      const date    = new Date(b.created_at).toLocaleDateString('ar-MA', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      const badge   = `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:${BSTATUS_BG[b.status]};color:${BSTATUS_COLOR[b.status]}">${BSTATUS_LABEL[b.status]}</span>`;
+      const waMsg   = encodeURIComponent(`مرحباً ${b.name}، بخصوص طلب حجز الشقة من ${b.check_in} إلى ${b.check_out}:`);
+      const waPhone = b.phone.replace(/\D/g,'');
+      let actions = '';
+      if (b.status==='pending') {
+        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'confirmed')">✅ تأكيد</button>`;
+        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+      } else if (b.status==='confirmed') {
+        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+      } else {
+        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'pending')">↩ إعادة</button>`;
+      }
+      actions += `<a class="action-btn ab-send" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬 WA</a>`;
+      return `<tr>
+        <td style="color:#888">#${b.id}</td>
+        <td><div class="contact-cell"><div class="c-avatar" style="background:#128c7e">${esc(b.name).charAt(0)}</div><div class="c-name">${esc(b.name)}</div></div></td>
+        <td><span class="phone-tag" style="direction:ltr;display:inline-block">${esc(b.phone)}</span></td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666" title="${esc(b.apartment)}">${esc(b.apartment||'—')}</td>
+        <td style="white-space:nowrap">${b.check_in}</td>
+        <td style="white-space:nowrap">${b.check_out}<br><span style="color:#999;font-size:.75rem">${nights} ليلة</span></td>
+        <td>${persons}</td>
+        <td>${badge}</td>
+        <td style="white-space:nowrap;font-size:.78rem;color:#999">${date}</td>
+        <td><div class="actions-cell">${actions}</div></td>
+      </tr>`;
+    }).join('');
+    renderBookingsPg(totalPages);
+  }
+
+  async function bookSetStatus(id, status) {
+    await fetch(`/api/bookings/${id}/status`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status }),
+    });
+    const b = allBookings.find(x => x.id === id);
+    if (b) b.status = status;
+    renderBookingsTable();
+    loadData(); // تحديث الإحصائيات الرئيسية
+    showToast(status==='confirmed' ? '✅ تم تأكيد الحجز' : status==='cancelled' ? '🗑️ تم إلغاء الحجز' : '↩ تم تغيير الحالة');
+  }
+
+  function renderBookingsPg(totalPages) {
+    const pg = document.getElementById('bookingsPg');
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    const pages = new Set([1]);
+    for (let i = Math.max(2,bookPage-1); i <= Math.min(totalPages-1,bookPage+1); i++) pages.add(i);
+    pages.add(totalPages);
+    let html = bookPage > 1 ? `<button class="t-btn" onclick="bookGoPage(${bookPage-1})">&#8249;</button>` : '';
+    let prev = 0;
+    for (const p of pages) {
+      if (p - prev > 1) html += `<span style="color:#aaa;padding:0 4px">…</span>`;
+      html += `<button class="t-btn" style="min-width:34px;border-radius:50%;${p===bookPage?'background:var(--teal);color:#fff':''}" onclick="bookGoPage(${p})">${p}</button>`;
+      prev = p;
+    }
+    if (bookPage < totalPages) html += `<button class="t-btn" onclick="bookGoPage(${bookPage+1})">&#8250;</button>`;
+    pg.innerHTML = html;
+  }
+
+  function bookGoPage(p) { bookPage = p; renderBookingsTable(); }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
 <script src="/js/nav.js"></script>
 <script src="/socket.io/socket.io.js"></script>
