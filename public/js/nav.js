@@ -26,7 +26,8 @@
     { href: '/sync',      icon: '🔄',  label: 'مزامنة' },
     { href: '/facebook',        icon: '📘',  label: 'فيسبوك' },
     { href: '/messenger-bulk', icon: '💬',  label: 'رد جماعي Messenger' },
-    { href: '/widget',         icon: '🌐',  label: 'ويدجت الموقع' },
+    { href: '/widget',          icon: '🌐',  label: 'ويدجت الموقع' },
+    { href: '/bookings-admin', icon: '🏢',  label: 'الحجوزات' },
   ];
 
   /* SVG icons for the dark sidebar */

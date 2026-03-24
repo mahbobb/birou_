@@ -8,6 +8,7 @@ const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
+const { createBooking, getBookings, updateBookingStatus, getBookingStats } = require("./bookings");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
@@ -848,6 +849,65 @@ app.post("/api/messenger/bulk-reply", async (req, res) => {
 });
 
 app.get("/api/messenger/bulk-status", (_req, res) => res.json(messengerBulkStatus));
+
+// ── Bookings API ────────────────────────────────────────────────────────────
+
+// CORS للسماح لـ abrajeimmo.com بإرسال الطلبات
+app.use("/api/bookings", (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+// إنشاء حجز جديد (عام — من نموذج الموقع)
+app.post("/api/bookings", async (req, res) => {
+  const { name, phone, apartment, check_in, check_out, adults, children, message, source } = req.body;
+  if (!name?.trim() || !phone?.trim() || !check_in || !check_out)
+    return res.status(400).json({ error: "الاسم والهاتف وتواريخ الحجز مطلوبة" });
+
+  try {
+    const id = await createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source });
+
+    // إشعار واتساب للمسؤول
+    const adminPhone = process.env.ADMIN_PHONE;
+    if (adminPhone) {
+      const jid = adminPhone.replace(/\D/g, "") + "@c.us";
+      const nights = Math.ceil((new Date(check_out) - new Date(check_in)) / 86400000);
+      const notifMsg = `🏠 *حجز جديد #${id}*\n👤 الاسم: ${name}\n📱 الهاتف: ${phone}\n🏢 الشقة: ${apartment || "غير محدد"}\n📅 الدخول: ${check_in}\n📅 الخروج: ${check_out} (${nights} ليلة)\n👨‍👩‍👧 ${adults} بالغ${children > 0 ? " + " + children + " طفل" : ""}\n💬 ملاحظة: ${message || "—"}`;
+      const bot = [...bots.values()].find(b => b.botConnected);
+      if (bot) bot.client.sendMessage(jid, notifMsg).catch(() => {});
+    }
+
+    res.json({ ok: true, id });
+  } catch (err) {
+    console.error("❌ [Bookings] خطأ:", err.message || err.code);
+    res.status(500).json({ error: "خطأ في الحجز، حاول مجدداً" });
+  }
+});
+
+// قائمة الحجوزات (للمسؤول)
+app.get("/api/bookings", async (req, res) => {
+  const { status, limit = 200, offset = 0 } = req.query;
+  const rows = await getBookings({ status: status || null, limit, offset });
+  res.json(rows);
+});
+
+// إحصائيات الحجوزات
+app.get("/api/bookings/stats", async (_req, res) => {
+  const stats = await getBookingStats();
+  res.json(stats);
+});
+
+// تحديث حالة الحجز
+app.patch("/api/bookings/:id/status", async (req, res) => {
+  const { status } = req.body;
+  if (!["pending", "confirmed", "cancelled"].includes(status))
+    return res.status(400).json({ error: "حالة غير صحيحة" });
+  await updateBookingStatus(req.params.id, status);
+  res.json({ ok: true });
+});
 
 // ── Dashboard API ──────────────────────────────────────────────────────────
 
@@ -2048,6 +2108,15 @@ app.get("/contact", (_req, res) => {
 
 app.get("/widget", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "widget.html"));
+});
+
+// نموذج الحجز العام (يمكن تضمينه على abrajeimmo.com عبر iframe)
+app.get("/booking", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "booking.html"));
+});
+
+app.get("/bookings-admin", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "bookings-admin.html"));
 });
 
 app.post("/api/contact", async (req, res) => {

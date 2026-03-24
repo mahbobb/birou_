@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حجز شقة — Abrajeimmo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f0f4f8;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12);
+      width: 100%;
+      max-width: 560px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1a3c5e 0%, #2563a8 100%);
+      color: #fff;
+      padding: 28px 28px 22px;
+      text-align: center;
+    }
+    .card-header h1 { font-size: 1.45rem; margin-bottom: 6px; }
+    .card-header p  { font-size: 0.88rem; opacity: .85; }
+    .card-header .logo { font-size: 2rem; margin-bottom: 8px; }
+
+    .card-body { padding: 28px; }
+
+    .form-row { display: flex; gap: 14px; }
+    .form-row .field { flex: 1; }
+
+    .field { margin-bottom: 18px; }
+    label { display: block; font-size: 0.83rem; color: #555; margin-bottom: 6px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid #dde3ec;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      color: #333;
+      outline: none;
+      transition: border-color .2s;
+      font-family: inherit;
+      background: #fafbfc;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #2563a8; background: #fff; }
+    textarea { min-height: 90px; resize: vertical; }
+
+    .counter-row { display: flex; gap: 14px; }
+    .counter-box { flex: 1; border: 1.5px solid #dde3ec; border-radius: 10px; padding: 10px 14px; background: #fafbfc; display: flex; align-items: center; justify-content: space-between; }
+    .counter-box label { margin: 0; font-size: 0.82rem; }
+    .counter-ctrl { display: flex; align-items: center; gap: 10px; }
+    .counter-btn { width: 30px; height: 30px; border: 1.5px solid #dde3ec; border-radius: 50%; background: #fff; color: #2563a8; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; font-weight: 700; }
+    .counter-btn:hover { background: #e8f0fb; }
+    .counter-val { min-width: 24px; text-align: center; font-weight: 700; font-size: 0.95rem; color: #1a3c5e; }
+
+    .nights-badge { text-align: center; font-size: 0.82rem; color: #2563a8; margin-bottom: 16px; font-weight: 600; min-height: 20px; }
+
+    .btn-submit {
+      width: 100%; background: linear-gradient(135deg, #1a3c5e, #2563a8);
+      color: #fff; border: none; border-radius: 12px;
+      padding: 14px; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: .9; }
+    .btn-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* Success screen */
+    .success-screen { display: none; text-align: center; padding: 40px 28px; }
+    .success-screen.show { display: block; }
+    .success-icon { font-size: 3.5rem; margin-bottom: 14px; }
+    .success-screen h2 { color: #1a3c5e; font-size: 1.3rem; margin-bottom: 8px; }
+    .success-screen p  { color: #666; font-size: 0.9rem; line-height: 1.6; }
+    .success-screen .ref { display: inline-block; background: #e8f0fb; color: #2563a8; border-radius: 8px; padding: 4px 14px; font-weight: 700; margin-top: 12px; font-size: 0.88rem; }
+
+    /* Error */
+    .err-msg { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; color: #b91c1c; font-size: 0.85rem; margin-bottom: 14px; display: none; }
+    .err-msg.show { display: block; }
+
+    .card-footer { padding: 14px 28px 20px; text-align: center; font-size: 0.78rem; color: #aaa; border-top: 1px solid #f0f0f0; }
+    .card-footer a { color: #2563a8; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <div class="logo">🏢</div>
+    <h1>طلب حجز شقة</h1>
+    <p>أبراج إيمو — Abrajeimmo.com</p>
+  </div>
+
+  <div class="card-body" id="formWrap">
+    <div class="err-msg" id="errMsg"></div>
+
+    <div class="field">
+      <label>الاسم الكامل *</label>
+      <input type="text" id="fName" placeholder="مثال: محمد أمين" autocomplete="name">
+    </div>
+
+    <div class="field">
+      <label>رقم الهاتف (واتساب) *</label>
+      <input type="tel" id="fPhone" placeholder="0600000000" autocomplete="tel">
+    </div>
+
+    <div class="field">
+      <label>الشقة المطلوبة</label>
+      <input type="text" id="fApartment" placeholder="مثال: شقة رقم 12 — برج الياسمين">
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>تاريخ الدخول *</label>
+        <input type="date" id="fCheckIn">
+      </div>
+      <div class="field">
+        <label>تاريخ الخروج *</label>
+        <input type="date" id="fCheckOut">
+      </div>
+    </div>
+
+    <div class="nights-badge" id="nightsBadge"></div>
+
+    <div class="field">
+      <label>عدد الأشخاص</label>
+      <div class="counter-row">
+        <div class="counter-box">
+          <label>بالغين</label>
+          <div class="counter-ctrl">
+            <button class="counter-btn" onclick="changeCount('adults',-1)">−</button>
+            <span class="counter-val" id="adultsVal">1</span>
+            <button class="counter-btn" onclick="changeCount('adults',1)">+</button>
+          </div>
+        </div>
+        <div class="counter-box">
+          <label>أطفال</label>
+          <div class="counter-ctrl">
+            <button class="counter-btn" onclick="changeCount('children',-1)">−</button>
+            <span class="counter-val" id="childrenVal">0</span>
+            <button class="counter-btn" onclick="changeCount('children',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ملاحظات إضافية</label>
+      <textarea id="fMessage" placeholder="أي تفاصيل أو متطلبات خاصة..."></textarea>
+    </div>
+
+    <button class="btn-submit" id="btnSubmit" onclick="submitBooking()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      إرسال طلب الحجز
+    </button>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <h2>تم إرسال طلب الحجز!</h2>
+    <p>شكراً لك، سنتواصل معك قريباً على واتساب للتأكيد.</p>
+    <div class="ref" id="bookingRef">رقم الطلب: —</div>
+    <br><br>
+    <button class="btn-submit" style="max-width:200px;margin:auto" onclick="resetForm()">حجز جديد</button>
+  </div>
+
+  <div class="card-footer">
+    <a href="https://abrajeimmo.com" target="_parent">abrajeimmo.com</a> — جميع الحقوق محفوظة
+  </div>
+</div>
+
+<script>
+const counts = { adults: 1, children: 0 };
+
+function changeCount(field, delta) {
+  counts[field] = Math.max(field === 'adults' ? 1 : 0, counts[field] + delta);
+  document.getElementById(field + 'Val').textContent = counts[field];
+}
+
+// حساب عدد الليالي
+document.getElementById('fCheckIn').addEventListener('change', updateNights);
+document.getElementById('fCheckOut').addEventListener('change', updateNights);
+
+// تعيين الحد الأدنى للتاريخ = اليوم
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('fCheckIn').min  = today;
+document.getElementById('fCheckOut').min = today;
+
+function updateNights() {
+  const ci = document.getElementById('fCheckIn').value;
+  const co = document.getElementById('fCheckOut').value;
+  const badge = document.getElementById('nightsBadge');
+  if (ci && co) {
+    const nights = Math.ceil((new Date(co) - new Date(ci)) / 86400000);
+    if (nights > 0) badge.textContent = `🌙 ${nights} ليلة`;
+    else { badge.textContent = '⚠️ تاريخ الخروج يجب أن يكون بعد تاريخ الدخول'; }
+  } else { badge.textContent = ''; }
+}
+
+async function submitBooking() {
+  const name      = document.getElementById('fName').value.trim();
+  const phone     = document.getElementById('fPhone').value.trim();
+  const apartment = document.getElementById('fApartment').value.trim();
+  const check_in  = document.getElementById('fCheckIn').value;
+  const check_out = document.getElementById('fCheckOut').value;
+  const message   = document.getElementById('fMessage').value.trim();
+  const errEl     = document.getElementById('errMsg');
+
+  errEl.classList.remove('show');
+
+  if (!name || !phone || !check_in || !check_out) {
+    errEl.textContent = '⚠️ يرجى ملء الحقول المطلوبة: الاسم، الهاتف، تواريخ الحجز';
+    errEl.classList.add('show');
+    return;
+  }
+  const nights = Math.ceil((new Date(check_out) - new Date(check_in)) / 86400000);
+  if (nights <= 0) {
+    errEl.textContent = '⚠️ تاريخ الخروج يجب أن يكون بعد تاريخ الدخول';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity=".3"/><path d="M12 2v4a8 8 0 0 1 8 8h4A12 12 0 0 0 12 2z"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg> جاري الإرسال...';
+
+  try {
+    // كشف عنوان السيرفر تلقائياً
+    const apiBase = window.BOOKING_API_URL || (window.location.origin + '/api/bookings');
+    const res  = await fetch(apiBase, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, apartment, check_in, check_out, adults: counts.adults, children: counts.children, message, source: 'abrajeimmo' }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      errEl.textContent = '❌ ' + (data.error || 'خطأ في الاتصال، حاول مجدداً');
+      errEl.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> إرسال طلب الحجز';
+      return;
+    }
+
+    document.getElementById('bookingRef').textContent = 'رقم الطلب: #' + data.id;
+    document.getElementById('formWrap').style.display = 'none';
+    document.getElementById('successScreen').classList.add('show');
+  } catch {
+    errEl.textContent = '❌ خطأ في الاتصال، تأكد من الإنترنت وحاول مجدداً';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> إرسال طلب الحجز';
+  }
+}
+
+function resetForm() {
+  document.getElementById('formWrap').style.display = 'block';
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('fName').value = '';
+  document.getElementById('fPhone').value = '';
+  document.getElementById('fApartment').value = '';
+  document.getElementById('fCheckIn').value = '';
+  document.getElementById('fCheckOut').value = '';
+  document.getElementById('fMessage').value = '';
+  document.getElementById('nightsBadge').textContent = '';
+  counts.adults = 1; counts.children = 0;
+  document.getElementById('adultsVal').textContent = '1';
+  document.getElementById('childrenVal').textContent = '0';
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('btnSubmit').innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> إرسال طلب الحجز';
+}
+</script>
+</body>
+</html>

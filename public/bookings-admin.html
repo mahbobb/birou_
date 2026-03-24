@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الحجوزات</title>
+  <link rel="stylesheet" href="/css/nav.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111b21; color: #e9edef; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; }
+
+    .page-wrap { flex: 1; display: flex; flex-direction: column; padding: 24px; gap: 20px; overflow-y: auto; }
+
+    h1 { font-size: 1.3rem; color: #e9edef; display: flex; align-items: center; gap: 10px; }
+
+    .card { background: #1f2c33; border-radius: 14px; padding: 20px; }
+    .card-title { font-size: 0.8rem; color: #8696a0; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+
+    /* Stats */
+    .stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-box { flex: 1; min-width: 110px; background: #2a3942; border-radius: 10px; padding: 14px 16px; text-align: center; }
+    .stat-num { font-size: 1.7rem; font-weight: 700; color: #00a884; }
+    .stat-lbl { font-size: 0.72rem; color: #8696a0; margin-top: 2px; }
+
+    /* Filter tabs */
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .ftab { padding: 7px 18px; border: 1.5px solid #374045; border-radius: 20px; background: transparent; color: #8696a0; font-size: 0.83rem; cursor: pointer; transition: all .15s; }
+    .ftab:hover { border-color: #00a884; color: #e9edef; }
+    .ftab.active { background: #00a884; border-color: #00a884; color: #fff; font-weight: 600; }
+
+    /* Table */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    thead th { text-align: right; padding: 10px 12px; color: #8696a0; font-weight: 500; border-bottom: 1px solid #2a3942; white-space: nowrap; }
+    tbody tr:hover { background: #2a3942; }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid #1a2530; color: #ccc; vertical-align: middle; }
+    .empty-tbl { text-align: center; color: #8696a0; padding: 40px; font-size: 0.88rem; }
+
+    /* Status badges */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .badge-pending   { background: #3d2e00; color: #f59e0b; }
+    .badge-confirmed { background: #0d2e1f; color: #00a884; }
+    .badge-cancelled { background: #2e1010; color: #f28b82; }
+
+    /* Action buttons */
+    .action-btns { display: flex; gap: 6px; flex-wrap: nowrap; }
+    .act-btn { padding: 5px 12px; border: none; border-radius: 7px; font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: opacity .15s; white-space: nowrap; }
+    .act-btn:hover { opacity: .8; }
+    .act-confirm { background: #00a884; color: #fff; }
+    .act-cancel  { background: #374045; color: #f28b82; }
+    .act-whatsapp { background: #25d366; color: #fff; }
+
+    /* Pagination */
+    .tbl-pg { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 14px 0 4px; }
+    .tpg-btn { min-width: 32px; height: 32px; border: none; border-radius: 50%; background: transparent; color: #8696a0; font-size: 0.82rem; cursor: pointer; transition: background .15s; }
+    .tpg-btn:hover { background: #2a3942; color: #e9edef; }
+    .tpg-btn.active { background: #00a884; color: #fff; font-weight: 700; }
+
+    /* Toast */
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#2a3942; color:#e9edef; padding:10px 20px; border-radius:10px; font-size:.88rem; transition:transform .3s; z-index:999; white-space:nowrap; }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+
+    /* Embed info box */
+    .embed-box { background: #2a3942; border-radius: 10px; padding: 14px 16px; }
+    .embed-box code { display: block; background: #111b21; border-radius: 8px; padding: 12px; font-size: 0.8rem; color: #00a884; overflow-x: auto; white-space: pre; margin-top: 10px; }
+    .copy-btn { background: #374045; color: #e9edef; border: none; border-radius: 8px; padding: 7px 16px; font-size: 0.82rem; cursor: pointer; margin-top: 8px; }
+    .copy-btn:hover { background: #00a884; color: #fff; }
+    .embed-label { font-size: 0.82rem; color: #8696a0; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<div id="app-nav"></div>
+
+<div class="page-wrap">
+
+  <h1>
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="#00a884"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    إدارة الحجوزات
+  </h1>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-title">إحصائيات</div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="sTotal">—</div>
+        <div class="stat-lbl">إجمالي الطلبات</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#f59e0b" id="sPending">—</div>
+        <div class="stat-lbl">بانتظار التأكيد</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="sConfirmed">—</div>
+        <div class="stat-lbl">مؤكدة</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#f28b82" id="sCancelled">—</div>
+        <div class="stat-lbl">ملغاة</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookings table -->
+  <div class="card">
+    <div class="card-title">قائمة الحجوزات</div>
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="setFilter(null,this)">الكل</button>
+      <button class="ftab" onclick="setFilter('pending',this)">بانتظار التأكيد</button>
+      <button class="ftab" onclick="setFilter('confirmed',this)">مؤكدة</button>
+      <button class="ftab" onclick="setFilter('cancelled',this)">ملغاة</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>الهاتف</th>
+            <th>الشقة</th>
+            <th>الدخول</th>
+            <th>الخروج</th>
+            <th>الأشخاص</th>
+            <th>الحالة</th>
+            <th>التاريخ</th>
+            <th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="bookingsTbody">
+          <tr><td colspan="10" class="empty-tbl">⏳ جاري التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-pg" id="tblPg"></div>
+  </div>
+
+  <!-- Embed widget -->
+  <div class="card">
+    <div class="card-title">ربط نموذج الحجز بموقع abrajeimmo.com</div>
+    <div class="embed-box">
+      <div class="embed-label">1. كود iframe — الصق هذا في أي صفحة على موقعك:</div>
+      <code id="iframeCode"></code>
+      <button class="copy-btn" onclick="copyCode('iframeCode')">📋 نسخ</button>
+
+      <div class="embed-label" style="margin-top:18px">2. أو رابط مباشر لصفحة الحجز:</div>
+      <code id="directLink"></code>
+      <button class="copy-btn" onclick="copyCode('directLink')">📋 نسخ</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/nav.js"></script>
+<script>
+let allBookings = [];
+let currentFilter = null;
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+const STATUS_LABELS = { pending: 'بانتظار التأكيد', confirmed: 'مؤكد', cancelled: 'ملغي' };
+const STATUS_BADGE  = { pending: 'badge-pending', confirmed: 'badge-confirmed', cancelled: 'badge-cancelled' };
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadBookings();
+  loadStats();
+  setEmbedCodes();
+});
+
+async function loadStats() {
+  try {
+    const r = await fetch('/api/bookings/stats');
+    const s = await r.json();
+    document.getElementById('sTotal').textContent     = s.total     || 0;
+    document.getElementById('sPending').textContent   = s.pending   || 0;
+    document.getElementById('sConfirmed').textContent = s.confirmed || 0;
+    document.getElementById('sCancelled').textContent = s.cancelled || 0;
+  } catch {}
+}
+
+async function loadBookings() {
+  try {
+    const res = await fetch('/api/bookings?limit=500');
+    allBookings = await res.json();
+    renderTable();
+  } catch {
+    document.getElementById('bookingsTbody').innerHTML =
+      `<tr><td colspan="10" class="empty-tbl">❌ خطأ في تحميل البيانات</td></tr>`;
+  }
+}
+
+function setFilter(status, btn) {
+  currentFilter = status;
+  currentPage = 1;
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const list = currentFilter ? allBookings.filter(b => b.status === currentFilter) : allBookings;
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const page = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const tbody = document.getElementById('bookingsTbody');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-tbl">📭 لا توجد حجوزات</td></tr>`;
+    document.getElementById('tblPg').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(b => {
+    const nights  = Math.ceil((new Date(b.check_out) - new Date(b.check_in)) / 86400000);
+    const persons = b.adults + (b.children > 0 ? '+' + b.children + '👶' : '');
+    const date    = new Date(b.created_at).toLocaleDateString('ar-MA', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const badge   = `<span class="badge ${STATUS_BADGE[b.status]}">${STATUS_LABELS[b.status]}</span>`;
+    const actions = buildActions(b);
+    return `<tr>
+      <td style="color:#8696a0">#${b.id}</td>
+      <td>${esc(b.name)}</td>
+      <td style="direction:ltr;text-align:right">${esc(b.phone)}</td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(b.apartment)}">${esc(b.apartment || '—')}</td>
+      <td style="white-space:nowrap">${b.check_in}</td>
+      <td style="white-space:nowrap">${b.check_out} <span style="color:#8696a0;font-size:.75rem">(${nights}ل)</span></td>
+      <td>${persons}</td>
+      <td>${badge}</td>
+      <td style="white-space:nowrap;font-size:.75rem;color:#8696a0">${date}</td>
+      <td><div class="action-btns">${actions}</div></td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(totalPages);
+}
+
+function buildActions(b) {
+  let btns = '';
+  if (b.status === 'pending') {
+    btns += `<button class="act-btn act-confirm" onclick="setStatus(${b.id},'confirmed')">✅ تأكيد</button>`;
+    btns += `<button class="act-btn act-cancel"  onclick="setStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+  } else if (b.status === 'confirmed') {
+    btns += `<button class="act-btn act-cancel" onclick="setStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+  } else {
+    btns += `<button class="act-btn act-confirm" onclick="setStatus(${b.id},'pending')">↩ إعادة</button>`;
+  }
+  const waMsg = encodeURIComponent(`مرحباً ${b.name}، بخصوص طلب حجز الشقة من ${b.check_in} إلى ${b.check_out}:`);
+  const waPhone = b.phone.replace(/\D/g, '');
+  btns += `<a class="act-btn act-whatsapp" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬</a>`;
+  return btns;
+}
+
+async function setStatus(id, status) {
+  await fetch(`/api/bookings/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const b = allBookings.find(x => x.id === id);
+  if (b) b.status = status;
+  renderTable();
+  loadStats();
+  showToast(status === 'confirmed' ? '✅ تم تأكيد الحجز' : status === 'cancelled' ? '🗑️ تم إلغاء الحجز' : '↩ تم تغيير الحالة');
+}
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById('tblPg');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  const pages = buildPages(currentPage, totalPages);
+  let html = currentPage > 1 ? `<button class="tpg-btn" onclick="goPage(${currentPage-1})">&#8249;</button>` : '';
+  let prev = 0;
+  for (const p of pages) {
+    if (p - prev > 1) html += `<span style="color:#8696a0;padding:0 2px">…</span>`;
+    html += `<button class="tpg-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+    prev = p;
+  }
+  if (currentPage < totalPages) html += `<button class="tpg-btn" onclick="goPage(${currentPage+1})">&#8250;</button>`;
+  pg.innerHTML = html;
+}
+
+function buildPages(cur, total) {
+  const s = new Set([1]);
+  for (let i = Math.max(2, cur-1); i <= Math.min(total-1, cur+1); i++) s.add(i);
+  s.add(total);
+  return [...s];
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+
+function setEmbedCodes() {
+  const base = window.location.origin;
+  document.getElementById('iframeCode').textContent =
+    `<iframe\n  src="${base}/booking"\n  width="100%"\n  height="650"\n  style="border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15)"\n  title="طلب حجز شقة"\n></iframe>`;
+  document.getElementById('directLink').textContent = `${base}/booking`;
+}
+
+function copyCode(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => showToast('📋 تم النسخ!'));
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
