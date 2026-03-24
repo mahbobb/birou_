@@ -295,7 +295,7 @@ function buildPages(cur, total) {
 function goPage(p) { currentPage = p; renderTable(); }
 
 function setEmbedCodes() {
-  const base = window.location.origin;
+  const base = 'https://abraje.uno';
   document.getElementById('iframeCode').textContent =
     `<iframe\n  src="${base}/booking"\n  width="100%"\n  height="650"\n  style="border:none;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.15)"\n  title="طلب حجز شقة"\n></iframe>`;
   document.getElementById('directLink').textContent = `${base}/booking`;
