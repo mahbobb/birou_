@@ -357,37 +357,92 @@
 
     /* ════════ RESPONSIVE — MOBILE (≤480px) ════════ */
     @media (max-width: 480px) {
+      :root { --sidebar-w: 260px; }
+
+      /* Sidebar — hidden by default, slides in */
       .sidebar {
         width: var(--sidebar-w) !important;
-        transform: translateX(100%);
-        transition: transform 0.25s ease;
-        z-index: 40;
+        transform: translateX(105%);
+        transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+        z-index: 50; box-shadow: -6px 0 24px rgba(0,0,0,.35);
       }
-      :root { --sidebar-w: 230px; }
-      .sidebar.mobile-open {
-        transform: translateX(0);
-      }
+      .sidebar.mobile-open { transform: translateX(0); }
       .sb-brand h2, .sb-brand small, .sb-link span,
-      .sb-status span, .sb-user-info, .sb-section { display: block; }
-      .sb-link { justify-content: flex-start; padding: 9px 12px; }
-      .sb-logout span:last-child { display: inline; }
+      .sb-status span, .sb-user-info, .sb-section { display: block !important; }
+      .sb-link { justify-content: flex-start; padding: 10px 14px; }
+      .sb-link .badge { margin-right: auto; }
       .sb-logout { justify-content: flex-start; }
+      .sb-logout span:last-child { display: inline; }
+
+      /* Main layout */
       .main { margin-right: 0; }
       .menu-btn { display: flex; }
-      .bots-row { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .quick-grid { grid-template-columns: repeat(2, 1fr); }
-      .page { padding: 10px; }
-      .topbar { padding: 0 10px; gap: 6px; }
-      .topbar-title { font-size: 0.9rem; }
+
+      /* Topbar */
+      .topbar { padding: 0 12px; height: 52px; gap: 6px; }
+      .topbar-title { font-size: 0.88rem; font-weight: 700; flex: 1; }
       .topbar-actions { gap: 4px; }
-      .tbar-btn { padding: 5px 8px; font-size: 0.72rem; }
-      .stat-body .num { font-size: 1.4rem; }
-      .last-msg { max-width: 120px; }
-      .action-btn { padding: 4px 7px; font-size: 0.7rem; }
-      .table-wrap { overflow-x: auto; }
-      th, td { padding: 9px 10px; font-size: 0.78rem; }
-      .admin-grid { grid-template-columns: 1fr; }
+      .tbar-btn { padding: 5px 9px; font-size: 0.72rem; }
+      .tbar-btn span:last-child { display: none; } /* إخفاء النص، إظهار الأيقونة فقط */
+
+      /* Pages */
+      .page { padding: 10px 8px; }
+
+      /* Stats */
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+      .stat-card { padding: 12px 10px; gap: 10px; border-radius: 10px; }
+      .stat-icon { width: 38px; height: 38px; font-size: 1rem; border-radius: 10px; flex-shrink: 0; }
+      .stat-body .num { font-size: 1.35rem; }
+      .stat-body .lbl { font-size: 0.68rem; }
+
+      /* Bots row */
+      .bots-row { grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
+      .bot-card { padding: 12px 14px; }
+
+      /* Quick grid */
+      .quick-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+      .quick-card { padding: 12px 8px; border-radius: 10px; }
+      .quick-card .qico { font-size: 1.4rem; }
+      .quick-card .qtxt { font-size: 0.72rem; }
+
+      /* Section title */
+      .section-title { font-size: 0.82rem; margin-bottom: 10px; }
+
+      /* Tables — horizontal scroll + compact */
+      .table-wrap { border-radius: 10px; }
+      .table-toolbar { gap: 6px; }
+      .t-search { font-size: 0.82rem; padding: 8px 10px; }
+      .t-btn { padding: 7px 10px; font-size: 0.78rem; }
+      th { padding: 10px 8px; font-size: 0.75rem; }
+      td { padding: 9px 8px; font-size: 0.78rem; }
+      .c-avatar { width: 30px; height: 30px; font-size: 0.78rem; }
+      .c-name { font-size: 0.82rem; }
+      .phone-tag { font-size: 0.7rem; }
+      .msg-badge { font-size: 0.7rem; }
+      .last-msg { max-width: 90px; font-size: 0.74rem; }
+      .action-btn { padding: 4px 7px; font-size: 0.68rem; }
+      .actions-cell { gap: 3px; }
+
+      /* Hide less important columns on mobile */
+      .col-hide-mob { display: none !important; }
+
+      /* Admin grid */
+      .admin-grid { grid-template-columns: 1fr; gap: 12px; }
+      .admin-card { padding: 16px; }
+
+      /* Modals */
+      .modal { padding: 20px; border-radius: 14px; }
+
+      /* Bookings filter tabs */
+      .t-btn { white-space: nowrap; }
+    }
+
+    /* ════════ RESPONSIVE — SMALL PHONES (≤360px) ════════ */
+    @media (max-width: 360px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .quick-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-body .num { font-size: 1.2rem; }
+      .tbar-btn { padding: 4px 6px; font-size: 0.68rem; }
     }
   </style>
 </head>
@@ -565,7 +620,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>#</th><th>الزبون</th><th>الهاتف</th><th>الرسائل</th><th>آخر رسالة</th><th>آخر ظهور</th><th>إجراءات</th></tr></thead>
+        <thead><tr><th>#</th><th>الزبون</th><th>الهاتف</th><th class="col-hide-mob">الرسائل</th><th class="col-hide-mob">آخر رسالة</th><th class="col-hide-mob">آخر ظهور</th><th>إجراءات</th></tr></thead>
         <tbody id="contactsBody"><tr class="empty-row"><td colspan="7">جاري التحميل...</td></tr></tbody>
       </table>
     </div>
@@ -608,9 +663,9 @@
       <table>
         <thead>
           <tr>
-            <th>#</th><th>الاسم</th><th>الهاتف</th><th>الشقة</th>
-            <th>الدخول</th><th>الخروج</th><th>الأشخاص</th>
-            <th>🪪 البطاقة</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th>
+            <th>#</th><th>الاسم</th><th class="col-hide-mob">الهاتف</th><th class="col-hide-mob">الشقة</th>
+            <th>الدخول</th><th>الخروج</th><th class="col-hide-mob">الأشخاص</th>
+            <th class="col-hide-mob">🪪 البطاقة</th><th>الحالة</th><th class="col-hide-mob">التاريخ</th><th>إجراء</th>
           </tr>
         </thead>
         <tbody id="bookingsBody"><tr class="empty-row"><td colspan="11">⏳ جاري التحميل...</td></tr></tbody>
@@ -924,9 +979,9 @@
             <div class="c-name">${escHtml(c.name)}</div>
           </div></td>
           <td><span class="phone-tag">+${c.phone}</span></td>
-          <td><span class="msg-badge">${c.totalMessages}</span></td>
-          <td><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
-          <td style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td class="col-hide-mob"><span class="msg-badge">${c.totalMessages}</span></td>
+          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
+          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${date}</td>
           <td><div class="actions-cell">
                         <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
           </div></td>
@@ -962,9 +1017,9 @@
             <div class="c-name">${escHtml(c.name)}</div>
           </div></td>
           <td><span class="phone-tag">+${c.phone}</span></td>
-          <td><span class="msg-badge">${c.totalMessages}</span></td>
-          <td><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
-          <td style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td class="col-hide-mob"><span class="msg-badge">${c.totalMessages}</span></td>
+          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
+          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${date}</td>
           <td><div class="actions-cell">
                         <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
             <a href="/messages?phone=${c.phone}" class="action-btn ab-msg">📨 رسائل</a>
@@ -1252,14 +1307,14 @@
       return `<tr>
         <td style="color:#888">#${b.id}</td>
         <td><div class="contact-cell"><div class="c-avatar" style="background:#128c7e">${esc(b.name).charAt(0)}</div><div class="c-name">${esc(b.name)}</div></div></td>
-        <td><span class="phone-tag" style="direction:ltr;display:inline-block">${esc(b.phone)}</span></td>
-        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666" title="${esc(b.apartment)}">${esc(b.apartment||'—')}</td>
+        <td class="col-hide-mob"><span class="phone-tag" style="direction:ltr;display:inline-block">${esc(b.phone)}</span></td>
+        <td class="col-hide-mob" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666" title="${esc(b.apartment)}">${esc(b.apartment||'—')}</td>
         <td style="white-space:nowrap">${b.check_in}</td>
-        <td style="white-space:nowrap">${b.check_out}<br><span style="color:#999;font-size:.75rem">${nights} ليلة</span></td>
-        <td>${persons}</td>
-        <td><div style="display:flex;gap:4px;flex-wrap:wrap">${idCell}</div></td>
+        <td style="white-space:nowrap">${b.check_out}<br><span style="color:#999;font-size:.75rem">${nights} ل</span></td>
+        <td class="col-hide-mob">${persons}</td>
+        <td class="col-hide-mob"><div style="display:flex;gap:4px;flex-wrap:wrap">${idCell}</div></td>
         <td>${badge}</td>
-        <td style="white-space:nowrap;font-size:.78rem;color:#999">${date}</td>
+        <td class="col-hide-mob" style="white-space:nowrap;font-size:.78rem;color:#999">${date}</td>
         <td><div class="actions-cell">${actions}</div></td>
       </tr>`;
     }).join('');
