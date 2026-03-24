@@ -869,20 +869,30 @@ app.use("/api/bookings", (req, res, next) => {
   next();
 });
 
-// إنشاء حجز جديد (عام — من نموذج الموقع) — يدعم multipart/form-data للصور
-app.post("/api/bookings", uploadIds.array("id_images", 4), async (req, res) => {
-  const { name, phone, apartment, check_in, check_out, adults, children, message, source } = req.body;
-  if (!name?.trim() || !phone?.trim() || !check_in || !check_out)
-    return res.status(400).json({ error: "الاسم والهاتف وتواريخ الحجز مطلوبة" });
+// إنشاء مجلد الصور تلقائياً عند الحاجة
+const IDS_DIR = path.join(__dirname, "public", "uploads", "ids");
+if (!fs.existsSync(IDS_DIR)) fs.mkdirSync(IDS_DIR, { recursive: true });
 
-  // إعادة تسمية الملفات المرفوعة بامتداد صحيح
-  const idImages = [];
-  for (const file of (req.files || [])) {
-    const ext  = file.mimetype.split("/")[1].replace("jpeg","jpg");
-    const dest = path.join(__dirname, "public", "uploads", "ids", `${file.filename}.${ext}`);
-    fs.renameSync(file.path, dest);
-    idImages.push(`/uploads/ids/${file.filename}.${ext}`);
-  }
+// إنشاء حجز جديد (عام — من نموذج الموقع) — يدعم multipart/form-data للصور
+app.post("/api/bookings", (req, res) => {
+  // multer في middleware مستقل لضمان وصول البيانات حتى لو فشل رفع الصور
+  uploadIds.array("id_images", 4)(req, res, async (multerErr) => {
+    const { name, phone, apartment, check_in, check_out, adults, children, message, source } = req.body || {};
+    if (!name?.trim() || !phone?.trim() || !check_in || !check_out)
+      return res.status(400).json({ error: "الاسم والهاتف وتواريخ الحجز مطلوبة" });
+
+    // إعادة تسمية الملفات المرفوعة بامتداد صحيح (تجاهل الخطأ إذا فشل multer)
+    const idImages = [];
+    if (!multerErr) {
+      for (const file of (req.files || [])) {
+        try {
+          const ext  = file.mimetype.split("/")[1].replace("jpeg","jpg");
+          const dest = path.join(IDS_DIR, `${file.filename}.${ext}`);
+          fs.renameSync(file.path, dest);
+          idImages.push(`/uploads/ids/${file.filename}.${ext}`);
+        } catch (_) {}
+      }
+    }
 
   try {
     const id = await createBooking({ name, phone, apartment, check_in, check_out, adults, children, message, source, id_images: idImages });
@@ -902,6 +912,7 @@ app.post("/api/bookings", uploadIds.array("id_images", 4), async (req, res) => {
     console.error("❌ [Bookings] خطأ:", err.message || err.code);
     res.status(500).json({ error: "خطأ في الحجز، حاول مجدداً" });
   }
+  }); // end multer callback
 });
 
 // قائمة الحجوزات (للمسؤول)
