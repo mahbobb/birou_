@@ -89,14 +89,26 @@
     .err-msg { background: #fff0f0; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; color: #b91c1c; font-size: 0.85rem; margin-bottom: 14px; display: none; }
     .err-msg.show { display: block; }
 
-    /* Upload area */
-    .upload-area {
-      border: 2px dashed #c8d3dd; border-radius: 10px; padding: 18px;
-      text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
-      background: #fafbfc; min-height: 90px; display: flex; align-items: center; justify-content: center;
+    /* Upload buttons */
+    .upload-btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .ubtn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 18px; border-radius: 10px; font-size: .88rem;
+      font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all .15s;
+      font-family: inherit;
     }
-    .upload-area:hover, .upload-area.drag { border-color: #2563a8; background: #f0f5ff; }
-    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; width: 100%; }
+    .ubtn-camera  { background: #1a3c5e; color: #fff; border-color: #1a3c5e; }
+    .ubtn-camera:hover  { background: #0f2840; }
+    .ubtn-gallery { background: #fff; color: #1a3c5e; border-color: #1a3c5e; }
+    .ubtn-gallery:hover { background: #f0f5ff; }
+    .upload-drop {
+      flex: 1; min-width: 160px; border: 2px dashed #c8d3dd; border-radius: 10px;
+      padding: 10px 14px; color: #999; font-size: .8rem; cursor: default;
+      display: flex; align-items: center; gap: 6px; transition: border-color .2s, background .2s;
+      background: #fafbfc;
+    }
+    .upload-drop.drag { border-color: #2563a8; background: #f0f5ff; color: #2563a8; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; margin-top: 12px; width: 100%; }
     .prev-item { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; }
     .prev-item img { width: 100%; height: 100%; object-fit: cover; }
     .prev-del { position:absolute; top:4px; left:4px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:.75rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
@@ -175,15 +187,30 @@
     <!-- ID Card Upload -->
     <div class="field">
       <label>صور البطاقة الوطنية (اختياري — حتى 4 صور)</label>
-      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fIdImages').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
-        <input type="file" id="fIdImages" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
-        <div id="uploadPlaceholder">
-          <div style="font-size:2rem;margin-bottom:8px">🪪</div>
-          <div style="font-size:.88rem;color:#555">اضغط لاختيار الصور أو اسحبها هنا</div>
-          <div style="font-size:.75rem;color:#aaa;margin-top:4px">JPG / PNG — حتى 8MB للصورة</div>
+
+      <!-- hidden inputs -->
+      <input type="file" id="fIdImages" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+      <input type="file" id="fCamera"   accept="image/*" capture="environment" style="display:none" onchange="handleFiles(this.files)">
+
+      <!-- action buttons -->
+      <div class="upload-btns" id="uploadBtns">
+        <button type="button" class="ubtn ubtn-camera" onclick="document.getElementById('fCamera').click()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 1 1 15.2 12 3.2 3.2 0 0 1 12 15.2M20 4h-3.17L15 2H9L7.17 4H4A2 2 0 0 0 2 6V18A2 2 0 0 0 4 20H20A2 2 0 0 0 22 18V6A2 2 0 0 0 20 4Z"/></svg>
+          التقاط بالكاميرا
+        </button>
+        <button type="button" class="ubtn ubtn-gallery" onclick="document.getElementById('fIdImages').click()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8.5 13.5L11 16.5L14.5 12L19 18H5M21 19V5A2 2 0 0 0 19 3H5A2 2 0 0 0 3 5V19A2 2 0 0 0 5 21H19A2 2 0 0 0 21 19Z"/></svg>
+          من المعرض
+        </button>
+        <div class="upload-drop" id="uploadDrop" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+          أو اسحب الصور هنا
         </div>
-        <div id="previewGrid" class="preview-grid" style="display:none"></div>
       </div>
+
+      <!-- preview -->
+      <div id="previewGrid" class="preview-grid" style="display:none"></div>
+      <div id="imgCounter" style="font-size:.75rem;color:#888;margin-top:6px;display:none"></div>
     </div>
 
     <button class="btn-submit" id="btnSubmit" onclick="submitBooking()">
@@ -226,17 +253,26 @@ function handleDrop(e) {
 }
 
 function renderPreviews() {
-  const grid = document.getElementById('previewGrid');
-  const ph   = document.getElementById('uploadPlaceholder');
-  if (!selectedFiles.length) { grid.style.display='none'; ph.style.display=''; return; }
-  ph.style.display = 'none';
+  const grid    = document.getElementById('previewGrid');
+  const counter = document.getElementById('imgCounter');
+  if (!selectedFiles.length) {
+    grid.style.display = 'none';
+    counter.style.display = 'none';
+    return;
+  }
   grid.style.display = '';
+  counter.style.display = '';
+  counter.textContent = `${selectedFiles.length} / 4 صور`;
   grid.innerHTML = selectedFiles.map((f, i) => {
     const url = URL.createObjectURL(f);
     return `<div class="prev-item"><img src="${url}"><button class="prev-del" onclick="removeFile(${i})">✕</button></div>`;
   }).join('');
   if (selectedFiles.length < 4) {
-    grid.innerHTML += `<div class="prev-item" style="border:2px dashed #c8d3dd;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafbfc" onclick="document.getElementById('fIdImages').click()"><span style="font-size:1.5rem;color:#aaa">+</span></div>`;
+    grid.innerHTML += `
+      <div class="prev-item" style="border:2px dashed #c8d3dd;border-radius:8px;background:#fafbfc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer" onclick="document.getElementById('fIdImages').click()">
+        <span style="font-size:1.4rem;color:#aaa">+</span>
+        <span style="font-size:.65rem;color:#bbb">إضافة</span>
+      </div>`;
   }
 }
 
