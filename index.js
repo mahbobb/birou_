@@ -150,27 +150,57 @@ async function importWhatsAppHistory(client, botId) {
           const sender    = msg.fromMe ? "أنت" : name;
           const ts        = new Date((msg.timestamp || Date.now() / 1000) * 1000);
 
-          // تحديد محتوى الرسالة
           let body = msg.body || "";
+
+          // ── تحميل الوسائط ──────────────────────────────────────────────
           if (!body && msg.hasMedia) {
-            body = msg.type === "image"    ? "📷 صورة"
-                 : msg.type === "video"    ? "🎬 فيديو"
-                 : msg.type === "ptt"      ? "🎤 رسالة صوتية"
-                 : msg.type === "audio"    ? "🎤 رسالة صوتية"
-                 : msg.type === "document" ? "📄 مستند"
-                 : msg.type === "sticker"  ? "🎭 ملصق"
-                                          : "📎 ملف";
+            const mType = msg.type;
+            const fallback = mType === "image"    ? "📷 صورة"
+                           : mType === "video"    ? "🎬 فيديو"
+                           : mType === "ptt"      ? "🎤 رسالة صوتية"
+                           : mType === "audio"    ? "🎤 رسالة صوتية"
+                           : mType === "document" ? "📄 مستند"
+                           : mType === "sticker"  ? "🎭 ملصق"
+                                                  : "📎 ملف";
+            try {
+              const media = await Promise.race([
+                msg.downloadMedia(),
+                new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000)),
+              ]);
+
+              if (media?.data) {
+                const mime = media.mimetype || "";
+                if (mime.startsWith("image/") && mType !== "sticker") {
+                  const f = await saveImage(phone, name, media, ts);
+                  body = f ? `/uploads/images/${f}` : fallback;
+                } else if (mime.startsWith("audio/") || mType === "ptt" || mType === "audio") {
+                  const f = await saveVoice(phone, name, media);
+                  body = f ? `/uploads/voices/${f}` : fallback;
+                } else if (mime.startsWith("video/") || mType === "video" || mType === "gif") {
+                  const f = await saveVideo(phone, name, media, ts);
+                  body = f ? `/uploads/videos/${f}` : fallback;
+                } else {
+                  body = fallback;
+                }
+              } else {
+                body = fallback;
+              }
+            } catch {
+              body = fallback;
+            }
           }
+
           if (!body) continue;
 
-          // registerContact + saveMessage (INSERT IGNORE على wa_msg_id)
           await registerContact(phone, name, body);
           await saveMessage(phone, sender, direction, body, "import", ts, waMsgId);
           imported++;
+
+          await new Promise(r => setTimeout(r, 150)); // تأخير بين الوسائط
         }
       } catch { /* تخطي المحادثة عند خطأ */ }
 
-      await new Promise(r => setTimeout(r, 300)); // تأخير خفيف بين المحادثات
+      await new Promise(r => setTimeout(r, 500)); // تأخير بين المحادثات
     }
 
     console.log(`✅ [${botId}] استيراد مكتمل: ${imported} رسالة محفوظة`);
