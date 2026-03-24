@@ -1,5 +1,6 @@
 require("dotenv").config();
 const crypto     = require("crypto");
+const rateLimit  = require("express-rate-limit");
 const { exec }   = require("child_process");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
@@ -811,18 +812,81 @@ if (SSL_CERT && SSL_KEY && fs.existsSync(SSL_CERT) && fs.existsSync(SSL_KEY)) {
   server = http.createServer(app);
 }
 
-const io = new SocketIO(server, { cors: { origin: "*" } });
+// السماح فقط للدومينات المعروفة
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+  .split(",").map(s => s.trim()).filter(Boolean);
+
+const io = new SocketIO(server, {
+  cors: {
+    origin: (origin, cb) => {
+      if (!origin || !ALLOWED_ORIGINS.length) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      cb(new Error("CORS: origin غير مسموح به"));
+    },
+    credentials: true,
+  },
+});
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+// ── Security headers ──────────────────────────────────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+
+// ── Rate limiters ─────────────────────────────────────────────────────────
+// 10 محاولات تسجيل دخول كل 15 دقيقة
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "محاولات كثيرة، انتظر 15 دقيقة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+// 200 طلب / دقيقة للـ API الإدارية
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { error: "طلبات كثيرة، أبطئ قليلاً" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => !req.path.startsWith("/api/"),
+});
+// 30 طلب / دقيقة على API الحجوزات (عامة بدون auth)
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: "طلبات كثيرة" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(apiLimiter);
 
 // إرسال رسالة لكل المتصلين بغرفة هاتف معين
 function emitMessage(phone, msgObj) {
   io.to(`phone:${phone}`).emit("new_message", msgObj);
 }
 
+// Socket.IO — التحقق من الـ token قبل أي عملية
+io.use((socket, next) => {
+  const cookieHeader = socket.handshake.headers.cookie || "";
+  const cookies = {};
+  cookieHeader.split(";").forEach(part => {
+    const [k, ...v] = part.trim().split("=");
+    if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
+  });
+  if (validTokens.has(cookies.auth_token)) return next();
+  next(new Error("غير مصرح"));
+});
+
 io.on("connection", (socket) => {
   socket.on("join", (phone) => {
-    // غادر الغرف القديمة وانضم للغرفة الجديدة
     for (const room of socket.rooms) {
       if (room !== socket.id) socket.leave(room);
     }
@@ -855,7 +919,7 @@ function requireAuth(req, res, next) {
 app.use(requireAuth);
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login", loginLimiter, (req, res) => {
   const { password } = req.body;
   const PASS = process.env.DASHBOARD_PASSWORD || "admin123";
   if (password !== PASS) return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
@@ -876,7 +940,8 @@ app.post("/api/admin/change-password", (req, res) => {
   const { current, newPass } = req.body;
   const PASS = process.env.DASHBOARD_PASSWORD || "admin123";
   if (current !== PASS) return res.status(401).json({ error: "كلمة المرور الحالية غير صحيحة" });
-  if (!newPass || newPass.length < 6) return res.status(400).json({ error: "كلمة المرور الجديدة قصيرة جداً (6 أحرف على الأقل)" });
+  if (!newPass || newPass.length < 8) return res.status(400).json({ error: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" });
+  if (!/[0-9]/.test(newPass)) return res.status(400).json({ error: "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل" });
   // حفظ في .env
   try {
     const envPath = path.join(__dirname, ".env");
@@ -1002,11 +1067,17 @@ app.get("/api/messenger/bulk-status", (_req, res) => res.json(messengerBulkStatu
 
 // ── Bookings API ────────────────────────────────────────────────────────────
 
-// CORS للسماح لـ abrajeimmo.com بإرسال الطلبات
-app.use("/api/bookings", (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
+// CORS للسماح لـ abrajeimmo.com بإرسال الطلبات فقط
+const BOOKING_ORIGINS = ["https://abrajeimmo.com","https://www.abrajeimmo.com","https://abraje.uno"];
+app.use("/api/bookings", bookingLimiter, (req, res, next) => {
+  const origin = req.headers.origin || "";
+  const allowed = !origin || BOOKING_ORIGINS.includes(origin);
+  if (allowed) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.header("Vary", "Origin");
+  }
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
@@ -1052,10 +1123,15 @@ app.post("/api/bookings/:id/images", (req, res) => {
     try {
       const imgs = [];
       for (const file of req.files) {
-        const ext  = file.mimetype.split("/")[1].replace("jpeg", "jpg");
-        const dest = path.join(IDS_DIR, `${file.filename}.${ext}`);
+        const ext      = (file.mimetype.split("/")[1] || "jpg").replace("jpeg","jpg").replace(/[^a-z0-9]/gi,"");
+        const safeName = path.basename(file.filename).replace(/[^a-z0-9_-]/gi,"");
+        const dest     = path.join(IDS_DIR, `${safeName}.${ext}`);
+        // منع path traversal — التأكد أن الملف داخل IDS_DIR
+        if (!dest.startsWith(IDS_DIR + path.sep) && dest !== IDS_DIR) {
+          fs.unlinkSync(file.path); continue;
+        }
         fs.renameSync(file.path, dest);
-        imgs.push(`/uploads/ids/${file.filename}.${ext}`);
+        imgs.push(`/uploads/ids/${safeName}.${ext}`);
       }
       await addIdImages(req.params.id, imgs);
       res.json({ ok: true, count: imgs.length });
