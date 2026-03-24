@@ -343,10 +343,11 @@ async function submitBooking() {
     fd.append('source', 'abrajeimmo');
     selectedFiles.forEach(f => fd.append('id_images', f));
     const res  = await fetch(apiBase, { method: 'POST', body: fd });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch { data = { error: `HTTP ${res.status}` }; }
 
     if (!res.ok || data.error) {
-      errEl.textContent = '❌ ' + (data.error || 'خطأ في الاتصال، حاول مجدداً');
+      errEl.textContent = '❌ ' + (data.error || `خطأ ${res.status}`);
       errEl.classList.add('show');
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> إرسال طلب الحجز';
@@ -356,8 +357,8 @@ async function submitBooking() {
     document.getElementById('bookingRef').textContent = 'رقم الطلب: #' + data.id;
     document.getElementById('formWrap').style.display = 'none';
     document.getElementById('successScreen').classList.add('show');
-  } catch {
-    errEl.textContent = '❌ خطأ في الاتصال، تأكد من الإنترنت وحاول مجدداً';
+  } catch (err) {
+    errEl.textContent = '❌ ' + (err.message || 'خطأ في الاتصال، تأكد من الإنترنت وحاول مجدداً');
     errEl.classList.add('show');
     btn.disabled = false;
     btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> إرسال طلب الحجز';
