@@ -877,20 +877,19 @@ function emitMessage(phone, msgObj) {
   io.to(`phone:${phone}`).emit("new_message", msgObj);
 }
 
-// Socket.IO — التحقق من الـ token قبل أي عملية
-io.use((socket, next) => {
-  const cookieHeader = socket.handshake.headers.cookie || "";
-  const cookies = {};
-  cookieHeader.split(";").forEach(part => {
-    const [k, ...v] = part.trim().split("=");
-    if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
-  });
-  if (validTokens.has(cookies.auth_token)) return next();
-  next(new Error("غير مصرح"));
-});
-
 io.on("connection", (socket) => {
+  // التحقق من الـ token عند الانضمام لغرفة (وليس عند الاتصال — لتفادي 400)
   socket.on("join", (phone) => {
+    const cookieHeader = socket.handshake.headers.cookie || "";
+    const cookies = {};
+    cookieHeader.split(";").forEach(part => {
+      const [k, ...v] = part.trim().split("=");
+      if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
+    });
+    if (!validTokens.has(cookies.auth_token)) {
+      socket.emit("unauthorized");
+      return;
+    }
     for (const room of socket.rooms) {
       if (room !== socket.id) socket.leave(room);
     }
