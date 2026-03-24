@@ -9,6 +9,13 @@ const { findCustomResponse } = require("./customResponses");
 const { verifyWebhook, handleWebhook } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
 const { createBooking, getBookings, updateBookingStatus, getBookingStats, addIdImages } = require("./bookings");
+const { registerContact, getStats, getAllContacts } = require("./contacts");
+const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
+const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
+const { saveVoice, getVoices, getVoiceStats, deleteVoice, updateVoiceNote } = require("./voices");
+const { saveVideo, getVideos, getVideoStats, deleteVideo, updateVideoNote } = require("./videos");
+const path   = require("path");
+const fs     = require("fs");
 const multer = require("multer");
 const uploadIds = multer({
   dest: path.join(__dirname, "public", "uploads", "ids"),
@@ -17,13 +24,6 @@ const uploadIds = multer({
     cb(null, /^image\/(jpeg|png|webp|jpg)$/.test(file.mimetype));
   },
 });
-const { registerContact, getStats, getAllContacts } = require("./contacts");
-const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
-const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
-const { saveVoice, getVoices, getVoiceStats, deleteVoice, updateVoiceNote } = require("./voices");
-const { saveVideo, getVideos, getVideoStats, deleteVideo, updateVideoNote } = require("./videos");
-const path   = require("path");
-const fs     = require("fs");
 
 // ─── التحقق من مفاتيح API ──────────────────────────────────────────────────
 
