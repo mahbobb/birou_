@@ -1,6 +1,7 @@
 require("dotenv").config();
 const crypto     = require("crypto");
-const rateLimit  = require("express-rate-limit");
+const rateLimit    = require("express-rate-limit");
+const compression  = require("compression");
 const { exec }   = require("child_process");
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
@@ -827,6 +828,9 @@ const io = new SocketIO(server, {
   },
 });
 
+// ── gzip لكل الردود ───────────────────────────────────────────────────────
+app.use(compression());
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -917,7 +921,17 @@ function requireAuth(req, res, next) {
 }
 
 app.use(requireAuth);
-app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
+// ملفات ثابتة — cache يوم كامل للـ JS/CSS/images، بدون cache للـ HTML
+app.use(express.static(path.join(__dirname, "public"), {
+  extensions: ["html"],
+  setHeaders(res, filePath) {
+    if (/\.(js|css|png|jpg|jpeg|svg|ico|webp|woff2?)$/.test(filePath)) {
+      res.setHeader("Cache-Control", "public, max-age=86400");
+    } else {
+      res.setHeader("Cache-Control", "no-cache");
+    }
+  },
+}));
 
 app.post("/api/login", loginLimiter, (req, res) => {
   const { password } = req.body;
@@ -1189,10 +1203,16 @@ app.patch("/api/bookings/:id", async (req, res) => {
 
 // ── Dashboard API ──────────────────────────────────────────────────────────
 
+let _statsCache = null, _statsCacheAt = 0;
 app.get("/api/stats", async (_req, res) => {
-  const stats = await getStats();
-  const connected = [...bots.values()].some(b => b.botConnected);
-  res.json({ ...stats, botPaused, autoReplyEnabled, botConnected: connected });
+  const now = Date.now();
+  if (!_statsCache || now - _statsCacheAt > 5000) {
+    const stats = await getStats();
+    const connected = [...bots.values()].some(b => b.botConnected);
+    _statsCache = { ...stats, botPaused, autoReplyEnabled, botConnected: connected };
+    _statsCacheAt = now;
+  }
+  res.json(_statsCache);
 });
 
 app.post("/api/auto-reply/enable", (_req, res) => {

@@ -111,11 +111,20 @@ async function getMessages({ phone, limit = 100, offset = 0 }) {
 
 async function getMessageStats() {
   try {
-    const [[{ total }]]    = await pool.query(`SELECT COUNT(*) AS total    FROM messages`);
-    const [[{ today }]]    = await pool.query(`SELECT COUNT(*) AS today    FROM messages WHERE DATE(created_at) = CURDATE()`);
-    const [[{ incoming }]] = await pool.query(`SELECT COUNT(*) AS incoming FROM messages WHERE direction='in'`);
-    const [[{ outgoing }]] = await pool.query(`SELECT COUNT(*) AS outgoing FROM messages WHERE direction='out'`);
-    return { total, today, incoming, outgoing };
+    const [[row]] = await pool.query(`
+      SELECT
+        COUNT(*)                          AS total,
+        SUM(DATE(created_at) = CURDATE()) AS today,
+        SUM(direction = 'in')             AS incoming,
+        SUM(direction = 'out')            AS outgoing
+      FROM messages
+    `);
+    return {
+      total:    Number(row.total    || 0),
+      today:    Number(row.today    || 0),
+      incoming: Number(row.incoming || 0),
+      outgoing: Number(row.outgoing || 0),
+    };
   } catch { return { total: 0, today: 0, incoming: 0, outgoing: 0 }; }
 }
 

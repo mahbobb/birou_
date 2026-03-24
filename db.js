@@ -28,7 +28,8 @@ async function initDb() {
       total_messages INT          NOT NULL DEFAULT 1,
       is_blocked     TINYINT(1)   NOT NULL DEFAULT 0,
       UNIQUE KEY uq_contacts_phone (phone),
-      INDEX idx_contacts_last_seen (last_seen)
+      INDEX idx_contacts_last_seen (last_seen),
+      INDEX idx_contacts_name      (name(50))
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
@@ -52,7 +53,9 @@ async function initDb() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY unique_message (contact, body(200), created_at),
       INDEX idx_messages_contact    (contact),
-      INDEX idx_messages_created_at (created_at)
+      INDEX idx_messages_created_at (created_at),
+      INDEX idx_messages_direction  (direction),
+      INDEX idx_messages_contact_dir_at (contact, direction, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
@@ -80,6 +83,14 @@ async function initDb() {
   try {
     await pool.query(`ALTER TABLE messages ADD UNIQUE KEY uq_wa_msg_id (wa_msg_id)`);
   } catch (_) { /* الفهرس موجود */ }
+  // migrations: indexes للأداء
+  for (const idx of [
+    `ALTER TABLE messages  ADD INDEX idx_messages_direction      (direction)`,
+    `ALTER TABLE messages  ADD INDEX idx_messages_contact_dir_at (contact, direction, created_at)`,
+    `ALTER TABLE contacts  ADD INDEX idx_contacts_name            (name(50))`,
+  ]) {
+    try { await pool.query(idx); } catch (_) { /* الفهرس موجود */ }
+  }
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS images (
