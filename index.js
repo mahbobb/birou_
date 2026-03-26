@@ -371,8 +371,23 @@ function setupClient(botId) {
     }
   });
 
+  // ── احذف ملفات قفل Chrome المتبقية (تمنع إعادة التشغيل بعد SIGKILL) ──────
+  const sessionDir = path.join(__dirname, "sessions", `session-${botId}`);
+  for (const lock of ["SingletonLock", "SingletonCookie", "SingletonSocket"]) {
+    try { fs.unlinkSync(path.join(sessionDir, lock)); console.log(`🔓 [${botId}] حذف قفل: ${lock}`); } catch {}
+  }
+
   c.initialize().catch((err) => {
     console.error(`\n❌ [${botId}] فشل التهيئة:`, err.message || err);
+    // إذا كان الخطأ بسبب قفل Chrome — احذف القفل وأعد المحاولة بسرعة
+    if (err.message?.includes("already running") || err.message?.includes("SingletonLock")) {
+      console.warn(`🔓 [${botId}] اكتشاف قفل Chrome — حذف وإعادة المحاولة...`);
+      for (const lock of ["SingletonLock", "SingletonCookie", "SingletonSocket"]) {
+        try { fs.unlinkSync(path.join(sessionDir, lock)); } catch {}
+      }
+      setTimeout(() => { try { c.destroy().catch(() => {}); } catch {} setupClient(botId); }, 5000);
+      return;
+    }
     // إعادة المحاولة بعد 35-60 ثانية (عشوائي لتفادي تصادم البوتات)
     const delay = 35000 + Math.floor(Math.random() * 25000);
     setTimeout(() => {
@@ -1331,9 +1346,19 @@ app.post("/api/restart-bot/:id", async (req, res) => {
       try { await bot.client.destroy(); } catch {}
     }
     // احذف الجلسة حتى يظهر QR جديد
+    // احذف ملفات قفل Chrome أولاً (بدون حذف الجلسة كلها)
+    const sessionDir2 = path.join(__dirname, "sessions", `session-${botId}`);
+    for (const lock of ["SingletonLock", "SingletonCookie", "SingletonSocket"]) {
+      try { fs.unlinkSync(path.join(sessionDir2, lock)); } catch {}
+    }
+    // احذف الجلسة كلها حتى يظهر QR جديد
     const sessionPath = path.join(__dirname, "sessions", botId);
     if (fs.existsSync(sessionPath)) {
       fs.rmSync(sessionPath, { recursive: true, force: true });
+    }
+    // احذف أيضاً مجلد session-botX
+    if (fs.existsSync(sessionDir2)) {
+      fs.rmSync(sessionDir2, { recursive: true, force: true });
     }
     // أعد تعيين الحالة
     bot.client       = null;
