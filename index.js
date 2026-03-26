@@ -906,7 +906,25 @@ io.on("connection", (socket) => {
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
-const validTokens = new Set();
+// ── Persistent tokens — يبقى صالحاً بعد restart ──────────────────────────
+const TOKENS_FILE = path.join(__dirname, "data", ".tokens.json");
+function loadTokens() {
+  try {
+    if (!fs.existsSync(path.join(__dirname, "data")))
+      fs.mkdirSync(path.join(__dirname, "data"), { recursive: true });
+    if (!fs.existsSync(TOKENS_FILE)) return new Set();
+    const list = JSON.parse(fs.readFileSync(TOKENS_FILE, "utf8"));
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 أيام
+    return new Set(list.filter(t => t.ts > cutoff).map(t => t.token));
+  } catch { return new Set(); }
+}
+function saveTokens(set) {
+  try {
+    const list = [...set].map(token => ({ token, ts: Date.now() }));
+    fs.writeFileSync(TOKENS_FILE, JSON.stringify(list));
+  } catch {}
+}
+const validTokens = loadTokens();
 
 function parseCookies(header = "") {
   const cookies = {};
@@ -945,13 +963,15 @@ app.post("/api/login", loginLimiter, (req, res) => {
   if (password !== PASS) return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
   const token = crypto.randomBytes(32).toString("hex");
   validTokens.add(token);
-  res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400`);
+  saveTokens(validTokens);
+  res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
   res.json({ ok: true });
 });
 
 app.post("/api/logout", (req, res) => {
   const cookies = parseCookies(req.headers.cookie);
   validTokens.delete(cookies.auth_token);
+  saveTokens(validTokens);
   res.setHeader("Set-Cookie", "auth_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
   res.json({ ok: true });
 });
@@ -973,7 +993,8 @@ app.post("/api/admin/change-password", (req, res) => {
     }
     fs.writeFileSync(envPath, envContent);
     process.env.DASHBOARD_PASSWORD = newPass;
-    validTokens.clear(); // إلغاء جميع الجلسات
+    validTokens.clear();
+    saveTokens(validTokens);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
