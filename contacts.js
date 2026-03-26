@@ -68,15 +68,17 @@ async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
              c.first_seen        AS firstSeen,
              c.last_seen         AS lastSeen,
              c.total_messages    AS totalMessages,
-             m.body              AS lastMessage,
+             c.last_message      AS lastMessage,
              m.direction         AS lastDirection,
              m.created_at        AS lastMessageAt
         FROM contacts c
         LEFT JOIN messages m ON m.id = (
-          SELECT MAX(id) FROM messages WHERE contact = c.phone
+          SELECT id FROM messages
+           WHERE contact = c.phone
+           ORDER BY id DESC LIMIT 1
         )
         ${where}
-       ORDER BY COALESCE(m.created_at, c.last_seen) DESC
+       ORDER BY c.last_seen DESC
        LIMIT ? OFFSET ?
     `, params);
     return rows;

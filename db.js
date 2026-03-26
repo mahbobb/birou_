@@ -52,9 +52,10 @@ async function initDb() {
       media_type VARCHAR(20),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY unique_message (contact, body(200), created_at),
-      INDEX idx_messages_contact    (contact),
-      INDEX idx_messages_created_at (created_at),
-      INDEX idx_messages_direction  (direction),
+      INDEX idx_messages_contact        (contact),
+      INDEX idx_messages_created_at     (created_at),
+      INDEX idx_messages_direction      (direction),
+      INDEX idx_messages_contact_id     (contact, id),
       INDEX idx_messages_contact_dir_at (contact, direction, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
@@ -140,6 +141,11 @@ async function initDb() {
       INDEX idx_videos_created_at (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // ── Migration: إضافة index (contact, id) لتسريع آخر رسالة ──
+  try {
+    await pool.query(`ALTER TABLE messages ADD INDEX idx_messages_contact_id (contact, id)`);
+  } catch { /* الـ index موجود مسبقاً */ }
 
   console.log("✅ MySQL جاهز — كل الجداول والـ UNIQUE constraints محدّثة");
 }
