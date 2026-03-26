@@ -395,7 +395,13 @@ function setupClient(botId) {
         if (ct[0] && ct[0][0]) callerName = ct[0][0].name;
       } catch {}
       await saveCall({ phone, name: callerName, callType, botId });
-      console.log(`📞 [${botId}] مكالمة واردة (${callType}) من: ${phone}`);
+
+      await call.reject();
+      console.log(`📵 [${botId}] رُفضت ${callLabel} من: ${phone}`);
+      await c.sendMessage(
+        call.from,
+        `${callLabel} 📵\nعذراً، لا نستقبل المكالمات على هذا الرقم.\nراسلنا بنصية وسنرد عليك فوراً 😊`
+      );
 
       // إشعار socket للوحة التحكم
       io.emit("new_call", { phone, name: callerName, callType, botId, created_at: new Date() });
