@@ -70,17 +70,17 @@ async function checkMessageExists(phone, direction, timestampMs) {
 
 // ─── جلب الرسائل (مع alias للتوافق مع الـfrontend) ───────────────────────
 
-async function getMessages({ phone, limit = 100, offset = 0 }) {
+async function getMessages({ phone, limit = 200, offset = 0, from_date = null } = {}) {
   try {
     const contact = normalizePhone(phone || "");
-    const lim     = parseInt(limit)  || 100;
+    const lim     = Math.min(parseInt(limit)  || 200, 500);
     const off     = parseInt(offset) || 0;
 
     const select = `
       SELECT id,
-             contact                                          AS phone,
-             IF(direction='out','out','in') AS direction,
-             COALESCE(media_url, body)                        AS body,
+             contact                          AS phone,
+             IF(direction='out','out','in')   AS direction,
+             COALESCE(media_url, body)        AS body,
              media_url,
              media_type,
              source,
@@ -89,16 +89,19 @@ async function getMessages({ phone, limit = 100, offset = 0 }) {
         FROM messages
     `;
 
+    const dateClause = from_date ? `AND created_at >= ?` : "";
+    const dateParam  = from_date ? [new Date(from_date)] : [];
+
     if (contact) {
       const [rows] = await pool.query(
-        `${select} WHERE contact = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        [contact, lim, off]
+        `${select} WHERE contact = ? ${dateClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        [contact, ...dateParam, lim, off]
       );
       return rows;
     }
     const [rows] = await pool.query(
-      `${select} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [lim, off]
+      `${select} WHERE 1=1 ${dateClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...dateParam, lim, off]
     );
     return rows;
   } catch (err) {

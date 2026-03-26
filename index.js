@@ -1563,8 +1563,8 @@ app.post("/api/resume", (_req, res) => {
 });
 
 app.get("/api/messages", async (req, res) => {
-  const { phone, limit = 100, offset = 0 } = req.query;
-  const list = await getMessages({ phone, limit: parseInt(limit), offset: parseInt(offset) });
+  const { phone, limit = 200, offset = 0, from_date } = req.query;
+  const list = await getMessages({ phone, limit: parseInt(limit), offset: parseInt(offset), from_date: from_date || null });
   res.json(list);
 });
 

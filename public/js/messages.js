@@ -3,9 +3,60 @@
 // ─────────────────────────────────────────────────────
 let lastMessageId = 0;
 let lastDateRendered = "";
+// from_date: اليوم الحالي منتصف الليل — تُحمَّل رسائل اليوم فقط افتراضياً
+let chatFromDate = todayMidnight();
+let hasOlderMessages = true; // نفترض أن هناك رسائل أقدم حتى نتحقق
+
+function todayMidnight() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
 
 const socketSeenId = new Set();
 const socketSeenSig = new Set();
+
+// ─────────────────────────────────────────────────────
+// تحميل رسائل أقدم (يوم سابق)
+// ─────────────────────────────────────────────────────
+async function loadOlderMessages() {
+  if (!selectedPhone) return;
+  const wrap = document.getElementById("messagesWrap");
+  const btn  = document.getElementById("loadOlderBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ جاري التحميل..."; }
+
+  // نرجع 7 أيام في الوقت لكل ضغطة
+  const d = new Date(chatFromDate);
+  d.setDate(d.getDate() - 7);
+  chatFromDate = d.toISOString();
+
+  const phone = encodeURIComponent(selectedPhone);
+  const url = `/api/messages?phone=${phone}&limit=200&from_date=${encodeURIComponent(chatFromDate)}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    const raw = await res.json();
+    const list = Array.isArray(raw) ? raw : [];
+    // فلتر الرسائل الجديدة فقط (غير موجودة في الـ DOM)
+    const existing = new Set([...wrap.querySelectorAll("[data-msgid]")].map(el => el.dataset.msgid));
+    const newMsgs = list
+      .filter(m => isValidMessageObject(m) && !existing.has(String(m.id)))
+      .reverse();
+
+    if (newMsgs.length > 0) {
+      const prevH = wrap.scrollHeight;
+      wrap.insertAdjacentHTML("afterbegin", renderMessages(newMsgs));
+      wrap.scrollTop = wrap.scrollHeight - prevH; // حافظ على موضع التمرير
+    }
+    // إذا رجعنا 60+ يوم بدون رسائل — أخفِ الزر
+    const daysDiff = (new Date() - new Date(chatFromDate)) / 86400000;
+    if (newMsgs.length === 0 && daysDiff > 60) {
+      hasOlderMessages = false;
+      if (btn) btn.remove();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "📅 تحميل رسائل أقدم (7 أيام)"; }
+    }
+  } catch { if (btn) { btn.disabled = false; btn.textContent = "📅 تحميل رسائل أقدم (7 أيام)"; } }
+}
 
 // ─────────────────────────────────────────────────────
 // Messages loading
@@ -13,13 +64,17 @@ const socketSeenSig = new Set();
 async function loadMessages(scrollToBottom = false) {
   if (!selectedPhone) return;
 
+  // reset عند تغيير المحادثة
+  if (scrollToBottom) { chatFromDate = todayMidnight(); hasOlderMessages = true; }
+
   const wrap = document.getElementById("messagesWrap");
   if (!wrap) return;
 
   try {
     const isFullLoad = lastMessageId === 0 || scrollToBottom;
     const phone = encodeURIComponent(selectedPhone);
-    const url = `/api/messages?phone=${phone}&limit=100`;
+    const fromParam = isFullLoad ? `&from_date=${encodeURIComponent(chatFromDate)}` : "";
+    const url = `/api/messages?phone=${phone}&limit=200${fromParam}`;
 
     if (isFullLoad) {
       wrap.innerHTML = `
@@ -77,7 +132,15 @@ async function loadMessages(scrollToBottom = false) {
 
     if (lastMessageId === 0 || scrollToBottom) {
       lastDateRendered = "";
-      wrap.innerHTML = renderMessages(msgs);
+      const olderBtn = hasOlderMessages ? `
+        <div style="text-align:center;padding:10px 0 4px">
+          <button id="loadOlderBtn" onclick="loadOlderMessages()"
+            style="background:none;border:1px solid #ccc;border-radius:20px;padding:6px 18px;
+                   font-size:0.8rem;color:#667;cursor:pointer;direction:rtl">
+            📅 تحميل رسائل أقدم (7 أيام)
+          </button>
+        </div>` : "";
+      wrap.innerHTML = olderBtn + renderMessages(msgs);
       markUnansweredMessages();
       requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
       if (newLastDbId > 0) lastMessageId = newLastDbId;
@@ -257,7 +320,7 @@ function renderSingleMessage(m) {
 
   const msgId = escAttr(String(m.id ?? ""));
   html += `
-    <div class="msg-bubble ${direction}${extraClass ? " " + extraClass : ""}" data-id="${msgId}" data-source="${escAttr(m.source||'')}">
+    <div class="msg-bubble ${direction}${extraClass ? " " + extraClass : ""}" data-id="${msgId}" data-msgid="${msgId}" data-source="${escAttr(m.source||'')}">
       <button class="msg-menu-btn" onclick="toggleMsgMenu(this)" title="خيارات">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
           <path d="M7 10l5 5 5-5z"/>
