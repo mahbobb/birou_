@@ -80,7 +80,10 @@ function isDuplicate(contactId, message) {
 
 // ─── Multi-client setup ────────────────────────────────────────────────────
 
-const BOT_IDS = ["bot1", "bot2", "bot3"];
+// BOTS_ENABLED=bot1,bot2,bot3  → يمكن تعطيل أي بوت من .env
+const _BOTS_ALL = ["bot1", "bot2", "bot3"];
+const _BOTS_ENV = (process.env.BOTS_ENABLED || "").split(",").map(s => s.trim()).filter(Boolean);
+const BOT_IDS   = _BOTS_ENV.length ? _BOTS_ALL.filter(id => _BOTS_ENV.includes(id)) : _BOTS_ALL;
 
 const bots = new Map(BOT_IDS.map(id => [id, {
   client:       null,
@@ -233,7 +236,13 @@ function setupClient(botId) {
       "--hide-scrollbars", "--mute-audio",
       "--no-default-browser-check", "--no-pings",
       "--safebrowsing-disable-auto-update",
-      "--js-flags=--max-old-space-size=256",
+      // ── تقليل استهلاك الذاكرة ────────────────────────────
+      "--disable-accelerated-2d-canvas",  // بدون GPU canvas
+      "--disable-webgl",                  // بدون WebGL
+      "--in-process-gpu",                 // GPU في نفس Process يوفر ~50MB
+      "--disable-canvas-aa",              // بدون anti-aliasing
+      "--disable-smooth-scrolling",
+      "--js-flags=--max-old-space-size=200",
     ],
   };
   if (CHROMIUM_PATH) puppeteerOpts.executablePath = CHROMIUM_PATH;
@@ -2675,12 +2684,12 @@ process.on("SIGINT", async () => {
 
 // ─── تشغيل ────────────────────────────────────────────────────────────────
 
-console.log(`🚀 تشغيل بوت واتساب IA (${AI_PROVIDER}) — 3 أرقام...`);
-// تشغيل البوتات بتأخير 40 ثانية بين كل واحد — يمنع تعارض Chrome instances
+console.log(`🚀 تشغيل بوت واتساب IA (${AI_PROVIDER}) — البوتات المفعّلة: ${BOT_IDS.join(", ")}`);
+// تشغيل البوتات بتأخير 60 ثانية بين كل واحد — يمنع تعارض Chrome instances على الـ VPS
 BOT_IDS.forEach((id, i) => {
   if (i === 0) { setupClient(id); return; }
   setTimeout(() => {
-    console.log(`\n⏱️  [${id}] بدء التشغيل (تأخير ${i * 40}ث)...`);
+    console.log(`\n⏱️  [${id}] بدء التشغيل (تأخير ${i * 60}ث)...`);
     setupClient(id);
-  }, i * 40000);
+  }, i * 60000);
 });
