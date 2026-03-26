@@ -12,7 +12,7 @@ const { verifyWebhook, handleWebhook, setIo: fbSetIo } = require("./facebook");
 const { getMessengerContacts, countUnanswered, saveMessengerContact, saveMessengerMessage, getMessengerMessages } = require("./messenger");
 const { createBooking, getBookings, updateBookingStatus, updateBooking, deleteBooking, getBookingStats, addIdImages } = require("./bookings");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
-const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
+const { saveMessage, checkMessageExists, getMessages, getMessagesCount, getMessageStats, getUnansweredContacts } = require("./messages");
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
 const { saveVoice, getVoices, getVoiceStats, deleteVoice, updateVoiceNote } = require("./voices");
 const { saveVideo, getVideos, getVideoStats, deleteVideo, updateVideoNote } = require("./videos");
@@ -1341,7 +1341,7 @@ app.post("/api/restart-bot/:id", async (req, res) => {
 });
 
 app.get("/api/contacts", async (req, res) => {
-  const limit  = Math.min(parseInt(req.query.limit  || "200"), 500);
+  const limit  = Math.min(parseInt(req.query.limit  || "1000"), 2000);
   const offset = parseInt(req.query.offset || "0");
   const search = (req.query.search || "").trim().substring(0, 50);
   const list = await getAllContacts({ limit, offset, search });
@@ -1632,8 +1632,12 @@ app.post("/api/resume", (_req, res) => {
 });
 
 app.get("/api/messages", async (req, res) => {
-  const { phone, limit = 200, offset = 0, from_date } = req.query;
-  const list = await getMessages({ phone, limit: parseInt(limit), offset: parseInt(offset), from_date: from_date || null });
+  const { phone, search, limit = 50, offset = 0, from_date } = req.query;
+  const [list, total] = await Promise.all([
+    getMessages({ phone, search, limit: parseInt(limit), offset: parseInt(offset), from_date: from_date || null }),
+    getMessagesCount({ phone, search, from_date: from_date || null }),
+  ]);
+  res.setHeader("X-Total-Count", total);
   res.json(list);
 });
 

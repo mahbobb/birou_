@@ -9,7 +9,7 @@ const PAGE_SIZE  = 50;
 async function loadContacts() {
   try {
     const [dbRes, waRes, delRes, msngRes] = await Promise.all([
-      fetch("/api/contacts"),
+      fetch("/api/contacts?limit=1000"),
       fetch("/api/wa-chats"),
       fetch("/api/deleted-phones"),
       fetch("/api/messenger/contacts?limit=200"),

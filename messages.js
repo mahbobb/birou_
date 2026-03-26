@@ -68,46 +68,86 @@ async function checkMessageExists(phone, direction, timestampMs) {
   } catch { return false; }
 }
 
-// ─── جلب الرسائل (مع alias للتوافق مع الـfrontend) ───────────────────────
+// ─── جلب الرسائل (مع JOIN contacts للحصول على الاسم) ────────────────────
 
-async function getMessages({ phone, limit = 200, offset = 0, from_date = null } = {}) {
+async function getMessages({ phone, search, limit = 200, offset = 0, from_date = null } = {}) {
   try {
     const contact = normalizePhone(phone || "");
     const lim     = Math.min(parseInt(limit)  || 200, 500);
     const off     = parseInt(offset) || 0;
 
     const select = `
-      SELECT id,
-             contact                          AS phone,
-             IF(direction='out','out','in')   AS direction,
-             COALESCE(media_url, body)        AS body,
-             media_url,
-             media_type,
-             source,
-             wa_msg_id,
-             created_at
-        FROM messages
+      SELECT m.id,
+             m.contact                          AS phone,
+             COALESCE(c.name, m.contact)        AS name,
+             IF(m.direction='out','out','in')   AS direction,
+             COALESCE(m.media_url, m.body)      AS body,
+             m.media_url,
+             m.media_type,
+             m.source,
+             m.wa_msg_id,
+             m.created_at
+        FROM messages m
+        LEFT JOIN contacts c ON c.phone = m.contact
     `;
 
-    const dateClause = from_date ? `AND created_at >= ?` : "";
-    const dateParam  = from_date ? [new Date(from_date)] : [];
+    const conditions = [];
+    const params     = [];
 
     if (contact) {
-      const [rows] = await pool.query(
-        `${select} WHERE contact = ? ${dateClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        [contact, ...dateParam, lim, off]
-      );
-      return rows;
+      conditions.push("m.contact = ?");
+      params.push(contact);
+    } else if (search) {
+      conditions.push("(m.contact LIKE ? OR c.name LIKE ?)");
+      params.push(`%${search}%`, `%${search}%`);
     }
+    if (from_date) {
+      conditions.push("m.created_at >= ?");
+      params.push(new Date(from_date));
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const [rows] = await pool.query(
-      `${select} WHERE 1=1 ${dateClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...dateParam, lim, off]
+      `${select} ${where} ORDER BY m.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, lim, off]
     );
     return rows;
   } catch (err) {
     console.error("❌ خطأ في جلب الرسائل:", err.message);
     return [];
   }
+}
+
+// ─── عدد الرسائل (للـ pagination الصحيح) ───────────────────────────────
+
+async function getMessagesCount({ phone = "", search = "", from_date = null } = {}) {
+  try {
+    const contact    = normalizePhone(phone || "");
+    const conditions = [];
+    const params     = [];
+
+    if (contact) {
+      conditions.push("m.contact = ?");
+      params.push(contact);
+    } else if (search) {
+      conditions.push("(m.contact LIKE ? OR c.name LIKE ?)");
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (from_date) {
+      conditions.push("m.created_at >= ?");
+      params.push(new Date(from_date));
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const [[{ n }]] = await pool.query(
+      `SELECT COUNT(*) AS n
+         FROM messages m
+         LEFT JOIN contacts c ON c.phone = m.contact
+       ${where}`,
+      params
+    );
+    return Number(n);
+  } catch { return 0; }
 }
 
 // ─── إحصائيات ─────────────────────────────────────────────────────────────
@@ -164,4 +204,4 @@ async function getUnansweredContacts() {
   }
 }
 
-module.exports = { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts };
+module.exports = { saveMessage, checkMessageExists, getMessages, getMessagesCount, getMessageStats, getUnansweredContacts };

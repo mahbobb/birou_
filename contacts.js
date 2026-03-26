@@ -54,14 +54,15 @@ async function getStats() {
 
 // ─── قائمة جميع الزبائن ───────────────────────────────────────────────────
 
-async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
+async function getAllContacts({ limit = 1000, offset = 0, search = "" } = {}) {
   try {
+    const lim   = Math.min(parseInt(limit) || 1000, 2000);
     const where = search
       ? `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0) AND (c.name LIKE ? OR c.phone LIKE ?)`
       : `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0)`;
     const params = search
-      ? [`%${search}%`, `%${search}%`, limit, offset]
-      : [limit, offset];
+      ? [`%${search}%`, `%${search}%`, lim, offset]
+      : [lim, offset];
 
     const [rows] = await pool.query(`
       SELECT c.phone, c.name,

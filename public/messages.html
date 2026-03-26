@@ -230,7 +230,7 @@
 <div class="toolbar">
   <div class="search-wrap">
     <span class="search-ico">🔍</span>
-    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث برقم الهاتف...">
+    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث بالاسم أو رقم الهاتف...">
   </div>
   <select id="filterSource">
     <option value="">كل المصادر</option>
@@ -312,9 +312,7 @@
 
   function filterList() {
     let list = [...allMessages];
-    const q      = document.getElementById("searchPhone").value.trim().toLowerCase();
     const source = document.getElementById("filterSource").value;
-    if (q)      list = list.filter(m => m.phone?.includes(q) || (m.name||"").toLowerCase().includes(q));
     if (source) list = list.filter(m => m.source === source);
     if (activeTab === "in")  list = list.filter(m => m.direction === "in");
     if (activeTab === "out") list = list.filter(m => m.direction === "out");
@@ -354,11 +352,15 @@
     currentOffset = offset;
     selectedIds.clear();
     updateSelUI();
-    const phone = document.getElementById("searchPhone").value.trim();
+    const q = document.getElementById("searchPhone").value.trim();
+    const isPhone = /^\+?[\d\s\-]{6,}$/.test(q);
     let url = `/api/messages?limit=${LIMIT}&offset=${offset}`;
-    if (phone) url += `&phone=${encodeURIComponent(phone)}`;
+    if (q && isPhone)  url += `&phone=${encodeURIComponent(q)}`;
+    else if (q)        url += `&search=${encodeURIComponent(q)}`;
     try {
-      allMessages = await fetch(url, { cache:"no-store" }).then(r=>r.json());
+      const res = await fetch(url, { cache:"no-store" });
+      totalMsgs = parseInt(res.headers.get("X-Total-Count") || "0") || totalMsgs;
+      allMessages = await res.json();
       if (activeTab !== "unanswered") renderTable(filterList());
       renderPagination();
     } catch { showToast("❌ خطأ في تحميل الرسائل"); }
@@ -565,9 +567,13 @@
   }
 
   /* ── Events ── */
+  let _searchTimer = null;
   document.getElementById("searchPhone").addEventListener("input", () => {
     currentOffset = 0;
-    if (activeTab !== "unanswered") renderTable(filterList());
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => {
+      if (activeTab !== "unanswered") loadMessages(0);
+    }, 400);
   });
   document.getElementById("filterSource").addEventListener("change", () => {
     currentOffset = 0;
