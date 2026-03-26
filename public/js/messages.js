@@ -120,12 +120,31 @@ async function loadMessages(scrollToBottom = false) {
     seenSig.forEach((k) => socketSeenSig.add(k));
 
     if (!msgs.length) {
+      // إذا لم تأتِ رسائل من آخر 24 ساعة — احمّل آخر 100 رسالة بدون فلتر الوقت
+      if (isFullLoad && chatFromDate) {
+        chatFromDate = "";
+        hasOlderMessages = false;
+        const isMsng2 = (typeof selectedSource !== "undefined" && selectedSource === "messenger");
+        const url2 = isMsng2
+          ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=100`
+          : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=100`;
+        try {
+          const res2 = await fetch(url2, { cache: "no-store" });
+          const raw2 = await res2.json();
+          const list2 = (Array.isArray(raw2) ? raw2 : []).filter(isValidMessageObject).reverse();
+          if (list2.length) {
+            lastDateRendered = "";
+            list2.forEach(m => { const k = String(m.id ?? ""); if (k) socketSeenId.add(k); });
+            wrap.innerHTML = renderMessages(list2);
+            markUnansweredMessages();
+            requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
+            lastMessageId = getLastDbId(list2) || 0;
+            return;
+          }
+        } catch {}
+      }
       if (lastMessageId === 0 || isFullLoad) {
-        wrap.innerHTML = `
-          <div style="text-align:center;color:#8696a0;padding:30px">
-            لا توجد رسائل بعد
-          </div>
-        `;
+        wrap.innerHTML = `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
       }
       return;
     }
