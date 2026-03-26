@@ -287,10 +287,17 @@ function setupClient(botId) {
     console.log(`\n📋 الزبائن المسجلين: ${stats.total} | اليوم: ${stats.today}`);
     console.log(`\n🟢 [${botId}] في انتظار الرسائل...\n`);
 
-    // ── استيراد سجل الرسائل مرة واحدة عند أول اتصال ────────────────────────
-    if (!bot._historyImported) {
-      bot._historyImported = true;
-      setTimeout(() => importWhatsAppHistory(c, botId), 5000);
+    // ── استيراد سجل الرسائل مرة واحدة في الحياة (flag ملف ثابت) ───────────
+    const flagFile = path.join(__dirname, "data", `imported_${botId}.flag`);
+    if (!fs.existsSync(flagFile)) {
+      if (!fs.existsSync(path.join(__dirname, "data")))
+        fs.mkdirSync(path.join(__dirname, "data"), { recursive: true });
+      setTimeout(async () => {
+        await importWhatsAppHistory(c, botId);
+        fs.writeFileSync(flagFile, new Date().toISOString()); // حفظ الـ flag بعد الانتهاء
+      }, 5000);
+    } else {
+      console.log(`⏭️  [${botId}] سجل الرسائل مستورد مسبقاً — تم التخطي`);
     }
 
     // ── Watchdog: فحص حالة الاتصال كل 45 ثانية — إعادة تشغيل تلقائية إذا تجمّد ──
