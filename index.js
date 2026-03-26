@@ -53,6 +53,26 @@ const config = {
     .split(",").map((n) => n.trim()).filter(Boolean),
 };
 
+// ─── تسجيل استخدام الردود المبرمجة ──────────────────────────────────────
+async function logResponseUsage(phone, keywordsLabel, matchedKw, replyText, source = "whatsapp") {
+  try {
+    const pool = require("./db");
+    await pool.query(
+      `INSERT INTO response_logs (phone, keywords_label, matched_kw, reply_preview, source)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        String(phone || "").slice(0, 20),
+        String(keywordsLabel || "").slice(0, 200),
+        String(matchedKw || "").slice(0, 100),
+        String(replyText || "").slice(0, 200),
+        source,
+      ]
+    );
+  } catch (err) {
+    console.error("❌ logResponseUsage:", err.message);
+  }
+}
+
 // ─── الحالة ───────────────────────────────────────────────────────────────
 
 const BOT_START_TIME = Math.floor(Date.now() / 1000); // وقت بدء البوت بالثواني
@@ -561,7 +581,7 @@ async function handleIncoming(message, botId) {
     await sleep(Math.random() * (config.delayMax - config.delayMin) + config.delayMin);
 
     // الأولوية 1: الأجوبة المبرمجة (keywords)
-    const { text: customText, voiceFile, defaultText } = findCustomResponse(body);
+    const { text: customText, voiceFile, defaultText, matchedKw, keywordsLabel } = findCustomResponse(body);
     let source = "custom";
 
     await chat.clearState();
@@ -579,6 +599,7 @@ async function handleIncoming(message, botId) {
       // رد keyword مبرمج
       await botReply(message, customText, botId);
       replyText = customText;
+      logResponseUsage(senderNumber, keywordsLabel, matchedKw, customText, "whatsapp");
       console.log(`✅ [مبرمج] → ${name}: ${customText.substring(0, 70)}`);
     } else {
       // الأولوية 2: الذكاء الاصطناعي
@@ -2320,6 +2341,47 @@ function writeResponses(data) {
 app.get("/api/responses", (_req, res) => {
   const data = readResponses();
   res.json({ responses: data.responses || [], defaultReply: data.defaultReply || "" });
+});
+
+// ── سجل استخدام الردود المبرمجة ───────────────────────────────────────────
+app.get("/api/response-logs", async (req, res) => {
+  try {
+    const pool    = require("./db");
+    const limit   = Math.min(parseInt(req.query.limit  || "100"), 500);
+    const offset  = parseInt(req.query.offset || "0");
+    const keyword = (req.query.keyword || "").trim();
+    const params  = keyword ? [`%${keyword}%`, limit, offset] : [limit, offset];
+    const where   = keyword ? "WHERE keywords_label LIKE ?" : "";
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM response_logs ${where}`,
+      keyword ? [`%${keyword}%`] : []
+    );
+    const [rows] = await pool.query(
+      `SELECT id, phone, keywords_label, matched_kw, reply_preview, source, created_at
+         FROM response_logs ${where}
+        ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      params
+    );
+    res.setHeader("X-Total-Count", total);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/response-logs/stats", async (_req, res) => {
+  try {
+    const pool = require("./db");
+    const [[{ total }]] = await pool.query("SELECT COUNT(*) AS total FROM response_logs");
+    const [[{ today }]] = await pool.query(
+      "SELECT COUNT(*) AS today FROM response_logs WHERE DATE(created_at) = CURDATE()"
+    );
+    const [topReplies] = await pool.query(`
+      SELECT keywords_label, COUNT(*) AS cnt
+        FROM response_logs
+       GROUP BY keywords_label
+       ORDER BY cnt DESC LIMIT 10
+    `);
+    res.json({ total: Number(total), today: Number(today), topReplies });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post("/api/responses", (req, res) => {

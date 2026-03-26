@@ -147,6 +147,22 @@ async function initDb() {
     await pool.query(`ALTER TABLE messages ADD INDEX idx_messages_contact_id (contact, id)`);
   } catch { /* الـ index موجود مسبقاً */ }
 
+  // ── جدول سجل استخدام الردود المبرمجة ──────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS response_logs (
+      id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+      keywords_label VARCHAR(200) NOT NULL DEFAULT '',
+      matched_kw     VARCHAR(100) NOT NULL DEFAULT '',
+      reply_preview  VARCHAR(200) NOT NULL DEFAULT '',
+      phone          VARCHAR(20)  NOT NULL DEFAULT '',
+      source         VARCHAR(20)  NOT NULL DEFAULT 'whatsapp',
+      created_at     DATETIME     DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_rl_created  (created_at),
+      INDEX idx_rl_keywords (keywords_label(80)),
+      INDEX idx_rl_phone    (phone)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
   console.log("✅ MySQL جاهز — كل الجداول والـ UNIQUE constraints محدّثة");
 }
 

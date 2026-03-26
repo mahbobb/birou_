@@ -61,11 +61,15 @@ function findCustomResponse(message) {
         }
       }
 
-      return { text, voiceFile, defaultText };
+      // معلومات للتسجيل
+      const matchedKw     = item.keywords.find(kw => messageLower.includes(kw.toLowerCase())) || "";
+      const keywordsLabel = (item.keywords || []).slice(0, 4).join(", ");
+
+      return { text, voiceFile, defaultText, matchedKw, keywordsLabel };
     }
   }
 
-  return { text: null, voiceFile: null, defaultText };
+  return { text: null, voiceFile: null, defaultText, matchedKw: null, keywordsLabel: null };
 }
 
 module.exports = { findCustomResponse };

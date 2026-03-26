@@ -255,8 +255,59 @@
       <div class="empty"><div class="empty-ico">⏳</div><p>جاري التحميل...</p></div>
     </div>
 
+    <!-- ══ قسم سجل الاستخدام ══ -->
+    <div class="card" style="margin-top:24px;border-right:4px solid #1976d2">
+      <h2 style="margin-bottom:16px">📊 سجل استخدام الردود المبرمجة</h2>
+
+      <!-- إحصائيات سريعة -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+        <div style="background:#e3f2fd;border-radius:12px;padding:14px 20px;flex:1;min-width:120px">
+          <div style="font-size:1.6rem;font-weight:800;color:#1565c0" id="rl-total">—</div>
+          <div style="font-size:.75rem;color:#555;margin-top:2px">إجمالي الاستخدامات</div>
+        </div>
+        <div style="background:#e8f5e9;border-radius:12px;padding:14px 20px;flex:1;min-width:120px">
+          <div style="font-size:1.6rem;font-weight:800;color:#2e7d32" id="rl-today">—</div>
+          <div style="font-size:.75rem;color:#555;margin-top:2px">اليوم</div>
+        </div>
+        <div style="background:#fff3e0;border-radius:12px;padding:14px 20px;flex:2;min-width:200px">
+          <div style="font-size:.8rem;font-weight:700;color:#e65100;margin-bottom:8px">🏆 الأكثر استخداماً</div>
+          <ul id="rl-top" style="list-style:none;font-size:.82rem;display:flex;flex-direction:column;gap:5px"></ul>
+        </div>
+      </div>
+
+      <!-- جدول السجل -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input id="rl-search" type="text" placeholder="🔍 بحث بالكلمة المفتاحية..."
+          style="flex:1;min-width:180px;padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;outline:none;direction:rtl">
+        <span id="rl-count" style="font-size:.8rem;color:var(--muted)"></span>
+        <button onclick="loadResponseLogs(0);loadResponseStats()" style="padding:7px 14px;background:var(--teal);color:white;border:none;border-radius:8px;cursor:pointer;font-size:.82rem">🔄 تحديث</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.83rem">
+          <thead>
+            <tr style="background:linear-gradient(135deg,#075e54,#128c7e);color:white">
+              <th style="padding:9px 12px;text-align:right;white-space:nowrap">الوقت</th>
+              <th style="padding:9px 12px;text-align:right">الكلمات المفتاحية</th>
+              <th style="padding:9px 12px;text-align:right">الرد</th>
+              <th style="padding:9px 12px;text-align:right">الهاتف</th>
+              <th style="padding:9px 12px;text-align:right">المصدر</th>
+            </tr>
+          </thead>
+          <tbody id="rl-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<style>
+  .rl-kw  { font-size:.82rem;font-weight:600;color:#075e54 }
+  .rl-cnt { margin-right:auto;background:#e8f5e9;color:#2e7d32;padding:1px 8px;border-radius:12px;font-size:.74rem;font-weight:700 }
+  #rl-top li { display:flex;align-items:center;justify-content:space-between;gap:8px }
+</style>
 
 <div id="toast"></div>
 
@@ -447,6 +498,66 @@
       btn.textContent = "📤 ابدأ الإرسال";
     }
   }
+</script>
+
+<!-- ══ سجل استخدام الردود ══ -->
+<script>
+  /* ── Stats ── */
+  async function loadResponseStats() {
+    try {
+      const s = await fetch("/api/response-logs/stats").then(r => r.json());
+      document.getElementById("rl-total").textContent = s.total ?? "—";
+      document.getElementById("rl-today").textContent = s.today ?? "—";
+      const top = document.getElementById("rl-top");
+      if (!s.topReplies?.length) { top.innerHTML = '<li style="color:var(--muted)">لا توجد بيانات بعد</li>'; return; }
+      top.innerHTML = s.topReplies.map(r =>
+        `<li><span class="rl-kw">${escHtml(r.keywords_label)}</span><span class="rl-cnt">${r.cnt}×</span></li>`
+      ).join("");
+    } catch {}
+  }
+
+  async function loadResponseLogs(offset = 0) {
+    const kw = document.getElementById("rl-search").value.trim();
+    let url = `/api/response-logs?limit=50&offset=${offset}`;
+    if (kw) url += `&keyword=${encodeURIComponent(kw)}`;
+    try {
+      const res  = await fetch(url);
+      const total = parseInt(res.headers.get("X-Total-Count") || "0");
+      const rows = await res.json();
+      document.getElementById("rl-count").textContent = `إجمالي: ${total}`;
+      const tbody = document.getElementById("rl-tbody");
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">لا توجد سجلات</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const t = new Date(r.created_at).toLocaleString("ar-MA");
+        const src = r.source === "messenger"
+          ? `<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:12px;font-size:.74rem">📘 ماسنجر</span>`
+          : `<span style="background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:12px;font-size:.74rem">📱 واتساب</span>`;
+        return `<tr>
+          <td style="font-size:.78rem;color:var(--muted)">${t}</td>
+          <td><b style="font-size:.82rem">${escHtml(r.keywords_label)}</b><br><small style="color:var(--muted)">${escHtml(r.matched_kw)}</small></td>
+          <td style="font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.reply_preview)}">${escHtml(r.reply_preview)}</td>
+          <td><code style="font-size:.75rem;background:#f0f4f8;padding:2px 6px;border-radius:4px">+${escHtml(r.phone)}</code></td>
+          <td>${src}</td>
+        </tr>`;
+      }).join("");
+    } catch {}
+  }
+
+  function escHtml(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  let _rlTimer = null;
+  document.addEventListener("DOMContentLoaded", () => {
+    loadResponseStats();
+    loadResponseLogs();
+    const inp = document.getElementById("rl-search");
+    if (inp) inp.addEventListener("input", () => {
+      clearTimeout(_rlTimer);
+      _rlTimer = setTimeout(() => loadResponseLogs(0), 400);
+    });
+  });
 </script>
 <script src="/js/nav.js"></script>
 </body>
