@@ -163,6 +163,21 @@ async function initDb() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
+  // ── جدول سجل المكالمات الواردة ──────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS calls (
+      id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+      phone      VARCHAR(20)  NOT NULL,
+      name       VARCHAR(100) NOT NULL DEFAULT 'غير معروف',
+      call_type  ENUM('voice','video') NOT NULL DEFAULT 'voice',
+      bot_id     VARCHAR(20)  NOT NULL DEFAULT 'bot1',
+      created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_calls_phone      (phone),
+      INDEX idx_calls_created_at (created_at),
+      INDEX idx_calls_bot        (bot_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
   console.log("✅ MySQL جاهز — كل الجداول والـ UNIQUE constraints محدّثة");
 }
 

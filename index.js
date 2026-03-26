@@ -16,6 +16,7 @@ const { saveMessage, checkMessageExists, getMessages, getMessagesCount, getMessa
 const { saveImage, getImages, getImageStats, deleteImage } = require("./images");
 const { saveVoice, getVoices, getVoiceStats, deleteVoice, updateVoiceNote } = require("./voices");
 const { saveVideo, getVideos, getVideoStats, deleteVideo, updateVideoNote } = require("./videos");
+const { saveCall, getCalls, getCallsCount, getCallStats } = require("./calls");
 const path   = require("path");
 const fs     = require("fs");
 const multer = require("multer");
@@ -379,13 +380,29 @@ function setupClient(botId) {
   // ── رد تلقائي على المكالمات الواردة ────────────────────────────────────────
   c.on("call", async (call) => {
     try {
+      const callType = call.isVideo ? "video" : "voice";
+      const callLabel = call.isVideo ? "📹 مكالمة فيديو" : "📞 مكالمة صوتية";
+      const phone = (call.from || "").replace(/@.*/, "");
+
+      // تسجيل المكالمة في قاعدة البيانات
+      let callerName = phone;
+      try {
+        const ct = await require("./db").query(
+          `SELECT name FROM contacts WHERE phone = ? LIMIT 1`, [phone]
+        );
+        if (ct[0] && ct[0][0]) callerName = ct[0][0].name;
+      } catch {}
+      await saveCall({ phone, name: callerName, callType, botId });
+
       await call.reject();
-      const callType = call.isVideo ? "📹 مكالمة فيديو" : "📞 مكالمة صوتية";
-      console.log(`📵 [${botId}] رُفضت ${callType} من: ${call.from}`);
+      console.log(`📵 [${botId}] رُفضت ${callLabel} من: ${call.from}`);
       await c.sendMessage(
         call.from,
-        `${callType} — عذراً، البوت لا يستقبل المكالمات.\nللتواصل يرجى إرسال رسالة نصية وسنرد عليك فوراً 😊`
+        `${callLabel} — عذراً، البوت لا يستقبل المكالمات.\nللتواصل يرجى إرسال رسالة نصية وسنرد عليك فوراً 😊`
       );
+
+      // إشعار socket للوحة التحكم
+      io.emit("new_call", { phone, name: callerName, callType, botId, created_at: new Date() });
     } catch (err) {
       console.error(`❌ [${botId}] خطأ في رفض المكالمة:`, err.message);
     }
@@ -2381,6 +2398,25 @@ app.get("/api/response-logs/stats", async (_req, res) => {
        ORDER BY cnt DESC LIMIT 10
     `);
     res.json({ total: Number(total), today: Number(today), topReplies });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── سجل المكالمات ────────────────────────────────────────────────────────
+app.get("/api/calls", async (req, res) => {
+  try {
+    const { phone, search, limit = 50, offset = 0 } = req.query;
+    const [list, total] = await Promise.all([
+      getCalls({ phone, search, limit: parseInt(limit), offset: parseInt(offset) }),
+      getCallsCount({ phone, search }),
+    ]);
+    res.setHeader("X-Total-Count", total);
+    res.json(list);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/calls/stats", async (_req, res) => {
+  try {
+    res.json(await getCallStats());
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

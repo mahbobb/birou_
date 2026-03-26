@@ -15,6 +15,7 @@
   const LINKS = [
     { href: '/chat',      icon: '🗨️',  label: 'الشات' },
     { href: '/messages',  icon: '💬',  label: 'الرسائل' },
+    { href: '/calls',     icon: '📞',  label: 'المكالمات' },
     { href: '/groups',    icon: '👥',  label: 'المجموعات' },
     { href: '/grp-chat',  icon: '💬',  label: 'رسائل المجموعات' },
     { href: '/responses', icon: '📋',  label: 'الردود' },
@@ -60,6 +61,7 @@
     const titles = {
       '/':          { icon: '📊', title: 'لوحة التحكم' },
       '/messages':  { icon: '📨', title: 'الرسائل' },
+      '/calls':     { icon: '📞', title: 'سجل المكالمات' },
       '/groups':    { icon: '👥', title: 'المجموعات' },
       '/responses': { icon: '📋', title: 'الردود التلقائية' },
       '/images':    { icon: '📸', title: 'الصور' },
@@ -102,6 +104,7 @@
       { href: '/',          svg: SVGS.home,      title: 'الرئيسية' },
       { href: '/chat',      svg: SVGS.chat,      title: 'الشات',              badge: true },
       { href: '/messages',  svg: SVGS.messages,  title: 'الرسائل' },
+      { href: '/calls',     svg: SVGS.voices,    title: 'المكالمات' },
       { href: '/responses', svg: SVGS.responses, title: 'الردود التلقائية' },
       { href: '/notes',     svg: SVGS.notes,     title: 'الملاحظات' },
       { href: '/groups',    svg: SVGS.groups,    title: 'المجموعات' },
@@ -146,6 +149,7 @@
       { label: 'التواصل', links: [
         { href: '/chat',      icon: '💬', label: 'الشات' },
         { href: '/messages',  icon: '📨', label: 'الرسائل' },
+        { href: '/calls',     icon: '📞', label: 'المكالمات' },
         { href: '/groups',    icon: '👥', label: 'المجموعات' },
         { href: '/grp-chat',  icon: '💬', label: 'رسائل المجموعات' },
         { href: '/responses', icon: '📋', label: 'الردود' },
