@@ -65,19 +65,18 @@ async function getAllContacts({ limit = 200, offset = 0, search = "" } = {}) {
 
     const [rows] = await pool.query(`
       SELECT c.phone, c.name,
-             c.first_seen     AS firstSeen,
-             c.last_seen      AS lastSeen,
-             c.last_message   AS lastMessage,
-             c.total_messages AS totalMessages,
-             m.direction      AS lastDirection
+             c.first_seen        AS firstSeen,
+             c.last_seen         AS lastSeen,
+             c.total_messages    AS totalMessages,
+             m.body              AS lastMessage,
+             m.direction         AS lastDirection,
+             m.created_at        AS lastMessageAt
         FROM contacts c
-        LEFT JOIN (
-          SELECT contact, direction
-            FROM messages
-           WHERE id IN (SELECT MAX(id) FROM messages GROUP BY contact)
-        ) m ON m.contact = c.phone
+        LEFT JOIN messages m ON m.id = (
+          SELECT MAX(id) FROM messages WHERE contact = c.phone
+        )
         ${where}
-       ORDER BY c.last_seen DESC
+       ORDER BY COALESCE(m.created_at, c.last_seen) DESC
        LIMIT ? OFFSET ?
     `, params);
     return rows;

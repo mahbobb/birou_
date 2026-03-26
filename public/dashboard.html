@@ -210,6 +210,12 @@
       width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
       color: white; font-weight: 700; font-size: 0.88rem;
       display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .unread-dot {
+      position: absolute; top: 0; left: 0;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #22c55e; border: 2px solid var(--card);
     }
     .c-name { font-weight: 600; font-size: 0.88rem; }
     .phone-tag { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; font-family: monospace; }
@@ -960,6 +966,29 @@
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
+  function fmtLastMsg(body, direction) {
+    if (!body) return "—";
+    const arrow = direction === "out" ? "↗ " : "";
+    if (/\/uploads\/images\//.test(body))  return arrow + "📷 صورة";
+    if (/\/uploads\/videos\//.test(body))  return arrow + "🎬 فيديو";
+    if (/\/uploads\/voices\//.test(body))  return arrow + "🎤 رسالة صوتية";
+    return arrow + body.substring(0, 38);
+  }
+
+  function fmtTime(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr), now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60)   return "الآن";
+    if (diff < 3600) return Math.floor(diff/60) + " د";
+    if (diff < 86400)return Math.floor(diff/3600) + " س";
+    if (diff < 604800) {
+      const days = ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
+      return days[d.getDay()];
+    }
+    return d.toLocaleDateString("ar-MA");
+  }
+
   /* ── Render recent ── */
   function renderRecent(list) {
     const body = document.getElementById("recentBody");
@@ -968,20 +997,21 @@
       return;
     }
     body.innerHTML = list.map(c => {
-      const date = new Date(c.lastSeen).toLocaleDateString("ar-MA");
-      const msg  = escHtml((c.lastMessage||"").substring(0,35));
+      const time = fmtTime(c.lastMessageAt || c.lastSeen);
+      const msg  = escHtml(fmtLastMsg(c.lastMessage, c.lastDirection));
       const grad = avatarGrad(c.name);
       const init = escHtml(initials(c.name));
+      const unread = c.lastDirection === "in" ? `<span class="unread-dot"></span>` : "";
       return `
         <tr>
           <td><div class="contact-cell">
-            <div class="c-avatar" style="background:${grad}">${init}</div>
+            <div class="c-avatar" style="background:${grad}">${init}${unread}</div>
             <div class="c-name">${escHtml(c.name)}</div>
           </div></td>
           <td><span class="phone-tag">+${c.phone}</span></td>
           <td class="col-hide-mob"><span class="msg-badge">${c.totalMessages}</span></td>
-          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
-          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg}</div></td>
+          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${time}</td>
           <td><div class="actions-cell">
                         <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
           </div></td>
@@ -1005,21 +1035,22 @@
       return;
     }
     body.innerHTML = list.map((c, i) => {
-      const date = new Date(c.lastSeen).toLocaleDateString("ar-MA");
-      const msg  = escHtml((c.lastMessage||"").substring(0,35));
+      const time = fmtTime(c.lastMessageAt || c.lastSeen);
+      const msg  = escHtml(fmtLastMsg(c.lastMessage, c.lastDirection));
       const grad = avatarGrad(c.name);
       const init = escHtml(initials(c.name));
+      const unread = c.lastDirection === "in" ? `<span class="unread-dot"></span>` : "";
       return `
         <tr>
           <td style="color:var(--muted);font-size:0.8rem">${i+1}</td>
           <td><div class="contact-cell">
-            <div class="c-avatar" style="background:${grad}">${init}</div>
+            <div class="c-avatar" style="background:${grad}">${init}${unread}</div>
             <div class="c-name">${escHtml(c.name)}</div>
           </div></td>
           <td><span class="phone-tag">+${c.phone}</span></td>
           <td class="col-hide-mob"><span class="msg-badge">${c.totalMessages}</span></td>
-          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg||"—"}</div></td>
-          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${date}</td>
+          <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg}</div></td>
+          <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${time}</td>
           <td><div class="actions-cell">
                         <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
             <a href="/messages?phone=${c.phone}" class="action-btn ab-msg">📨 رسائل</a>
