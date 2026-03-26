@@ -3,14 +3,12 @@
 // ─────────────────────────────────────────────────────
 let lastMessageId = 0;
 let lastDateRendered = "";
-// from_date: اليوم الحالي منتصف الليل — تُحمَّل رسائل اليوم فقط افتراضياً
-let chatFromDate = todayMidnight();
-let hasOlderMessages = true; // نفترض أن هناك رسائل أقدم حتى نتحقق
+// from_date: آخر 24 ساعة افتراضياً
+let chatFromDate = last24h();
+let hasOlderMessages = true;
 
-function todayMidnight() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+function last24h() {
+  return new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 }
 
 const socketSeenId = new Set();
@@ -65,7 +63,7 @@ async function loadMessages(scrollToBottom = false) {
   if (!selectedPhone) return;
 
   // reset عند تغيير المحادثة
-  if (scrollToBottom) { chatFromDate = todayMidnight(); hasOlderMessages = true; }
+  if (scrollToBottom) { chatFromDate = last24h(); hasOlderMessages = true; }
 
   const wrap = document.getElementById("messagesWrap");
   if (!wrap) return;
