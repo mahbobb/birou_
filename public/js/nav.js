@@ -157,6 +157,10 @@
         { href: '/voices',    icon: '🎤', label: 'الصوتيات' },
         { href: '/videos',    icon: '🎬', label: 'الفيديوهات' },
       ]},
+      { label: 'الأعمال', links: [
+        { href: '/bookings-admin', icon: '🏢', label: 'الحجوزات' },
+        { href: '/messenger-bulk', icon: '💬', label: 'Messenger جماعي' },
+      ]},
       { label: 'الإعدادات', links: [
         { href: '/notes',     icon: '📝', label: 'الملاحظات' },
         { href: '/qr',        icon: '📲', label: 'QR Code' },
