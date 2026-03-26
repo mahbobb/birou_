@@ -146,6 +146,35 @@
     #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: .88rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 999; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Quick Reply Button ── */
+    .reply-btn { background: #e3f2fd; color: #1565c0; }
+    .reply-btn:hover { background: #bbdefb; }
+
+    /* ── Quick Reply Modal ── */
+    .qr-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 999; align-items: center; justify-content: center;
+    }
+    .qr-overlay.open { display: flex; }
+    .qr-modal-box {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      width: min(460px, 94vw); box-shadow: 0 8px 40px rgba(0,0,0,.18);
+    }
+    .qr-modal-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+    .qr-modal-to { font-size: .82rem; color: var(--muted); margin-bottom: 10px; }
+    .qr-modal-ta {
+      width: 100%; min-height: 90px; padding: 10px 13px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-size: .9rem; resize: vertical; font-family: inherit;
+      direction: rtl; outline: none;
+    }
+    .qr-modal-ta:focus { border-color: var(--teal); }
+    .qr-modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+    .qr-btn { padding: 9px 20px; border: none; border-radius: 9px; cursor: pointer; font-size: .87rem; font-weight: 600; }
+    .qr-btn-cancel { background: #f0f4f8; color: var(--text); }
+    .qr-btn-send { background: var(--teal); color: white; }
+    .qr-btn-send:hover { background: var(--dark); }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; height: auto; }
@@ -242,6 +271,19 @@
 
 <div class="pagination" id="pagination"></div>
 <div id="toast"></div>
+
+<!-- ── Quick Reply Modal ── -->
+<div class="qr-overlay" id="replyOverlay" onclick="if(event.target===this)closeReply()">
+  <div class="qr-modal-box">
+    <h3>✏️ رد سريع</h3>
+    <div class="qr-modal-to" id="replyTo"></div>
+    <textarea class="qr-modal-ta" id="replyText" placeholder="اكتب ردك هنا..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
+    <div class="qr-modal-actions">
+      <button class="qr-btn qr-btn-cancel" onclick="closeReply()">إلغاء</button>
+      <button class="qr-btn qr-btn-send" id="replySendBtn" onclick="sendReply()">إرسال ✉️</button>
+    </div>
+  </div>
+</div>
 
 <script>
   /* ── State ── */
@@ -362,7 +404,10 @@
         <td class="msg-body">${renderBodyCell(m.body)}</td>
         <td>${srcBadge}</td>
         <td class="time">${time}</td>
-        <td><a href="/chat?phone=${m.phone}" class="chat-btn">💬 شات</a></td>
+        <td style="white-space:nowrap">
+          <button class="chat-btn reply-btn" onclick="openReply('${m.phone}','${escHtml(m.name||m.phone)}')">✏️ رد</button>
+          <a href="/chat?phone=${m.phone}" class="chat-btn" style="margin-right:4px">💬 شات</a>
+        </td>
       </tr>`;
     }).join("");
   }
@@ -385,7 +430,10 @@
         <td class="msg-body" title="${escHtml(u.lastBody||"")}">${escHtml((u.lastBody||"").substring(0,50))}</td>
         <td><span class="badge badge-no-reply">⚠️ بدون رد</span></td>
         <td class="time" title="${time}">${ago}</td>
-        <td><a href="/chat?phone=${u.phone}" class="chat-btn">💬 رد</a></td>
+        <td style="white-space:nowrap">
+          <button class="chat-btn reply-btn" onclick="openReply('${u.phone}','${escHtml(u.name||u.phone)}')">✏️ رد</button>
+          <a href="/chat?phone=${u.phone}" class="chat-btn" style="margin-right:4px">💬 شات</a>
+        </td>
       </tr>`;
     }).join("");
   }
@@ -525,6 +573,45 @@
     currentOffset = 0;
     if (activeTab !== "unanswered") renderTable(filterList());
   });
+
+  /* ── Quick Reply ── */
+  let _replyPhone = "", _replyName = "";
+
+  function openReply(phone, name) {
+    _replyPhone = phone;
+    _replyName  = name;
+    document.getElementById("replyTo").textContent = `إلى: ${name} (+${phone})`;
+    document.getElementById("replyText").value = "";
+    document.getElementById("replyOverlay").classList.add("open");
+    setTimeout(() => document.getElementById("replyText").focus(), 100);
+  }
+
+  function closeReply() {
+    document.getElementById("replyOverlay").classList.remove("open");
+  }
+
+  async function sendReply() {
+    const text = document.getElementById("replyText").value.trim();
+    if (!text) return showToast("⚠️ اكتب رسالة أولاً");
+    const btn = document.getElementById("replySendBtn");
+    btn.disabled = true; btn.textContent = "جاري الإرسال...";
+    try {
+      const r = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: _replyPhone, message: text, source: "manual" })
+      });
+      const d = await r.json();
+      if (d.ok || d.status === "sent") {
+        showToast("✅ تم الإرسال");
+        closeReply();
+        await refresh();
+      } else {
+        showToast("❌ " + (d.error || "فشل الإرسال"));
+      }
+    } catch { showToast("❌ خطأ في الاتصال"); }
+    btn.disabled = false; btn.textContent = "إرسال ✉️";
+  }
 
   /* ── Init & auto-refresh every 10s ── */
   refresh();

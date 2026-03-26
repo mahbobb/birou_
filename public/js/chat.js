@@ -968,6 +968,48 @@ if ("Notification" in window && Notification.permission === "default") {
 
 loadContacts()
 
+// ── Auto-open contact from URL ?phone=XXXXX (coming from /messages page) ──
+;(function() {
+  const urlPhone = new URLSearchParams(window.location.search).get("phone") || ""
+  if (!urlPhone) return
+  let tries = 0
+  const timer = setInterval(() => {
+    tries++
+    // try exact match
+    let el = document.querySelector(`.contact-item[data-phone="${urlPhone}"]`)
+    // try normalized match
+    if (!el) {
+      for (const item of document.querySelectorAll(".contact-item")) {
+        if (normalizeKey(item.dataset.phone) === normalizeKey(urlPhone)) { el = item; break; }
+      }
+    }
+    if (el) {
+      clearInterval(timer)
+      selectContact(el)
+      return
+    }
+    // fallback: open by phone directly after 3s if not found in list
+    if (tries >= 10) {
+      clearInterval(timer)
+      selectedPhone = urlPhone
+      selectedName  = urlPhone
+      selectedColor = avatarColor(urlPhone)
+      selectedSource = "whatsapp"
+      selectedFbId   = ""
+      lastMessageId = 0
+      lastDateRendered = ""
+      socket.emit("join", normalizeKey(urlPhone))
+      document.getElementById("noSelection").style.display = "none"
+      document.getElementById("chatView").classList.add("open")
+      document.getElementById("chatAvatar").textContent = urlPhone[0].toUpperCase()
+      document.getElementById("chatAvatar").style.background = selectedColor
+      document.getElementById("chatName").textContent  = urlPhone
+      document.getElementById("chatPhone").textContent = "+" + urlPhone
+      loadMessages(true)
+    }
+  }, 300)
+})()
+
 setInterval(loadContacts,10000)
 
 setInterval(()=>{
