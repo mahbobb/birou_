@@ -1,7 +1,11 @@
 const axios = require("axios");
 const { generateResponse } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
-const { saveMessengerContact } = require("./messenger");
+const { saveMessengerContact, saveMessengerMessage } = require("./messenger");
+
+let _io = null;
+function setIo(io) { _io = io; }
+function emitMsg(fbId, msg) { if (_io) _io.to(`msng:${fbId}`).emit("new_messenger_msg", msg); }
 
 const PAGE_ACCESS_TOKEN = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.FACEBOOK_VERIFY_TOKEN || "my_verify_token";
@@ -50,8 +54,9 @@ async function handleWebhook(req, res) {
 
       try {
         const userName = await getUserName(senderId);
-        // حفظ الزبون كـ "in" (لم يُرد عليه بعد)
         await saveMessengerContact(senderId, userName, messageText, "in");
+        await saveMessengerMessage(senderId, userName, "in", messageText);
+        emitMsg(senderId, { fb_id: senderId, direction: "in", body: messageText, name: userName, created_at: new Date().toISOString() });
 
         await sendTyping(senderId);
         const { text: customText } = findCustomResponse(messageText);
@@ -64,8 +69,8 @@ async function handleWebhook(req, res) {
         }
 
         await sendMessage(senderId, response);
-        // تحديث الاتجاه لـ "out" بعد الرد
         await saveMessengerContact(senderId, userName, response, "out");
+        await saveMessengerMessage(senderId, userName, "out", response);
         console.log(`✅ [Messenger][${source}] → ${senderId}: ${response.substring(0, 60)}...`);
       } catch (error) {
         console.error(`❌ [Messenger] خطأ:`, error.message);
@@ -168,4 +173,4 @@ async function replyToComment(commentId, text) {
   );
 }
 
-module.exports = { verifyWebhook, handleWebhook };
+module.exports = { verifyWebhook, handleWebhook, setIo };

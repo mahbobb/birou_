@@ -8,14 +8,16 @@ const PAGE_SIZE  = 50;
 // ── Load & merge contacts from DB + WhatsApp ──────────────────────────────
 async function loadContacts() {
   try {
-    const [dbRes, waRes, delRes] = await Promise.all([
+    const [dbRes, waRes, delRes, msngRes] = await Promise.all([
       fetch("/api/contacts"),
       fetch("/api/wa-chats"),
       fetch("/api/deleted-phones"),
+      fetch("/api/messenger/contacts?limit=200"),
     ]);
-    const dbContacts   = await dbRes.json();
-    const waChats      = await waRes.json();
-    const deletedKeys  = new Set((await delRes.json()).map(p => normalizeKey(p)));
+    const dbContacts    = await dbRes.json();
+    const waChats       = await waRes.json();
+    const deletedKeys   = new Set((await delRes.json()).map(p => normalizeKey(p)));
+    const msngContacts  = await msngRes.json();
 
     const merged = new Map();
 
@@ -70,8 +72,23 @@ async function loadContacts() {
       }
     }
 
+    // دمج Messenger contacts
+    const msngList = Array.isArray(msngContacts) ? msngContacts : [];
+    for (const m of msngList) {
+      merged.set(`msng_${m.fb_id}`, {
+        phone:         m.fb_id,
+        name:          m.name || "مجهول",
+        lastMessage:   m.last_message || "",
+        lastSeen:      m.last_seen,
+        lastDirection: m.direction,
+        totalMessages: 0,
+        source:        "messenger",
+        fb_id:         m.fb_id,
+      });
+    }
+
     const newList = Array.from(merged.values())
-      .filter(c => !deletedKeys.has(normalizeKey(c.phone)))
+      .filter(c => c.source === "messenger" || !deletedKeys.has(normalizeKey(c.phone)))
       .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
 
     const newSig = newList.map(c => c.phone + c.lastSeen).join("|");
@@ -201,13 +218,17 @@ function renderContacts(list) {
     const isUnread = c.lastDirection === "in";
     const isActive = normalizeKey(c.phone) === normalizeKey(selectedPhone);
     const classes  = ["contact-item", isActive ? "active" : "", isUnread ? "unread" : ""].filter(Boolean).join(" ");
-    const botNum   = c.botId === "bot1" ? "1" : c.botId === "bot2" ? "2" : c.botId === "bot3" ? "3" : "";
-    const botBadge = botNum ? `<span class="bot-badge">${botNum}</span>` : "";
+    const isMsng   = c.source === "messenger";
+    const botNum   = !isMsng && (c.botId === "bot1" ? "1" : c.botId === "bot2" ? "2" : c.botId === "bot3" ? "3" : "");
+    const botBadge = isMsng
+      ? `<span class="bot-badge" style="background:#1877f2">📘</span>`
+      : botNum ? `<span class="bot-badge">${botNum}</span>` : "";
     const total    = c.totalMessages > 0 ? formatCount(c.totalMessages) : "";
     const msgCount = total ? `<span class="msg-count-badge">${total}</span>` : "";
     return `
       <div class="${classes}"
         data-phone="${escHtml(c.phone)}" data-name="${escHtml(c.name || c.phone)}"
+        data-source="${c.source || 'whatsapp'}"
         onclick="selectContact(this)">
         <div class="contact-avatar" style="background:${color}">${initial}</div>
         <div class="contact-details">

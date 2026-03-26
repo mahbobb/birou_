@@ -70,9 +70,13 @@ async function loadMessages(scrollToBottom = false) {
 
   try {
     const isFullLoad = lastMessageId === 0 || scrollToBottom;
-    const phone = encodeURIComponent(selectedPhone);
     const fromParam = isFullLoad ? `&from_date=${encodeURIComponent(chatFromDate)}` : "";
-    const url = `/api/messages?phone=${phone}&limit=200${fromParam}`;
+
+    // Messenger أو WhatsApp
+    const isMsng = (typeof selectedSource !== "undefined" && selectedSource === "messenger");
+    const url = isMsng
+      ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`
+      : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`;
 
     if (isFullLoad) {
       wrap.innerHTML = `

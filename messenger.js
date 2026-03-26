@@ -1,6 +1,6 @@
 const pool = require("./db");
 
-// ─── إنشاء جدول messenger_contacts ───────────────────────────────────────
+// ─── إنشاء الجداول ────────────────────────────────────────────────────────
 async function initMessengerTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS messenger_contacts (
@@ -12,6 +12,18 @@ async function initMessengerTable() {
       direction    ENUM('in','out') NOT NULL DEFAULT 'in',
       UNIQUE KEY uq_fb_id (fb_id),
       INDEX idx_last_seen (last_seen)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messenger_messages (
+      id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+      fb_id      VARCHAR(50)  NOT NULL,
+      name       VARCHAR(100) NOT NULL DEFAULT 'مجهول',
+      direction  ENUM('in','out') NOT NULL,
+      body       TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_mm_fb_id    (fb_id),
+      INDEX idx_mm_created  (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 }
@@ -63,4 +75,32 @@ async function countUnanswered() {
   } catch { return 0; }
 }
 
-module.exports = { saveMessengerContact, getMessengerContacts, countUnanswered };
+// ─── حفظ رسالة ────────────────────────────────────────────────────────────
+async function saveMessengerMessage(fbId, name, direction, body) {
+  try {
+    await pool.query(
+      `INSERT INTO messenger_messages (fb_id, name, direction, body) VALUES (?, ?, ?, ?)`,
+      [fbId, name || "مجهول", direction, body]
+    );
+  } catch {}
+}
+
+// ─── جلب رسائل زبون ────────────────────────────────────────────────────────
+async function getMessengerMessages({ fb_id, limit = 100, from_date = null } = {}) {
+  try {
+    const dateClause = from_date ? `AND created_at >= ?` : "";
+    const params = from_date
+      ? [fb_id, new Date(from_date), parseInt(limit)]
+      : [fb_id, parseInt(limit)];
+    const [rows] = await pool.query(
+      `SELECT id, fb_id, name, direction, body, created_at
+         FROM messenger_messages
+        WHERE fb_id = ? ${dateClause}
+        ORDER BY created_at DESC LIMIT ?`,
+      params
+    );
+    return rows;
+  } catch { return []; }
+}
+
+module.exports = { saveMessengerContact, getMessengerContacts, countUnanswered, saveMessengerMessage, getMessengerMessages };

@@ -8,8 +8,8 @@ const qrcode = require("qrcode-terminal");
 const express = require("express");
 const { generateResponse, clearHistory } = require("./claude");
 const { findCustomResponse } = require("./customResponses");
-const { verifyWebhook, handleWebhook } = require("./facebook");
-const { getMessengerContacts, countUnanswered, saveMessengerContact } = require("./messenger");
+const { verifyWebhook, handleWebhook, setIo: fbSetIo } = require("./facebook");
+const { getMessengerContacts, countUnanswered, saveMessengerContact, saveMessengerMessage, getMessengerMessages } = require("./messenger");
 const { createBooking, getBookings, updateBookingStatus, updateBooking, deleteBooking, getBookingStats, addIdImages } = require("./bookings");
 const { registerContact, getStats, getAllContacts } = require("./contacts");
 const { saveMessage, checkMessageExists, getMessages, getMessageStats, getUnansweredContacts } = require("./messages");
@@ -884,6 +884,8 @@ function emitMessage(phone, msgObj) {
   io.to(`phone:${phone}`).emit("new_message", msgObj);
 }
 
+fbSetIo(io);
+
 io.on("connection", (socket) => {
   // التحقق من الـ token عند الانضمام لغرفة (وليس عند الاتصال — لتفادي 400)
   socket.on("join", (phone) => {
@@ -901,6 +903,19 @@ io.on("connection", (socket) => {
       if (room !== socket.id) socket.leave(room);
     }
     if (phone) socket.join(`phone:${phone}`);
+  });
+  socket.on("join_messenger", (fbId) => {
+    const cookieHeader = socket.handshake.headers.cookie || "";
+    const cookies = {};
+    cookieHeader.split(";").forEach(part => {
+      const [k, ...v] = part.trim().split("=");
+      if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
+    });
+    if (!validTokens.has(cookies.auth_token)) return;
+    for (const room of socket.rooms) {
+      if (room !== socket.id) socket.leave(room);
+    }
+    if (fbId) socket.join(`msng:${fbId}`);
   });
 });
 
@@ -1062,6 +1077,39 @@ app.get("/api/messenger/contacts", async (req, res) => {
 app.get("/api/messenger/count", async (_req, res) => {
   const n = await countUnanswered();
   res.json({ count: n });
+});
+
+// ── رسائل زبون Messenger ──────────────────────────────────────────────────
+app.get("/api/messenger/messages", async (req, res) => {
+  const { fb_id, limit = 100, from_date } = req.query;
+  if (!fb_id) return res.json([]);
+  const list = await getMessengerMessages({ fb_id, limit: parseInt(limit), from_date: from_date || null });
+  res.json(list.reverse()); // من القديم للجديد
+});
+
+// ── إرسال رسالة لـ Messenger ──────────────────────────────────────────────
+app.post("/api/messenger/send", async (req, res) => {
+  const { fb_id, text, name } = req.body || {};
+  if (!fb_id || !text?.trim()) return res.status(400).json({ error: "fb_id و text مطلوبان" });
+  const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+  if (!token) return res.status(503).json({ error: "Facebook token غير مضبوط" });
+  try {
+    await axios.post(
+      "https://graph.facebook.com/v19.0/me/messages",
+      { recipient: { id: fb_id }, message: { text: text.trim() } },
+      { params: { access_token: token } }
+    );
+    await saveMessengerContact(fb_id, name || "مجهول", text.trim(), "out");
+    await saveMessengerMessage(fb_id, name || "مجهول", "out", text.trim());
+    // إرسال socket للتحديث الفوري
+    io.to(`msng:${fb_id}`).emit("new_messenger_msg", {
+      fb_id, direction: "out", body: text.trim(), name: "أنت",
+      created_at: new Date().toISOString()
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data?.error?.message || err.message });
+  }
 });
 
 let messengerBulkStatus = { running: false, done: 0, total: 0, ok: 0, fail: 0 };

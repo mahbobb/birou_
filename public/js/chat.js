@@ -5,6 +5,8 @@ let selectedPhone = ""
 let selectedName = ""
 let selectedColor = "#00a884"
 let currentViewTab = "msgs"
+let selectedSource = "whatsapp" // "whatsapp" | "messenger"
+let selectedFbId   = ""
 
 // ─────────────────────────────────────────
 // NOTIFICATION SOUND  (Web Audio API — no file needed)
@@ -64,7 +66,26 @@ const socket = io()
 
 // إعادة الانضمام للغرفة تلقائياً عند إعادة الاتصال بالسيرفر
 socket.on("connect", () => {
-  if (selectedPhone) socket.emit("join", normalizeKey(selectedPhone))
+  if (!selectedPhone) return
+  if (selectedSource === "messenger") socket.emit("join_messenger", selectedPhone)
+  else socket.emit("join", normalizeKey(selectedPhone))
+})
+
+// رسائل Messenger الواردة
+socket.on("new_messenger_msg", (m) => {
+  if (!selectedPhone || m.fb_id !== selectedFbId) {
+    loadContacts(); return;
+  }
+  const wrap = document.getElementById("messagesWrap")
+  if (!wrap) return
+  const wasAtBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 80
+  wrap.insertAdjacentHTML("beforeend", renderSingleMessage({
+    id: Date.now(), direction: m.direction,
+    body: m.body, created_at: m.created_at, source: m.direction === "out" ? "manual" : "user"
+  }))
+  if (wasAtBottom || m.direction === "out")
+    requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight })
+  loadContacts()
 })
 
 socket.on("new_message", (m) => {
@@ -159,12 +180,15 @@ function backToList(){
 
 function selectContact(el){
 
-const phone = el.dataset.phone
-const name  = el.dataset.name
+const phone  = el.dataset.phone
+const name   = el.dataset.name
+const source = el.dataset.source || "whatsapp"
 
-selectedPhone = phone
-selectedName  = name
-selectedColor = avatarColor(name || phone)
+selectedPhone  = phone
+selectedName   = name
+selectedColor  = avatarColor(name || phone)
+selectedSource = source
+selectedFbId   = source === "messenger" ? phone : ""
 
 lastMessageId = 0
 lastDateRendered = ""
@@ -172,7 +196,11 @@ lastDateRendered = ""
 socketSeenId.clear()
 socketSeenSig.clear()
 
-socket.emit("join", normalizeKey(phone))
+if (source === "messenger") {
+  socket.emit("join_messenger", phone)
+} else {
+  socket.emit("join", normalizeKey(phone))
+}
 
 setViewTab("msgs")
 
@@ -272,22 +300,16 @@ autoResize(input)
 
 try{
 
-const botId = document.getElementById("botSelect")?.value || undefined
+const isMsng = selectedSource === "messenger"
+const botId  = !isMsng && (document.getElementById("botSelect")?.value || undefined)
 
-const res = await fetch("/api/send",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-phone:selectedPhone,
-message:text,
-...(botId ? { botId } : {})
-})
-
+const res = await fetch(isMsng ? "/api/messenger/send" : "/api/send", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(isMsng
+    ? { fb_id: selectedPhone, text, name: selectedName }
+    : { phone: selectedPhone, message: text, ...(botId ? { botId } : {}) }
+  )
 })
 
 const data = await res.json()
