@@ -380,6 +380,8 @@ function setupClient(botId) {
   // ── رد تلقائي على المكالمات الواردة ────────────────────────────────────────
   c.on("call", async (call) => {
     try {
+      // بعض المكالمات تأتي بدون id (مكالمات مجموعات أو تنسيق غير متوقع)
+      if (!call || !call.id) return;
       const callType = call.isVideo ? "video" : "voice";
       const callLabel = call.isVideo ? "📹 مكالمة فيديو" : "📞 مكالمة صوتية";
       const phone = (call.from || "").replace(/@.*/, "");
