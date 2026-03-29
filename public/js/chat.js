@@ -7,6 +7,13 @@ let selectedColor = "#00a884"
 let currentViewTab = "msgs"
 let selectedSource = "whatsapp" // "whatsapp" | "messenger"
 let selectedFbId   = ""
+let _botPhones     = {} // botId → phone number
+
+fetch("/api/bots").then(r => r.json()).then(data => {
+  Object.entries(data).forEach(([id, info]) => {
+    if (info.phone) _botPhones[id] = info.phone
+  })
+}).catch(() => {})
 
 // ─────────────────────────────────────────
 // NOTIFICATION SOUND  (Web Audio API — no file needed)
@@ -183,6 +190,7 @@ function selectContact(el){
 const phone  = el.dataset.phone
 const name   = el.dataset.name
 const source = el.dataset.source || "whatsapp"
+const botId  = el.dataset.botid || ""
 
 selectedPhone  = phone
 selectedName   = name
@@ -215,6 +223,17 @@ av.style.background = selectedColor
 
 document.getElementById("chatName").textContent = name || phone
 document.getElementById("chatPhone").textContent = "+" + phone
+
+const viaEl = document.getElementById("chatBotVia")
+if (viaEl) {
+  if (botId && source !== "messenger") {
+    const botPhone = (_botPhones && _botPhones[botId]) ? "+" + _botPhones[botId] : botId
+    viaEl.textContent = "📲 " + botPhone
+    viaEl.style.display = ""
+  } else {
+    viaEl.style.display = "none"
+  }
+}
 
 document.querySelectorAll(".contact-item")
 .forEach(i=>i.classList.remove("active"))

@@ -229,6 +229,7 @@ function renderContacts(list) {
       <div class="${classes}"
         data-phone="${escHtml(c.phone)}" data-name="${escHtml(c.name || c.phone)}"
         data-source="${c.source || 'whatsapp'}"
+        data-botid="${escHtml(c.botId || '')}"
         onclick="selectContact(this)">
         <div class="contact-avatar" style="background:${color}">${initial}</div>
         <div class="contact-details">

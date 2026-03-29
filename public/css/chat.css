@@ -243,6 +243,7 @@ body {
 }
 .chat-header .info .name  { font-weight: 600; font-size: 0.93rem; color: #e9edef; }
 .chat-header .info .phone { font-size: 0.73rem; color: #8696a0; margin-top: 1px; }
+.chat-header .info .bot-via { font-size: 0.68rem; color: #00a884; margin-top: 1px; }
 
 /* Messages area */
 .messages-wrap {

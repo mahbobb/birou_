@@ -395,13 +395,7 @@ function setupClient(botId) {
         if (ct[0] && ct[0][0]) callerName = ct[0][0].name;
       } catch {}
       await saveCall({ phone, name: callerName, callType, botId });
-
-      await call.reject();
-      console.log(`📵 [${botId}] رُفضت ${callLabel} من: ${phone}`);
-      await c.sendMessage(
-        call.from,
-        `${callLabel} 📵\nعذراً، لا نستقبل المكالمات على هذا الرقم.\nراسلنا بنصية وسنرد عليك فوراً 😊`
-      );
+      console.log(`📞 [${botId}] مكالمة واردة من: ${phone} — سيرن على الهاتف`);
 
       // إشعار socket للوحة التحكم
       io.emit("new_call", { phone, name: callerName, callType, botId, created_at: new Date() });
@@ -528,8 +522,8 @@ async function handleIncoming(message, botId) {
         if (imgFile) io.emit("new_media", { type: "image", phone: key, name, url: imgUrl });
         if (autoReplyEnabled) {
           const r = "📸 وصلتنا صورتك، شكرا! إذا عندك أي سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          const s1 = await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s1?.id?._serialized || null);
           emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
@@ -544,8 +538,8 @@ async function handleIncoming(message, botId) {
         if (voiceFile) io.emit("new_media", { type: "voice", phone: key, name, url: voiceUrl });
         if (autoReplyEnabled) {
           const r = "🎤 وصلتنا رسالتك الصوتية! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          const s2 = await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s2?.id?._serialized || null);
           emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
@@ -560,8 +554,8 @@ async function handleIncoming(message, botId) {
         if (videoFile) io.emit("new_media", { type: "video", phone: key, name, url: videoUrl });
         if (autoReplyEnabled) {
           const r = "🎬 وصلنا الفيديو ديالك، شكرا! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
-          await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default");
+          const s3 = await botReply(message, r, botId);
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s3?.id?._serialized || null);
           emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
@@ -607,16 +601,18 @@ async function handleIncoming(message, botId) {
 
     // replyText: نص الرد المُرسَل
     let replyText = "";
+    let sentWaId  = null;
     if (voiceFile) {
       // ملف صوتي مبرمج
       const media = MessageMedia.fromFilePath(voiceFile);
       await botReply(message, media, botId, { sendAudioAsVoice: true });
       replyText = customText || "🎤 رسالة صوتية";
-      if (customText) await botReply(message, customText, botId);
+      if (customText) { const s = await botReply(message, customText, botId); sentWaId = s?.id?._serialized || null; }
       console.log(`✅ [🎤 صوت مبرمج] → ${name}`);
     } else if (customText) {
       // رد keyword مبرمج
-      await botReply(message, customText, botId);
+      const s = await botReply(message, customText, botId);
+      sentWaId  = s?.id?._serialized || null;
       replyText = customText;
       logResponseUsage(senderNumber, keywordsLabel, matchedKw, customText, "whatsapp");
       console.log(`✅ [مبرمج] → ${name}: ${customText.substring(0, 70)}`);
@@ -624,22 +620,24 @@ async function handleIncoming(message, botId) {
       // الأولوية 2: الذكاء الاصطناعي
       try {
         const aiReply = await generateResponse(contactId, name, body);
-        await botReply(message, aiReply, botId);
+        const s = await botReply(message, aiReply, botId);
+        sentWaId  = s?.id?._serialized || null;
         replyText = aiReply;
         source    = "ai";
         console.log(`🤖 [AI] → ${name}: ${aiReply.substring(0, 70)}`);
       } catch (aiErr) {
         // الأولوية 3: الرد الافتراضي (fallback)
         console.warn(`⚠️  AI فشل (${aiErr.message}) — جاري استخدام الرد الافتراضي`);
-        await botReply(message, defaultText, botId);
+        const s = await botReply(message, defaultText, botId);
+        sentWaId  = s?.id?._serialized || null;
         replyText = defaultText;
         source    = "default";
         console.log(`↩️  [افتراضي] → ${name}: ${defaultText.substring(0, 70)}`);
       }
     }
 
-    // حفظ رد البوت (بدون wa_msg_id لأن botMsgIds يمنع التكرار من message_create)
-    await saveMessage(senderNumber, "البوت", "out", replyText, source);
+    // حفظ رد البوت مع wa_msg_id لمنع التكرار حتى في حالة race condition مع message_create
+    await saveMessage(senderNumber, "البوت", "out", replyText, source, null, sentWaId);
     emitMessage(key, { phone: key, name: "البوت", direction: "out", body: replyText, source, created_at: new Date().toISOString() });
 
   } catch (err) {
