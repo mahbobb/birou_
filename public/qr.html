@@ -265,6 +265,7 @@
   async function refresh() {
     try {
       const res  = await fetch('/api/qr');
+      if (res.status === 401) { location.href = '/login'; return; }
       const data = await res.json();
       for (const id of BOT_IDS) {
         if (data[id]) updateCard(id, data[id]);

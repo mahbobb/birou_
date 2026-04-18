@@ -7,11 +7,15 @@ const pool = mysql.createPool({
   password:           process.env.DB_PASSWORD || "",
   database:           process.env.DB_NAME     || "whatsapp_bot",
   waitForConnections: true,
-  connectionLimit:    20,
+  connectionLimit:    30,  // زيادة من 20 إلى 30
   queueLimit:         0,
   charset:            "utf8mb4",
   enableKeepAlive:    true,
   keepAliveInitialDelay: 10000,
+  timeout:            10000,  // timeout الاتصال 10 ثواني
+  authPlugins: {
+    mysql_native_password: () => () => {},
+  },
 });
 
 // ─── إنشاء الجداول مع UNIQUE constraints ─────────────────────────────────
@@ -41,6 +45,9 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE contacts ADD COLUMN is_deleted TINYINT(1) NOT NULL DEFAULT 0
   `).catch(() => {});
+  // migration: add photo columns
+  await pool.query(`ALTER TABLE contacts ADD COLUMN photo VARCHAR(300) DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE contacts ADD COLUMN photo_at DATETIME DEFAULT NULL`).catch(()=>{});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -147,6 +154,15 @@ async function initDb() {
     await pool.query(`ALTER TABLE messages ADD INDEX idx_messages_contact_id (contact, id)`);
   } catch { /* الـ index موجود مسبقاً */ }
 
+  // ── Migration: index مركّب لتسريع MAX(id) GROUP BY contact ──
+  try {
+    await pool.query(`ALTER TABLE messages ADD INDEX idx_msg_contact_id_cover (contact, id, created_at, direction)`);
+  } catch { /* الـ index موجود مسبقاً */ }
+  // ── index على contacts.last_seen لتسريع ORDER BY ──
+  try {
+    await pool.query(`ALTER TABLE contacts ADD INDEX idx_contacts_last_seen2 (last_seen, id)`);
+  } catch { /* الـ index موجود مسبقاً */ }
+
   // ── جدول سجل استخدام الردود المبرمجة ──────────────────────────────────
   await pool.query(`
     CREATE TABLE IF NOT EXISTS response_logs (
@@ -177,6 +193,33 @@ async function initDb() {
       INDEX idx_calls_bot        (bot_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // ── جدول المستخدمين ────────────────────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id         INT AUTO_INCREMENT PRIMARY KEY,
+      name       VARCHAR(100) NOT NULL,
+      username   VARCHAR(50)  NOT NULL,
+      password   VARCHAR(200) NOT NULL,
+      role       ENUM('admin','agent') NOT NULL DEFAULT 'agent',
+      active     TINYINT(1)   NOT NULL DEFAULT 1,
+      created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_users_username (username)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+  `);
+
+  // seed: أضف أدمن افتراضي إذا الجدول فارغ
+  const [uRows] = await pool.query("SELECT COUNT(*) AS cnt FROM users");
+  if (uRows[0].cnt === 0) {
+    const crypto = require("crypto");
+    const defPass = process.env.DASHBOARD_PASSWORD || "admin123";
+    const hash = crypto.createHash("sha256").update(defPass).digest("hex");
+    await pool.query(
+      "INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, 'admin')",
+      ["المدير", "admin", hash]
+    );
+    console.log("✅ تم إنشاء مستخدم افتراضي: admin / " + defPass);
+  }
 
   console.log("✅ MySQL جاهز — كل الجداول والـ UNIQUE constraints محدّثة");
 }

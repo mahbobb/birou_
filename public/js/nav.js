@@ -1,4 +1,18 @@
 'use strict';
+
+// ── Auto-redirect to login on 401 ──────────────────────────────────────────
+(function(){
+  const _fetch = window.fetch;
+  window.fetch = function(...args){
+    return _fetch.apply(this, args).then(res=>{
+      if(res.status===401 && !res.url.includes('/api/login')){
+        window.location.href='/login';
+      }
+      return res;
+    });
+  };
+})();
+
 /**
  * nav.js — Shared navigation component
  *
@@ -19,6 +33,8 @@
     { href: '/groups',    icon: '👥',  label: 'المجموعات' },
     { href: '/grp-chat',  icon: '💬',  label: 'رسائل المجموعات' },
     { href: '/responses', icon: '📋',  label: 'الردود' },
+    { href: '/ai-reply',  icon: '🤖',  label: 'رد ذكي' },
+    { href: '/bulk-reply',icon: '📤',  label: 'رد جماعي' },
     { href: '/images',    icon: '📸',  label: 'الصور' },
     { href: '/voices',    icon: '🎤',  label: 'الصوتيات' },
     { href: '/videos',    icon: '🎬',  label: 'الفيديوهات' },
@@ -64,6 +80,8 @@
       '/calls':     { icon: '📞', title: 'سجل المكالمات' },
       '/groups':    { icon: '👥', title: 'المجموعات' },
       '/responses': { icon: '📋', title: 'الردود التلقائية' },
+      '/ai-reply':  { icon: '🤖', title: 'رد ذكي تلقائي' },
+      '/bulk-reply':{ icon: '📤', title: 'رد جماعي على الرسائل' },
       '/images':    { icon: '📸', title: 'الصور' },
       '/voices':    { icon: '🎤', title: 'الصوتيات' },
       '/videos':    { icon: '🎬', title: 'الفيديوهات' },
@@ -88,6 +106,7 @@
       <nav class="nav-links">
         <a href="/">🏠</a>
         ${navHTML}
+        <span id="bot-status-indicator" class="bot-status-dot" title="حالة البوت">🟢</span>
         <a href="#" class="nav-logout" onclick="${logout}">🚪 خروج</a>
       </nav>`;
   }
@@ -153,6 +172,8 @@
         { href: '/groups',    icon: '👥', label: 'المجموعات' },
         { href: '/grp-chat',  icon: '💬', label: 'رسائل المجموعات' },
         { href: '/responses', icon: '📋', label: 'الردود' },
+        { href: '/ai-reply',  icon: '🤖', label: 'رد ذكي' },
+        { href: '/bulk-reply',icon: '📤', label: 'رد جماعي' },
         { href: '/facebook',  icon: '📘', label: 'فيسبوك' },
         { href: '/widget',    icon: '🌐', label: 'ويدجت الموقع' },
       ]},
@@ -207,4 +228,79 @@
       <a href="#" onclick="${logout}">🚪 خروج</a>`;
   }
 
+})();
+
+// ─── Bot Status Indicator CSS ─────────────────────────────────────────────
+const style = document.createElement("style");
+style.textContent = `
+  .bot-status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: bot-pulse 2s ease-in-out infinite;
+    cursor: help;
+    font-size: 1rem;
+  }
+  .bot-status-dot.connected { color: #00a884; }
+  .bot-status-dot.disconnected { color: #e53935; animation: none; }
+  @keyframes bot-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+`;
+document.head.appendChild(style);
+
+// ─── HEARTBEAT: إبقاء اتصال البوت حياً ────────────────────────────────────
+(function() {
+  const HEARTBEAT_INTERVAL = 120000; // كل 2 دقيقة (تقليل من 60s)
+  const STATUS_CHECK_INTERVAL = 60000;  // كل دقيقة (تقليل من 30s)
+
+  const updateStatusIndicator = (connected) => {
+    const indicator = document.getElementById("bot-status-indicator");
+    if (indicator) {
+      indicator.classList.toggle("connected", connected);
+      indicator.classList.toggle("disconnected", !connected);
+      indicator.textContent = connected ? "🟢" : "🔴";
+    }
+  };
+
+  // Heartbeat ping
+  setInterval(async () => {
+    try {
+      const resp = await fetch("/api/ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botId: "default" }),
+      });
+      updateStatusIndicator(resp.ok);
+    } catch (err) {
+      console.warn("🔔 [Heartbeat] Failed:", err.message);
+      updateStatusIndicator(false);
+    }
+  }, HEARTBEAT_INTERVAL);
+
+  // Status check
+  setInterval(async () => {
+    try {
+      const resp = await fetch("/api/bot-status?botId=default");
+      const data = await resp.json();
+      updateStatusIndicator(data.ok && data.connected);
+
+      if (!data.ok || !data.connected) {
+        console.error("🔴 [Bot Status] البوت غير متصل!");
+      } else {
+        console.log(`✅ [Bot Status] متصل | Uptime: ${data.uptime}`);
+      }
+    } catch (err) {
+      console.warn("⚠️ [Status Check] Error:", err.message);
+      updateStatusIndicator(false);
+    }
+  }, STATUS_CHECK_INTERVAL);
+
+  // First check immediately
+  fetch("/api/bot-status?botId=default")
+    .then(r => r.json())
+    .then(data => updateStatusIndicator(data.ok && data.connected))
+    .catch(() => updateStatusIndicator(false));
 })();

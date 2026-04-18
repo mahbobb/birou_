@@ -72,10 +72,11 @@ RÈGLES ABSOLUES:
     const provider = AI_PROVIDER === "openai" ? "OpenAI" : "Groq";
     console.error(`Erreur API ${provider}:`, error.message);
 
-    if (error.status === 401) throw new Error(`Clé API ${provider} invalide`);
-    if (error.status === 429) throw new Error(`Limite ${provider} dépassée`);
-    if (error.status === 402 || error.code === "insufficient_quota") {
-      throw new Error(`Crédit ${provider} insuffisant — rechargez votre compte`);
+    if (error.status === 401) throw new Error(`CREDIT_LOW:Clé API ${provider} invalide`);
+    if (error.status === 429) throw new Error(`Limite ${provider} dépassée — réessayez plus tard`);
+    if (error.status === 402 || error.code === "insufficient_quota" ||
+        (error.message && error.message.toLowerCase().includes("credit"))) {
+      throw new Error(`CREDIT_LOW:Crédit ${provider} insuffisant — rechargez sur groq.com`);
     }
     throw new Error(`Erreur ${provider}: ${error.message}`);
   }

@@ -118,5 +118,6 @@ select.ha-select:focus{color:var(--text)}
   object-fit: cover;
   border-radius: 6px;
   transition: opacity .18s;
+  padding: 10px;
 }
 .b-img-wrap:hover img { opacity: .85; }

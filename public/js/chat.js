@@ -9,6 +9,16 @@ let selectedSource = "whatsapp" // "whatsapp" | "messenger"
 let selectedFbId   = ""
 let _botPhones     = {} // botId → phone number
 
+// ─────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────
+function escHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function escAttr(s) {
+  return String(s || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 fetch("/api/bots").then(r => r.json()).then(data => {
   Object.entries(data).forEach(([id, info]) => {
     if (info.phone) _botPhones[id] = info.phone
@@ -680,9 +690,12 @@ function renderMediaPage(type) {
       const src  = `/uploads/voices/${escHtml(v.filename)}`;
       const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
       const dir  = v.direction === "out" ? "📤" : "📥";
-      return `<div class="voice-item">
+      return `<div class="voice-item" onclick="openAudioModal('${escAttr(src)}')" style="cursor:pointer;padding:8px;border-radius:8px;background:#2a3942;transition:background 0.2s;hover:background:#374045">
         <div class="voice-item-meta">${dir} ${date}</div>
-        <audio controls src="${src}" preload="none" style="width:100%;max-width:320px;height:36px;"></audio>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="#00a884"><path d="M12 14c-.833 0-1.542-.292-2.125-.875S9 11.833 9 11V5c0-.833.292-1.542.875-2.125S11.167 2 12 2s1.542.292 2.125.875S15 4.167 15 5v6c0 .833-.292 1.542-.875 2.125S12.833 14 12 14Zm0 7c-.552 0-1-.448-1-1v-2.075C9.267 17.692 7.833 16.917 6.7 15.6 5.787 14.54 5.242 13.34 5.064 11.997 4.992 11.45 5.448 11 6 11s.988.452 1.09.995c.183.963.63 1.81 1.363 2.543C9.438 15.512 10.617 16 12 16s2.563-.488 3.538-1.462c.732-.733 1.18-1.58 1.362-2.543C17.012 11.452 17.448 11 18 11s1.008.45.936.997c-.178 1.34-.723 2.542-1.636 3.603C16.167 16.917 14.733 17.692 13 17.925V20c0 .552-.448 1-1 1Zm0-9c.283 0 .521-.096.713-.288.191-.191.287-.429.287-.712V5c0-.283-.096-.521-.287-.713A.968.968 0 0 0 12 4a.968.968 0 0 0-.713.287A.968.968 0 0 0 11 5v6c0 .283.096.521.287.712.192.192.43.288.713.288Z"/></svg>
+          <span style="color:#00a884;font-size:0.8rem;flex:1">اضغط للاستماع</span>
+        </div>
       </div>`;
     }).join("");
   }
@@ -763,6 +776,59 @@ document.addEventListener("keydown", function onKey(e){
 if(e.key==="Escape"){ el.remove(); document.removeEventListener("keydown",onKey) }
 })
 
+}
+
+// ─────────────────────────────────────────
+// AUDIO MODAL
+// ─────────────────────────────────────────
+function openAudioModal(src) {
+  const existing = document.getElementById("audioModal");
+  if (existing) existing.remove();
+
+  const el = document.createElement("div");
+  el.id = "audioModal";
+  el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;";
+
+  const audioId = "audioPlayer_" + Math.random().toString(36).substr(2, 9);
+  el.innerHTML = `
+    <div style="background:#222;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.6)">
+      <audio id="${audioId}" src="${escAttr(src)}" preload="metadata" style="width:100%;outline:none"></audio>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:16px">
+        <button onclick="document.getElementById('${audioId}').play()" style="background:#00a884;color:white;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">▶</button>
+        <button onclick="document.getElementById('${audioId}').pause()" style="background:#888;color:white;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">⏸</button>
+        <a href="${escAttr(src)}" download style="background:#374045;color:#00a884;border:none;flex:1;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:center;text-decoration:none;font-weight:600">📥 تحميل</a>
+      </div>
+    </div>
+    <button onclick="this.closest('#audioModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;padding:8px 24px;border-radius:8px;cursor:pointer;margin-top:8px">✕ إغلاق</button>`;
+
+  el.addEventListener("click", e => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+
+  document.addEventListener("keydown", function onKey(e) {
+    if (e.key === "Escape") { el.remove(); document.removeEventListener("keydown", onKey); }
+  });
+}
+
+// ─────────────────────────────────────────
+// EXTRACT VIDEO THUMBNAIL
+// ─────────────────────────────────────────
+function extractVideoThumbnail(videoEl) {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = videoEl.videoWidth || 160;
+    canvas.height = videoEl.videoHeight || 90;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    const thumb = canvas.toDataURL("image/jpeg", 0.7);
+    const parent = videoEl.closest(".vid-wrap");
+    if (parent && parent.style.backgroundImage === "") {
+      parent.style.backgroundImage = `url(${thumb})`;
+      parent.style.backgroundSize = "cover";
+      parent.style.backgroundPosition = "center";
+    }
+  } catch (e) {
+    console.warn("Failed to extract thumbnail:", e);
+  }
 }
 
 // ─────────────────────────────────────────
@@ -1030,6 +1096,11 @@ loadContacts()
 })()
 
 setInterval(loadContacts,10000)
+
+// ── PRELOAD STATUS ────────────────────────────────────────────────────
+if (typeof preloadCache !== "undefined") {
+  console.log("🔄 نظام التحميل المسبق مفعّل — البيانات ستُحمل تلقائياً عند فتح الصفحة");
+}
 
 setInterval(()=>{
   if (currentViewTab !== "msgs") return;

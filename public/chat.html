@@ -41,6 +41,16 @@
         <button class="wf-tab active" id="tabAll" onclick="setTab('all')">الكل <span class="tab-badge" id="badgeAll">0</span></button>
         <button class="wf-tab" id="tabUnread" onclick="setTab('unread')">غير مقروء <span class="tab-badge" id="badgeUnread">0</span></button>
       </div>
+      <!-- Preload Progress Bar -->
+      <div id="preloadProgress" style="display:none;padding:8px;background:#f5f5f5;border-bottom:1px solid #e0e0e0">
+        <div style="font-size:0.75rem;color:#667;margin-bottom:4px;display:flex;justify-content:space-between">
+          <span>📦 تحميل البيانات...</span>
+          <span id="preloadPercent">0%</span>
+        </div>
+        <div style="background:#ddd;height:4px;border-radius:2px;overflow:hidden">
+          <div id="preloadBar" style="background:#00a884;height:100%;width:0%;transition:width 0.3s ease"></div>
+        </div>
+      </div>
     </div>
     <div class="new-chat-bar" id="newChatBar">
       <input type="tel" id="newChatPhone" placeholder="أدخل رقم الهاتف مثلاً: 212600123456"

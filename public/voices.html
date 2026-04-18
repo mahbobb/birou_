@@ -339,6 +339,22 @@
     .mbtn-green  { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
     .mbtn-green:hover { box-shadow: 0 4px 14px rgba(37,211,102,0.4); }
 
+    /* Play All highlight */
+    .voice-card.playing-now {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(37,211,102,0.18);
+    }
+    .voice-card.playing-now .vc-wave span {
+      background: linear-gradient(180deg, #25d366, #128c7e);
+    }
+    .voice-card.already-played .vc-avatar {
+      opacity: 0.45;
+    }
+    #playAllBtn.playing {
+      background: #e53935;
+      animation: recPulse 1.2s ease-in-out infinite;
+    }
+
     /* Toast */
     #toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -404,6 +420,7 @@
   </div>
   <button class="tbtn tbtn-teal"   onclick="toggleSelectAll()">☑️ تحديد الكل</button>
   <button class="tbtn tbtn-orange" onclick="openUploadModal()">⬆️ رفع</button>
+  <button class="tbtn tbtn-green"  id="playAllBtn" onclick="togglePlayAll()">▶️ تشغيل الكل</button>
   <button class="tbtn tbtn-green"  onclick="load()">🔄</button>
   <button class="tbtn tbtn-red" id="bulkDelBtn" onclick="bulkDelete()">🗑️ حذف المحدد</button>
 </div>
@@ -501,6 +518,14 @@
   let recordSeconds = 0;
   let uploadQueue   = [];
   let selectedIds   = new Set();
+  let voicesList    = [];       // قائمة الصوتيات المحملة
+  let playAllIdx    = -1;       // فهرس التشغيل الحالي في وضع "لعب الكل"
+  let playAllActive = false;    // وضع تشغيل الكل
+
+  /* ── تحقق إذا كان أي صوت يشتغل ── */
+  function isAnyAudioPlaying() {
+    return [...document.querySelectorAll("audio")].some(a => !a.paused);
+  }
 
   /* ── Init mic check ── */
   if (!navigator.mediaDevices || !window.isSecureContext) {
@@ -587,12 +612,17 @@
     } catch {}
   }
 
-  async function load() {
+  async function load(force = false) {
+    // لا تعيد التحميل إذا كان صوت يشتغل — إلا إذا force = true
+    if (!force && (isAnyAudioPlaying() || playAllActive)) {
+      return;
+    }
     const q  = document.getElementById("searchPhone").value.trim();
-    let url   = "/api/voices?limit=200";
+    let url   = "/api/voices?limit=500";
     if (q) url += /^\d+$/.test(q) ? `&phone=${encodeURIComponent(q)}` : `&search=${encodeURIComponent(q)}`;
     try {
       const list = await fetch(url).then(r => r.json());
+      voicesList = list;
       selectedIds.clear(); updateSelUI(); renderList(list);
     } catch { showToast("❌ خطأ في تحميل الصوتيات"); }
   }
@@ -681,6 +711,91 @@
         </div>
       </div>`;
     }).join("");
+  }
+
+  /* ── تشغيل الكل ── */
+  function togglePlayAll() {
+    if (playAllActive) {
+      stopPlayAll();
+    } else {
+      startPlayAll();
+    }
+  }
+
+  function startPlayAll() {
+    const audios = document.querySelectorAll(".vc-player audio");
+    if (!audios.length) return showToast("⚠️ لا توجد صوتيات للتشغيل");
+
+    playAllActive = true;
+    playAllIdx    = 0;
+
+    const btn = document.getElementById("playAllBtn");
+    btn.textContent = "⏹️ وقف التشغيل";
+    btn.classList.add("playing");
+
+    showToast(`▶️ تشغيل ${audios.length} صوتية...`);
+    playNext(audios, 0);
+  }
+
+  function playNext(audios, idx) {
+    if (!playAllActive || idx >= audios.length) {
+      stopPlayAll();
+      showToast("✅ انتهى تشغيل كل الصوتيات");
+      return;
+    }
+
+    playAllIdx = idx;
+
+    // إزالة تمييز السابق
+    document.querySelectorAll(".voice-card.playing-now").forEach(c => {
+      c.classList.remove("playing-now");
+      c.classList.add("already-played");
+    });
+
+    const audio = audios[idx];
+    const card  = audio.closest(".voice-card");
+    if (card) {
+      card.classList.add("playing-now");
+      card.classList.remove("already-played");
+      // تمرير الصفحة لتظهر البطاقة الحالية
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+
+    // عند الانتهاء من هذا الصوت، انتقل للتالي
+    audio.onended = () => {
+      if (!playAllActive) return;
+      setTimeout(() => playNext(audios, idx + 1), 600);
+    };
+
+    // تحديث العداد
+    document.getElementById("sTotal").textContent =
+      `${idx + 1}/${audios.length}`;
+  }
+
+  function stopPlayAll() {
+    playAllActive = false;
+    playAllIdx    = -1;
+
+    // إيقاف كل الأصوات
+    document.querySelectorAll(".vc-player audio").forEach(a => {
+      a.pause();
+      a.onended = null;
+    });
+
+    // إزالة التمييزات
+    document.querySelectorAll(".voice-card.playing-now, .voice-card.already-played").forEach(c => {
+      c.classList.remove("playing-now", "already-played");
+    });
+
+    const btn = document.getElementById("playAllBtn");
+    btn.textContent = "▶️ تشغيل الكل";
+    btn.classList.remove("playing");
+
+    // إعادة تحميل الإحصائيات الحقيقية
+    loadStats();
   }
 
   /* ── Selection ── */
@@ -869,8 +984,15 @@
     setTimeout(() => t.classList.remove("show"), 3000);
   }
 
-  loadStats(); load();
-  setInterval(() => { loadStats(); load(); }, 30000);
+  loadStats(); load(true);
+
+  // تحديث كل 30 ثانية — لكن فقط إذا لم يكن صوت يشتغل
+  setInterval(() => {
+    loadStats();
+    if (!isAnyAudioPlaying() && !playAllActive) {
+      load();
+    }
+  }, 30000);
 </script>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -878,12 +1000,20 @@
   const _sock = io();
   _sock.on("new_media", (data) => {
     if (data.type !== "voice") return;
-    const t = document.getElementById("toast");
-    t.textContent = `🎤 رسالة صوتية جديدة من ${data.name || data.phone}`;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3500);
+    // دائماً نُظهر الإشعار
+    showToast(`🎤 رسالة صوتية جديدة من ${data.name || data.phone}`);
     loadStats();
-    load();
+    // إعادة التحميل فقط إذا لم يكن صوت يشتغل
+    if (!isAnyAudioPlaying() && !playAllActive) {
+      load();
+    }
+  });
+
+  // إذا أوقف المستخدم الصوت يدوياً أثناء "تشغيل الكل"، أوقف الوضع
+  document.addEventListener("click", (e) => {
+    if (playAllActive && e.target.tagName === "AUDIO") {
+      // المستخدم تفاعل مع مشغل صوت — لا نتدخل
+    }
   });
 </script>
 <footer id="app-footer"></footer>

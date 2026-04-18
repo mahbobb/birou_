@@ -51,7 +51,7 @@
       color: #444;
       margin-bottom: 7px;
     }
-    input[type="password"] {
+    input[type="password"], input[type="text"] {
       width: 100%;
       padding: 11px 14px;
       border: 1.5px solid #ddd;
@@ -61,7 +61,7 @@
       transition: border-color 0.2s;
       outline: none;
     }
-    input[type="password"]:focus {
+    input[type="password"]:focus, input[type="text"]:focus {
       border-color: #25d366;
     }
     .btn-login {
@@ -104,19 +104,27 @@
     <div class="error-msg" id="errorMsg">كلمة المرور غير صحيحة</div>
 
     <div class="form-group">
+      <label for="usernameInput">اسم المستخدم</label>
+      <input type="text" id="usernameInput" placeholder="admin" autofocus autocomplete="username">
+    </div>
+
+    <div class="form-group">
       <label for="passwordInput">كلمة المرور</label>
-      <input type="password" id="passwordInput" placeholder="••••••••" autofocus>
+      <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
     </div>
 
     <button class="btn-login" id="loginBtn" onclick="doLogin()">دخول</button>
   </div>
 
   <script>
-    document.getElementById("passwordInput").addEventListener("keydown", e => {
-      if (e.key === "Enter") doLogin();
+    ["usernameInput","passwordInput"].forEach(id => {
+      document.getElementById(id).addEventListener("keydown", e => {
+        if (e.key === "Enter") doLogin();
+      });
     });
 
     async function doLogin() {
+      const username = document.getElementById("usernameInput").value.trim();
       const password = document.getElementById("passwordInput").value;
       if (!password) return;
       const btn = document.getElementById("loginBtn");
@@ -128,13 +136,13 @@
         const res  = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password })
+          body: JSON.stringify({ username, password })
         });
         const data = await res.json();
         if (data.ok) {
-          window.location.href = "/";
+          window.location.href = data.role === "admin" ? "/dashboard" : "/user-reply";
         } else {
-          err.textContent = data.error || "كلمة المرور غير صحيحة";
+          err.textContent = data.error || "اسم المستخدم أو كلمة المرور غير صحيحة";
           err.classList.add("show");
           document.getElementById("passwordInput").value = "";
           document.getElementById("passwordInput").focus();

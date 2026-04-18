@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المستخدمون — واتساب بوت</title>
+  <link rel="stylesheet" href="/css/nav.css">
+  <style>
+    :root {
+      --green:#25d366; --teal:#128c7e; --dark:#075e54;
+      --red:#e53935; --bg:#f0f2f5; --white:#fff;
+      --border:#e8edf2; --text:#1a1a2e; --muted:#8696a0;
+      --sidebar-w:230px;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Segoe UI',Tahoma,sans-serif; background:var(--bg); color:var(--text); direction:rtl; display:flex; min-height:100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width:var(--sidebar-w); min-height:100vh;
+      background:linear-gradient(180deg,var(--dark) 0%,#063d36 100%);
+      display:flex; flex-direction:column;
+      position:fixed; right:0; top:0; bottom:0; z-index:40;
+      box-shadow:-3px 0 16px rgba(0,0,0,.18);
+    }
+    .sb-brand { padding:22px 18px 16px; border-bottom:1px solid rgba(255,255,255,.1); }
+    .brand-row { display:flex; align-items:center; gap:10px; }
+    .brand-icon { width:40px; height:40px; background:var(--green); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+    .sb-brand h2 { color:white; font-size:1rem; font-weight:700; }
+    .sb-nav { flex:1; padding:12px 10px; overflow-y:auto; }
+    .sb-section { font-size:.68rem; color:rgba(255,255,255,.35); font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:10px 8px 4px; }
+    .sb-link {
+      display:flex; align-items:center; gap:10px; padding:9px 12px;
+      border-radius:10px; text-decoration:none; color:rgba(255,255,255,.7);
+      font-size:.88rem; transition:all .18s; margin-bottom:2px;
+    }
+    .sb-link:hover { background:rgba(255,255,255,.1); color:white; }
+    .sb-link.active { background:rgba(37,211,102,.2); color:var(--green); font-weight:600; }
+    .sb-link .ico { font-size:1rem; width:20px; text-align:center; }
+    .sb-bottom { padding:12px 10px; border-top:1px solid rgba(255,255,255,.08); }
+    .sb-logout {
+      display:flex; align-items:center; gap:8px; padding:8px 12px;
+      border-radius:10px; background:rgba(229,57,53,.15); color:#ef9a9a;
+      text-decoration:none; font-size:.83rem; cursor:pointer; border:none; width:100%; text-align:right;
+    }
+
+    /* ── MAIN ── */
+    .main { margin-right:var(--sidebar-w); flex:1; padding:28px; }
+    .page-title { font-size:1.3rem; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+
+    /* ── CARD ── */
+    .card { background:var(--white); border-radius:14px; padding:24px; box-shadow:0 1px 6px rgba(0,0,0,.08); margin-bottom:20px; }
+    .card h2 { font-size:1rem; color:var(--dark); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    th { background:#f5f5f5; padding:10px 14px; text-align:right; font-weight:600; color:var(--muted); font-size:.78rem; border-bottom:2px solid var(--border); }
+    td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafafa; }
+
+    /* ── BADGE ── */
+    .badge {
+      display:inline-block; padding:3px 10px; border-radius:20px;
+      font-size:.72rem; font-weight:700;
+    }
+    .badge-admin { background:#e8f5e9; color:#2e7d32; }
+    .badge-agent { background:#e3f2fd; color:#1565c0; }
+    .badge-off   { background:#f5f5f5; color:#999; }
+
+    /* ── BUTTONS ── */
+    .btn { padding:8px 18px; border:none; border-radius:8px; cursor:pointer; font-size:.88rem; font-weight:600; transition:all .18s; }
+    .btn:hover { opacity:.88; }
+    .btn-green { background:var(--green); color:white; }
+    .btn-red   { background:var(--red); color:white; padding:5px 12px; font-size:.78rem; }
+    .btn-gray  { background:#e0e0e0; color:#333; }
+    .btn-edit  { background:#e3f2fd; color:#1565c0; padding:5px 12px; font-size:.78rem; }
+
+    /* ── FORM ── */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-group label { font-size:.82rem; font-weight:600; color:var(--muted); }
+    .form-group input, .form-group select {
+      padding:9px 12px; border:1px solid var(--border); border-radius:8px;
+      font-size:.9rem; outline:none; background:var(--bg);
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--teal); background:white; }
+    .form-actions { display:flex; gap:8px; margin-top:16px; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+      z-index:200; align-items:center; justify-content:center;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:white; border-radius:16px; padding:28px; width:420px; max-width:95vw;
+      box-shadow:0 8px 40px rgba(0,0,0,.2);
+    }
+    .modal h3 { font-size:1.05rem; color:var(--dark); margin-bottom:18px; }
+    .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:#1a1a2e; color:white; padding:10px 22px;
+      border-radius:10px; font-size:.88rem; opacity:0; transition:opacity .3s;
+      pointer-events:none; z-index:999;
+    }
+    #toast.show { opacity:1; }
+
+    @media (max-width:600px) {
+      .main { margin-right:0; padding:14px; }
+      .form-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="brand-row">
+      <div class="brand-icon">🤖</div>
+      <h2>واتساب بوت</h2>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">الرئيسية</div>
+    <a class="sb-link" href="/dashboard"><span class="ico">📊</span><span>لوحة التحكم</span></a>
+    <div class="sb-section">الإعدادات</div>
+    <a class="sb-link active" href="/users"><span class="ico">👤</span><span>المستخدمون</span></a>
+    <a class="sb-link" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
+    <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
+  </nav>
+  <div class="sb-bottom">
+    <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">
+      <span>🚪</span><span>خروج</span>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="page-title">👤 إدارة المستخدمين</div>
+
+  <!-- Stats row -->
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="card" style="flex:1;min-width:120px;padding:16px;text-align:center">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--dark)" id="statTotal">—</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">إجمالي المستخدمين</div>
+    </div>
+    <div class="card" style="flex:1;min-width:120px;padding:16px;text-align:center">
+      <div style="font-size:1.8rem;font-weight:700;color:#2e7d32" id="statAdmins">—</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">أدمن</div>
+    </div>
+    <div class="card" style="flex:1;min-width:120px;padding:16px;text-align:center">
+      <div style="font-size:1.8rem;font-weight:700;color:#1565c0" id="statAgents">—</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">موظف</div>
+    </div>
+    <div class="card" style="flex:1;min-width:120px;padding:16px;text-align:center">
+      <div style="font-size:1.8rem;font-weight:700;color:var(--green)" id="statActive">—</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px">نشط</div>
+    </div>
+  </div>
+
+  <!-- Add user form -->
+  <div class="card">
+    <h2>➕ إضافة مستخدم جديد</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>الاسم الكامل</label>
+        <input type="text" id="newName" placeholder="مثال: أحمد الموظف">
+      </div>
+      <div class="form-group">
+        <label>اسم المستخدم (للدخول)</label>
+        <input type="text" id="newUsername" placeholder="مثال: ahmed" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="newPassword" placeholder="4 أحرف على الأقل" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>الدور</label>
+        <select id="newRole">
+          <option value="agent">موظف (Agent)</option>
+          <option value="admin">أدمن (Admin)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-green" onclick="addUser()">➕ إضافة</button>
+    </div>
+  </div>
+
+  <!-- Users table -->
+  <div class="card">
+    <h2>👥 قائمة المستخدمين</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الاسم</th>
+            <th>اسم الدخول</th>
+            <th>الدور</th>
+            <th>الحالة</th>
+            <th>تاريخ الإنشاء</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody">
+          <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">⏳ جاري التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>✏️ تعديل المستخدم</h3>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>الاسم الكامل</label>
+        <input type="text" id="editName">
+      </div>
+      <div class="form-group">
+        <label>الدور</label>
+        <select id="editRole">
+          <option value="agent">موظف (Agent)</option>
+          <option value="admin">أدمن (Admin)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور الجديدة (اتركها فارغة للإبقاء)</label>
+        <input type="password" id="editPassword" placeholder="اتركها فارغة إن لم تريد التغيير">
+      </div>
+      <div class="form-group">
+        <label>الحالة</label>
+        <select id="editActive">
+          <option value="1">نشط ✅</option>
+          <option value="0">معطل ❌</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-green" onclick="saveEdit()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let users = [];
+
+  async function loadUsers() {
+    try {
+      const res = await fetch("/api/users");
+      users = await res.json();
+      renderTable();
+      updateStats();
+    } catch { showToast("❌ خطأ في تحميل المستخدمين"); }
+  }
+
+  function updateStats() {
+    document.getElementById("statTotal").textContent  = users.length;
+    document.getElementById("statAdmins").textContent = users.filter(u => u.role === "admin").length;
+    document.getElementById("statAgents").textContent = users.filter(u => u.role === "agent").length;
+    document.getElementById("statActive").textContent = users.filter(u => u.active).length;
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("usersBody");
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">لا يوجد مستخدمون</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map((u, i) => `
+      <tr>
+        <td style="color:var(--muted);font-size:.8rem">${i + 1}</td>
+        <td><b>${esc(u.name)}</b></td>
+        <td style="font-family:monospace;direction:ltr;text-align:right">${esc(u.username)}</td>
+        <td><span class="badge badge-${u.role}">${u.role === "admin" ? "أدمن" : "موظف"}</span></td>
+        <td>${u.active ? '<span class="badge" style="background:#e8f5e9;color:#2e7d32">✅ نشط</span>' : '<span class="badge badge-off">❌ معطل</span>'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${fmtDate(u.created_at)}</td>
+        <td>
+          <button class="btn btn-edit" onclick="openEdit(${u.id})">✏️ تعديل</button>
+          <button class="btn btn-red"  onclick="deleteUser(${u.id},'${esc(u.username)}')" style="margin-right:4px">🗑️</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function addUser() {
+    const name     = document.getElementById("newName").value.trim();
+    const username = document.getElementById("newUsername").value.trim();
+    const password = document.getElementById("newPassword").value;
+    const role     = document.getElementById("newRole").value;
+    if (!name || !username || !password) return showToast("⚠️ أكمل جميع الحقول");
+    try {
+      const res  = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, username, password, role })
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast("❌ " + data.error);
+      showToast("✅ تمت الإضافة!");
+      document.getElementById("newName").value     = "";
+      document.getElementById("newUsername").value = "";
+      document.getElementById("newPassword").value = "";
+      loadUsers();
+    } catch (e) { showToast("❌ " + e.message); }
+  }
+
+  function openEdit(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById("editId").value       = u.id;
+    document.getElementById("editName").value     = u.name;
+    document.getElementById("editRole").value     = u.role;
+    document.getElementById("editActive").value   = u.active ? "1" : "0";
+    document.getElementById("editPassword").value = "";
+    document.getElementById("editModal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("editModal").classList.remove("open");
+  }
+
+  async function saveEdit() {
+    const id       = document.getElementById("editId").value;
+    const name     = document.getElementById("editName").value.trim();
+    const role     = document.getElementById("editRole").value;
+    const active   = document.getElementById("editActive").value;
+    const password = document.getElementById("editPassword").value;
+    const body     = { name, role, active: active === "1" };
+    if (password) body.password = password;
+    try {
+      const res  = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast("❌ " + data.error);
+      showToast("✅ تم الحفظ!");
+      closeModal();
+      loadUsers();
+    } catch (e) { showToast("❌ " + e.message); }
+  }
+
+  async function deleteUser(id, username) {
+    if (!confirm(`حذف المستخدم "${username}"؟`)) return;
+    try {
+      const res  = await fetch(`/api/users/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) return showToast("❌ " + data.error);
+      showToast("✅ تم الحذف");
+      loadUsers();
+    } catch (e) { showToast("❌ " + e.message); }
+  }
+
+  // Close modal on overlay click
+  document.getElementById("editModal").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  function esc(s) { return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("ar-MA", { year:"numeric", month:"2-digit", day:"2-digit" });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadUsers();
+</script>
+</body>
+</html>

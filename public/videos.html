@@ -6,205 +6,172 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>الفيديوهات — واتساب بوت</title>
   <style>
+    :root {
+      --green:  #25d366;
+      --teal:   #128c7e;
+      --dark:   #075e54;
+      --red:    #e53935;
+      --blue:   #1976d2;
+      --orange: #ff9800;
+      --bg:     #f0f2f5;
+      --card:   #ffffff;
+      --border: #e8edf2;
+      --text:   #1a1a2e;
+      --muted:  #8696a0;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; min-height: 100vh; }
 
+    /* Header */
     header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
+      background: linear-gradient(135deg, var(--dark), var(--teal));
+      color: white; padding: 0 24px;
       display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 8px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.18); position: sticky; top: 0; z-index: 50; height: 60px;
     }
-    header h1 { font-size: 1.3rem; }
-    .nav-links a {
-      color: white; text-decoration: none; margin-right: 10px;
-      font-size: 0.85rem; padding: 5px 10px;
-      border-radius: 8px; transition: background 0.2s;
-    }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon { width: 38px; height: 38px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    header h1 { font-size: 1.15rem; font-weight: 700; }
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.82rem; padding: 5px 10px; border-radius: 8px; transition: all 0.2s; white-space: nowrap; }
+    .nav-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .nav-links a.active { background: rgba(255,255,255,0.22); color: white; font-weight: 600; }
 
     /* Stats */
-    .stats { display: flex; gap: 16px; padding: 20px 24px 10px; flex-wrap: wrap; }
-    .stat-card {
-      background: white; border-radius: 12px; padding: 14px 22px;
-      flex: 1; min-width: 110px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
-    }
-    .stat-card .num { font-size: 1.7rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.78rem; color: #666; margin-top: 3px; }
+    .stats-row { display: flex; gap: 14px; padding: 20px 24px 0; flex-wrap: wrap; }
+    .stat-card { background: var(--card); border-radius: var(--radius); padding: 18px 20px; flex: 1; min-width: 130px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; border: 1px solid var(--border); transition: transform 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .stat-icon.green { background: #e8f5e9; }
+    .stat-icon.teal  { background: #e0f2f1; }
+    .stat-icon.red   { background: #ffebee; }
+    .stat-body .num  { font-size: 1.7rem; font-weight: 800; line-height: 1; color: var(--dark); }
+    .stat-body .lbl  { font-size: 0.76rem; color: var(--muted); margin-top: 3px; }
+    #selCard         { display: none; }
+    #selCard .stat-body .num { color: var(--red); }
 
     /* Toolbar */
-    .toolbar {
-      padding: 10px 24px 14px;
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    .search-input {
-      flex: 1; min-width: 160px;
-      padding: 8px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.88rem; outline: none; direction: rtl; background: white;
-    }
-    .search-input:focus { border-color: #128c7e; }
-    .btn {
-      padding: 8px 14px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.82rem; font-weight: 600;
-      transition: opacity 0.2s; white-space: nowrap;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-green { background: #25d366; color: white; }
-    .btn-blue  { background: #128c7e; color: white; }
-    .btn-red   { background: #e53935; color: white; }
-    .btn-gray  { background: #ccc;    color: #333;  }
-    .btn:disabled { opacity: 0.4; cursor: default; }
+    .toolbar { padding: 16px 24px 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap .search-ico { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+    .search-input { width: 100%; padding: 9px 36px 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; outline: none; direction: rtl; background: var(--card); transition: border-color 0.2s; color: var(--text); }
+    .search-input:focus { border-color: var(--teal); }
+    .tbtn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.83rem; font-weight: 600; transition: all 0.18s; white-space: nowrap; }
+    .tbtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .tbtn-teal   { background: var(--teal);   color: white; }
+    .tbtn-green  { background: var(--green);  color: white; }
+    .tbtn-orange { background: var(--orange); color: white; }
+    .tbtn-red    { background: var(--red);    color: white; }
+    .tbtn-gray   { background: #ccc;          color: #333;  }
+    #bulkDelBtn  { display: none; }
 
     /* Gallery */
-    .gallery-wrap { padding: 0 24px 32px; }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 18px;
-    }
+    .gallery-wrap { padding: 8px 24px 40px; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 18px; }
 
-    .vid-card {
-      background: white; border-radius: 14px; overflow: hidden;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-      position: relative; transition: box-shadow 0.2s;
-    }
-    .vid-card.selected { outline: 3px solid #128c7e; }
-    .vid-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
+    /* Video Card */
+    .vid-card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1.5px solid var(--border); transition: box-shadow 0.2s, border-color 0.2s; position: relative; }
+    .vid-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .vid-card.selected { border-color: var(--red); box-shadow: 0 0 0 3px rgba(229,57,53,0.12); }
+    .vid-card.playing-now { border-color: var(--green); box-shadow: 0 0 0 3px rgba(37,211,102,0.18); }
+    .vid-card.already-played { opacity: 0.55; }
 
-    /* Checkbox overlay */
-    .card-cb {
-      position: absolute; top: 10px; right: 10px;
-      width: 24px; height: 24px;
-      background: white; border: 2px solid #ccc; border-radius: 5px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 2; font-size: 0.78rem; color: white;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .vid-card.selected .card-cb { background: #128c7e; border-color: #128c7e; }
+    /* Checkbox */
+    .card-cb { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; background: rgba(255,255,255,0.9); border: 2px solid #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; font-size: 0.85rem; color: white; transition: all 0.15s; backdrop-filter: blur(4px); }
+    .vid-card.selected .card-cb { background: var(--red); border-color: var(--red); }
     .vid-card.selected .card-cb::after { content: "✓"; }
 
-    .vid-card video { width: 100%; max-height: 200px; background: #000; display: block; }
+    /* Video element */
+    .vid-card video { width: 100%; max-height: 210px; background: #111; display: block; object-fit: cover; }
 
-    .vid-info { padding: 12px 14px; }
-    .vid-info .sender { font-weight: 700; font-size: 0.92rem; margin-bottom: 3px; }
-    .phone-tag {
-      background: #e8f5e9; color: #2e7d32;
-      padding: 1px 7px; border-radius: 5px;
-      font-family: monospace; font-size: 0.76rem;
-      display: inline-block; margin-bottom: 4px;
-    }
-    .vid-info .meta { font-size: 0.76rem; color: #999; margin-bottom: 8px; }
-    .vid-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-    .vid-actions .btn { padding: 5px 12px; font-size: 0.78rem; }
-    .dl-btn {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 5px 12px; background: #075e54; color: white;
-      border-radius: 8px; text-decoration: none; font-size: 0.78rem; font-weight: 600;
-    }
-    .dl-btn:hover { opacity: 0.85; }
+    /* Card info */
+    .vid-info { padding: 12px 14px 14px; }
+    .vid-sender { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+    .vid-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .phone-tag { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 0.75rem; }
+    .vid-time { font-size: 0.75rem; color: var(--muted); }
+    .vid-size { font-size: 0.73rem; color: #bbb; }
+    .vid-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .vbtn { padding: 5px 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: all 0.18s; display: inline-flex; align-items: center; gap: 4px; }
+    .vbtn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .vbtn.dl  { background: #e0f2f1; color: var(--dark); text-decoration: none; }
+    .vbtn.rep { background: #e3f2fd; color: var(--blue); }
+    .vbtn.del { background: #ffebee; color: var(--red);  }
     .note-wrap { display: flex; gap: 6px; align-items: center; }
-    .note-input {
-      flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.8rem; direction: rtl; outline: none; font-family: inherit; background: #fafafa;
-    }
-    .note-input:focus { border-color: #128c7e; background: white; }
-    .note-save { padding: 5px 11px; background: #128c7e; color: white; border: none;
-      border-radius: 8px; font-size: 0.78rem; cursor: pointer; }
-    .note-save:hover { opacity: 0.85; }
+    .note-input { flex: 1; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.82rem; direction: rtl; outline: none; font-family: inherit; background: #fafafa; color: var(--text); transition: border-color 0.2s; }
+    .note-input:focus { border-color: var(--teal); background: white; }
+    .note-save-btn { padding: 5px 14px; background: var(--teal); color: white; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; flex-shrink: 0; }
+    .note-save-btn:hover { opacity: 0.85; }
 
-    .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
-
-    /* Reply modal */
-    .overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5); z-index: 100;
-      align-items: center; justify-content: center;
+    /* Play All button state */
+    #playAllBtn.playing { background: var(--red); animation: recPulse 1.2s ease-in-out infinite; }
+    @keyframes recPulse {
+      0%,100% { box-shadow: 0 2px 8px rgba(229,57,53,0.3); }
+      50%      { box-shadow: 0 4px 18px rgba(229,57,53,0.6); }
     }
+
+    /* Empty */
+    .empty { text-align: center; padding: 70px 20px; color: var(--muted); background: var(--card); border-radius: var(--radius); border: 1.5px dashed var(--border); grid-column: 1/-1; }
+    .empty .empty-icon { font-size: 3rem; opacity: 0.4; margin-bottom: 12px; }
+
+    /* Modal overlay */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
     .overlay.open { display: flex; }
-    .modal {
-      background: white; border-radius: 16px; padding: 26px;
-      width: 90%; max-width: 460px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .modal h3 { margin-bottom: 12px; font-size: 1.05rem; color: #075e54; }
-    .modal .to-info { background: #f5f5f5; border-radius: 8px; padding: 7px 12px;
-      margin-bottom: 12px; font-size: 0.83rem; color: #555; }
-    .tab-bar { display: flex; gap: 8px; margin-bottom: 12px; }
-    .tab-btn { flex: 1; padding: 7px; border: 2px solid #ddd; background: white;
-      border-radius: 10px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-      transition: all 0.2s; color: #666; }
-    .tab-btn.active { border-color: #128c7e; background: #e8f5e9; color: #075e54; }
+    .modal { background: white; border-radius: 18px; padding: 28px; width: 92%; max-width: 500px; box-shadow: 0 16px 48px rgba(0,0,0,0.22); max-height: 92vh; overflow-y: auto; animation: modalIn 0.22s ease; }
+    @keyframes modalIn { from { transform: scale(0.95) translateY(16px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-header h3 { font-size: 1.05rem; color: var(--dark); font-weight: 700; }
+    .modal-close { background: #f0f2f5; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    .modal-close:hover { background: #e0e0e0; }
+    .to-info { background: #f0f2f5; border-radius: 10px; padding: 9px 14px; margin-bottom: 14px; font-size: 0.84rem; color: #555; border-right: 3px solid var(--teal); }
+    .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; background: #f0f2f5; border-radius: 10px; padding: 4px; }
+    .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.18s; color: var(--muted); }
+    .tab-btn.active { background: white; color: var(--dark); box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-    .modal textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd;
-      border-radius: 10px; font-size: 0.88rem; resize: vertical; outline: none;
-      direction: rtl; font-family: inherit; }
-    .modal textarea:focus { border-color: #128c7e; }
-    .voice-upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 20px;
-      text-align: center; cursor: pointer; transition: border-color 0.2s; color: #888; }
-    .voice-upload-area:hover { border-color: #128c7e; }
-    .or-sep { text-align: center; color: #bbb; font-size: 0.78rem; margin: 8px 0; }
-    .btn-record { background: #128c7e; color: white; padding: 9px 22px;
-      border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s; }
-    .btn-record.recording { background: #e53935; }
-    .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
-    #voiceFileInput { display: none; }
+    .modal textarea { width: 100%; height: 110px; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.9rem; resize: vertical; outline: none; direction: rtl; font-family: inherit; transition: border-color 0.2s; }
+    .modal textarea:focus { border-color: var(--teal); }
+    .voice-upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .voice-upload-area:hover { border-color: var(--teal); background: #f0fdf4; }
+    .or-sep { text-align: center; color: #ccc; font-size: 0.82rem; margin: 10px 0; }
+    .btn-record { background: linear-gradient(135deg, var(--teal), var(--dark)); color: white; padding: 10px 24px; border: none; border-radius: 50px; font-size: 0.92rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-record:hover { transform: translateY(-1px); }
+    .btn-record.recording { background: linear-gradient(135deg, var(--red), #c62828); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+    .mbtn { padding: 9px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; transition: all 0.18s; }
+    .mbtn:hover { filter: brightness(1.08); }
+    .mbtn-cancel { background: #f0f2f5; color: #555; }
+    .mbtn-green  { background: var(--green); color: white; }
 
     /* Upload modal */
-    #uploadOverlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55); z-index: 300;
-      align-items: center; justify-content: center;
-    }
+    #uploadOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
     #uploadOverlay.open { display: flex; }
-    .upload-modal {
-      background: white; border-radius: 14px; padding: 26px;
-      width: 90%; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    }
-    .upload-modal h3 { font-size: 1.05rem; color: #075e54; margin-bottom: 14px; }
+    .upload-modal { background: white; border-radius: 18px; padding: 28px; width: 92%; max-width: 520px; box-shadow: 0 16px 48px rgba(0,0,0,0.22); animation: modalIn 0.22s ease; }
+    .upload-modal h3 { font-size: 1.05rem; color: var(--dark); margin-bottom: 16px; font-weight: 700; }
     .upload-modal label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 4px; margin-top: 10px; }
-    .upload-modal input[type=text], .upload-modal input[type=tel] {
-      width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.88rem; outline: none; direction: rtl;
-    }
-    .upload-modal input:focus { border-color: #128c7e; }
-    .drop-zone {
-      border: 2px dashed #ccc; border-radius: 10px; padding: 22px;
-      text-align: center; cursor: pointer; margin-top: 12px;
-      color: #888; background: #fafafa; transition: border-color 0.2s;
-    }
-    .drop-zone:hover, .drop-zone.drag-over { border-color: #128c7e; color: #128c7e; }
-    .drop-zone .dz-icon { font-size: 2rem; }
-    #uploadFileInput { display: none; }
+    .upload-modal input[type=text], .upload-modal input[type=tel] { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.88rem; outline: none; direction: rtl; transition: border-color 0.2s; }
+    .upload-modal input:focus { border-color: var(--teal); }
+    .drop-zone { border: 2px dashed var(--border); border-radius: 14px; padding: 28px 20px; text-align: center; cursor: pointer; margin-top: 12px; color: var(--muted); background: #fafafa; transition: all 0.2s; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--teal); background: #f0fdf4; color: var(--teal); }
+    .drop-zone .dz-icon { font-size: 2.5rem; margin-bottom: 8px; }
     .upload-preview { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
-    .up-item {
-      display: flex; align-items: center; gap: 10px;
-      background: #f5f5f5; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem;
-    }
-    .up-item .up-icon { font-size: 1.2rem; flex-shrink: 0; }
-    .up-item .up-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .up-item .up-size { color: #aaa; font-size: 0.72rem; flex-shrink: 0; }
-    .up-item .rm { background: none; border: none; color: #e53935; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
-    .up-progress { margin-top: 10px; font-size: 0.8rem; color: #128c7e; display: none; }
-    .upload-modal .modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+    .up-item { display: flex; align-items: center; gap: 10px; background: #f8f9fa; border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; border: 1px solid var(--border); }
+    .up-item .up-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .up-item .up-size { color: var(--muted); font-size: 0.74rem; flex-shrink: 0; }
+    .up-item .rm { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; padding: 0 4px; flex-shrink: 0; }
+    .up-progress { margin-top: 10px; font-size: 0.82rem; color: var(--teal); display: none; }
 
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 400;
-    }
-    #toast.show { opacity: 1; }
+    /* Toast */
+    #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26,26,46,0.92); color: white; padding: 11px 24px; border-radius: 50px; font-size: 0.88rem; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; backdrop-filter: blur(8px); white-space: nowrap; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── Responsive ── */
+    /* Responsive */
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; height: auto; }
-      .nav-links { display: flex; flex-wrap: wrap; gap: 4px; }
-      .nav-links a { font-size: 0.78rem; padding: 4px 8px; margin-right: 0; }
-    }
-    @media (max-width: 480px) {
-      header { padding: 10px 12px; }
-      .nav-links a { font-size: 0.7rem; padding: 3px 6px; }
+      .stats-row, .toolbar, .gallery-wrap { padding-left: 16px; padding-right: 16px; }
+      .gallery { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -213,32 +180,48 @@
 <header id="app-header"></header>
 
 <!-- Stats -->
-<div class="stats">
-  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الفيديوهات</div></div>
-  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">فيديوهات اليوم</div></div>
-  <div class="stat-card"><div class="num" id="sSelected">0</div><div class="label">محددة</div></div>
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon green">🎬</div>
+    <div class="stat-body"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي الفيديوهات</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon teal">📅</div>
+    <div class="stat-body"><div class="num" id="sToday">—</div><div class="lbl">اليوم</div></div>
+  </div>
+  <div class="stat-card" id="selCard">
+    <div class="stat-icon red">☑️</div>
+    <div class="stat-body"><div class="num" id="sSelected">0</div><div class="lbl">محددة</div></div>
+  </div>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
-  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف أو تعليق...">
-  <button class="btn btn-blue"  onclick="openUploadModal()">📤 رفع فيديو</button>
-  <button class="btn btn-green" onclick="toggleSelectAll()" id="btnSelAll">☑️ تحديد الكل</button>
-  <button class="btn btn-red"   id="btnDelSel" onclick="deleteSelected()" disabled>🗑️ حذف المحددة (<span id="selCount">0</span>)</button>
-  <button class="btn btn-gray"  onclick="load()">🔄 تحديث</button>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث برقم أو اسم أو تعليق...">
+  </div>
+  <button class="tbtn tbtn-teal"   onclick="toggleSelectAll()">☑️ تحديد الكل</button>
+  <button class="tbtn tbtn-orange" onclick="openUploadModal()">⬆️ رفع فيديو</button>
+  <button class="tbtn tbtn-green"  id="playAllBtn" onclick="togglePlayAll()">▶️ تشغيل الكل</button>
+  <button class="tbtn tbtn-gray"   onclick="load(true)">🔄</button>
+  <button class="tbtn tbtn-red"    id="bulkDelBtn" onclick="deleteSelected()">🗑️ حذف المحدد (<span id="selCount">0</span>)</button>
 </div>
 
 <!-- Gallery -->
 <div class="gallery-wrap">
   <div class="gallery" id="gallery">
-    <div class="empty" style="grid-column:1/-1">جاري التحميل...</div>
+    <div class="empty"><div class="empty-icon">🎬</div><p>جاري التحميل...</p></div>
   </div>
 </div>
 
 <!-- Reply Modal -->
 <div class="overlay" id="replyOverlay">
   <div class="modal">
-    <h3>💬 رد على الزبون</h3>
+    <div class="modal-header">
+      <h3>💬 رد على الزبون</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
     <div class="to-info" id="replyTo"></div>
     <div class="tab-bar">
       <button class="tab-btn active" id="tabText"  onclick="switchTab('text')">📝 نص</button>
@@ -250,20 +233,20 @@
     <div class="tab-panel" id="panelVoice">
       <div style="text-align:center;margin-bottom:8px">
         <button id="recordBtn" class="btn-record" onclick="toggleRecord()">🎙️ ابدأ التسجيل</button>
-        <div id="recordTimer" style="display:none;margin-top:6px;color:#e53935;font-weight:700">⏺️ <span id="timerDisplay">0:00</span></div>
+        <div id="recordTimer" style="display:none;margin-top:6px;color:var(--red);font-weight:700">⏺️ <span id="timerDisplay">0:00</span></div>
       </div>
       <div class="or-sep">— أو اختر ملف —</div>
       <div class="voice-upload-area" onclick="document.getElementById('voiceFileInput').click()">
         <div style="font-size:1.8rem">🎵</div>
-        <p style="font-size:0.83rem;margin-top:4px">mp3 · ogg · wav · m4a</p>
+        <p style="font-size:0.83rem;margin-top:4px;color:var(--muted)">mp3 · ogg · wav · m4a</p>
       </div>
-      <input type="file" id="voiceFileInput" accept="audio/*">
-      <audio id="voicePreview" controls style="display:none;margin-top:10px;width:100%;"></audio>
-      <div id="voiceName" style="font-size:0.78rem;color:#555;margin-top:4px;text-align:center;"></div>
+      <input type="file" id="voiceFileInput" accept="audio/*" style="display:none">
+      <audio id="voicePreview" controls style="display:none;margin-top:12px;width:100%;"></audio>
+      <div id="voiceName" style="font-size:0.78rem;color:var(--muted);margin-top:4px;text-align:center;"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-gray" onclick="closeModal()">إلغاء</button>
-      <button class="btn btn-green" onclick="sendReply()">إرسال ✉️</button>
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="mbtn mbtn-green"  onclick="sendReply()">✉️ إرسال</button>
     </div>
   </div>
 </div>
@@ -279,14 +262,14 @@
     <div class="drop-zone" id="upDropZone" onclick="document.getElementById('uploadFileInput').click()">
       <div class="dz-icon">🎬</div>
       <p style="font-size:0.83rem;margin-top:5px">اسحب الفيديوهات هنا أو اضغط للاختيار</p>
-      <small style="color:#aaa">mp4 · webm · mov · avi · mkv</small>
+      <small style="color:#bbb">mp4 · webm · mov · avi · mkv</small>
     </div>
-    <input type="file" id="uploadFileInput" accept="video/*" multiple>
+    <input type="file" id="uploadFileInput" accept="video/*" multiple style="display:none">
     <div class="upload-preview" id="upPreview"></div>
     <div class="up-progress" id="upProgress">⏳ جاري الرفع...</div>
     <div class="modal-actions">
-      <button class="btn btn-gray" onclick="closeUploadModal()">إلغاء</button>
-      <button class="btn btn-blue" id="upSendBtn" onclick="doUpload()">📤 رفع (<span id="upCount">0</span>)</button>
+      <button class="mbtn mbtn-cancel" onclick="closeUploadModal()">إلغاء</button>
+      <button class="mbtn mbtn-green"  id="upSendBtn" onclick="doUpload()">📤 رفع (<span id="upCount">0</span>)</button>
     </div>
   </div>
 </div>
@@ -294,31 +277,37 @@
 <div id="toast"></div>
 
 <script>
-  let allVideos   = [];
-  let selectedIds = new Set();
-  let upFiles     = [];
-  let replyPhone  = "";
-  let activeTab   = "text";
-  let voiceData   = null, voiceMime = null;
+  /* ── State ── */
+  let allVideos     = [];
+  let selectedIds   = new Set();
+  let upFiles       = [];
+  let replyPhone    = "";
+  let activeTab     = "text";
+  let voiceData     = null, voiceMime = null;
   let mediaRecorder = null, recordChunks = [], recordInterval = null, recordSeconds = 0;
+  let playAllActive = false;
+  let playAllIdx    = -1;
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
+  /* ── Detect if any video is playing ── */
+  function isAnyVideoPlaying() {
+    return [...document.querySelectorAll("video")].some(v => !v.paused);
+  }
+
+  /* ── Stats ── */
   async function loadStats() {
     try {
-      const stats = await fetch("/api/videos/stats").then(r => r.json());
-      document.getElementById("sTotal").textContent = stats.total;
-      document.getElementById("sToday").textContent = stats.today;
+      const s = await fetch("/api/videos/stats").then(r => r.json());
+      document.getElementById("sTotal").textContent = s.total;
+      document.getElementById("sToday").textContent = s.today;
     } catch {}
   }
 
-  // ── Load ──────────────────────────────────────────────────────────────────
-  async function load() {
+  /* ── Load ── */
+  async function load(force = false) {
+    if (!force && (isAnyVideoPlaying() || playAllActive)) return;
     const q = document.getElementById("searchPhone").value.trim();
-    let url = "/api/videos?limit=100";
-    if (q) {
-      if (/^\d+$/.test(q)) url += `&phone=${encodeURIComponent(q)}`;
-      else url += `&search=${encodeURIComponent(q)}`;
-    }
+    let url = "/api/videos?limit=200";
+    if (q) url += /^\d+$/.test(q) ? `&phone=${encodeURIComponent(q)}` : `&search=${encodeURIComponent(q)}`;
     try {
       allVideos = await fetch(url).then(r => r.json());
       selectedIds.clear();
@@ -327,11 +316,11 @@
     } catch { showToast("❌ خطأ في تحميل الفيديوهات"); }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  /* ── Render ── */
   function renderGallery(list) {
     const g = document.getElementById("gallery");
     if (!list.length) {
-      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد فيديوهات 🎬</div>`;
+      g.innerHTML = `<div class="empty"><div class="empty-icon">🎬</div><p>لا توجد فيديوهات</p></div>`;
       return;
     }
     g.innerHTML = list.map(v => {
@@ -343,36 +332,111 @@
       return `
         <div class="vid-card${sel}" id="vc-${v.id}">
           <div class="card-cb" onclick="toggleCard(${v.id})"></div>
-          <video src="${src}" controls preload="metadata"></video>
+          <video src="${src}" controls preload="none" poster=""></video>
           <div class="vid-info">
-            <div class="sender">${escHtml(v.name)}</div>
-            <span class="phone-tag">+${v.phone}</span>
-            <div class="meta">${time} · ${mb} MB</div>
+            <div class="vid-sender">${escHtml(v.name)}</div>
+            <div class="vid-meta">
+              <span class="phone-tag">+${v.phone}</span>
+              <span class="vid-time">${time}</span>
+              <span class="vid-size">${mb} MB</span>
+            </div>
             <div class="vid-actions">
-              <a href="${src}" download="${v.filename}" class="dl-btn">⬇️ تحميل</a>
-              <button class="btn btn-blue" onclick="openReply('${v.phone}','${escHtml(v.name)}')">↩️ رد</button>
-              <button class="btn btn-red"  onclick="deleteSingle(${v.id})">🗑️ حذف</button>
+              <a href="${src}" download="${v.filename}" class="vbtn dl">⬇️ تحميل</a>
+              <button class="vbtn rep" onclick="openReply('${v.phone}','${escHtml(v.name)}')">↩️ رد</button>
+              <button class="vbtn del" onclick="deleteSingle(${v.id})">🗑️ حذف</button>
             </div>
             <div class="note-wrap">
-              <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق..." value="${note}"
+              <input class="note-input" id="note-${v.id}" type="text" placeholder="📝 تعليق للبحث لاحقاً..." value="${note}"
                      onkeydown="if(event.key==='Enter') saveNote(${v.id})">
-              <button class="note-save" onclick="saveNote(${v.id})">حفظ</button>
+              <button class="note-save-btn" onclick="saveNote(${v.id})">حفظ</button>
             </div>
           </div>
         </div>`;
     }).join("");
   }
 
-  // ── Selection ─────────────────────────────────────────────────────────────
+  /* ── Play All ── */
+  function togglePlayAll() {
+    if (playAllActive) stopPlayAll();
+    else startPlayAll();
+  }
+
+  function startPlayAll() {
+    const videos = document.querySelectorAll(".vid-card video");
+    if (!videos.length) return showToast("⚠️ لا توجد فيديوهات للتشغيل");
+    playAllActive = true;
+    playAllIdx = 0;
+    const btn = document.getElementById("playAllBtn");
+    btn.textContent = "⏹️ وقف التشغيل";
+    btn.classList.add("playing");
+    showToast(`▶️ تشغيل ${videos.length} فيديو...`);
+    playNextVideo(videos, 0);
+  }
+
+  function playNextVideo(videos, idx) {
+    if (!playAllActive || idx >= videos.length) {
+      stopPlayAll();
+      if (idx >= videos.length) showToast("✅ انتهى تشغيل كل الفيديوهات");
+      return;
+    }
+    playAllIdx = idx;
+
+    // إزالة تمييز السابق
+    document.querySelectorAll(".vid-card.playing-now").forEach(c => {
+      c.classList.remove("playing-now");
+      c.classList.add("already-played");
+    });
+
+    const video = videos[idx];
+    const card  = video.closest(".vid-card");
+    if (card) {
+      card.classList.add("playing-now");
+      card.classList.remove("already-played");
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    video.currentTime = 0;
+    video.play().catch(() => {});
+
+    video.onended = () => {
+      if (!playAllActive) return;
+      setTimeout(() => playNextVideo(videos, idx + 1), 800);
+    };
+
+    // تحديث العداد في الإحصائيات
+    document.getElementById("sTotal").textContent = `${idx + 1}/${videos.length}`;
+  }
+
+  function stopPlayAll() {
+    playAllActive = false;
+    playAllIdx = -1;
+
+    document.querySelectorAll(".vid-card video").forEach(v => {
+      v.pause();
+      v.onended = null;
+    });
+
+    document.querySelectorAll(".vid-card.playing-now, .vid-card.already-played").forEach(c => {
+      c.classList.remove("playing-now", "already-played");
+    });
+
+    const btn = document.getElementById("playAllBtn");
+    btn.textContent = "▶️ تشغيل الكل";
+    btn.classList.remove("playing");
+
+    loadStats();
+  }
+
+  /* ── Selection ── */
   function toggleCard(id) {
     if (selectedIds.has(id)) selectedIds.delete(id);
     else selectedIds.add(id);
-    updateSelUI();
     document.getElementById(`vc-${id}`)?.classList.toggle("selected", selectedIds.has(id));
+    updateSelUI();
   }
 
   function toggleSelectAll() {
-    if (selectedIds.size === allVideos.length) {
+    if (selectedIds.size === allVideos.length && allVideos.length > 0) {
       selectedIds.clear();
     } else {
       allVideos.forEach(v => selectedIds.add(v.id));
@@ -388,15 +452,21 @@
     const n = selectedIds.size;
     document.getElementById("sSelected").textContent = n;
     document.getElementById("selCount").textContent  = n;
-    document.getElementById("btnDelSel").disabled    = n === 0;
-    document.getElementById("btnSelAll").textContent =
-      (n === allVideos.length && n > 0) ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
+    document.getElementById("selCard").style.display    = n ? "flex" : "none";
+    document.getElementById("bulkDelBtn").style.display = n ? "inline-flex" : "none";
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  /* ── Delete ── */
   async function deleteSingle(id) {
     if (!confirm("حذف هذا الفيديو نهائياً؟")) return;
-    if (await doDelete(id)) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
+    try {
+      const r = await fetch(`/api/videos/${id}`, { method: "DELETE" });
+      if ((await r.json()).ok) {
+        document.getElementById(`vc-${id}`)?.remove();
+        selectedIds.delete(id); updateSelUI();
+        showToast("✅ تم الحذف"); loadStats();
+      }
+    } catch { showToast("❌ خطأ في الاتصال"); }
   }
 
   async function deleteSelected() {
@@ -404,38 +474,34 @@
     if (!confirm(`حذف ${selectedIds.size} فيديو نهائياً؟`)) return;
     let done = 0;
     for (const id of [...selectedIds]) {
-      if (await doDelete(id)) done++;
+      try {
+        const r = await fetch(`/api/videos/${id}`, { method: "DELETE" });
+        if ((await r.json()).ok) { document.getElementById(`vc-${id}`)?.remove(); done++; }
+      } catch {}
     }
-    showToast(`✅ تم حذف ${done} فيديو`);
-    await load(); await loadStats();
+    selectedIds.clear(); updateSelUI();
+    showToast(`✅ تم حذف ${done} فيديو`); loadStats();
   }
 
-  async function doDelete(id) {
-    try {
-      const r = await fetch(`/api/videos/${id}`, { method: "DELETE" });
-      return (await r.json()).ok;
-    } catch { return false; }
-  }
-
-  // ── Note ──────────────────────────────────────────────────────────────────
+  /* ── Note ── */
   async function saveNote(id) {
     const note = document.getElementById(`note-${id}`)?.value.trim();
     try {
       const r = await fetch(`/api/videos/${id}/note`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note }),
       });
       if ((await r.json()).ok) showToast("✅ تم حفظ التعليق");
     } catch {}
   }
 
-  // ── Reply Modal ───────────────────────────────────────────────────────────
+  /* ── Reply Modal ── */
   function switchTab(tab) {
     activeTab = tab;
     ["text","voice"].forEach(t => {
-      document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle("active", t === tab);
-      document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle("active", t === tab);
+      const key = t.charAt(0).toUpperCase() + t.slice(1);
+      document.getElementById("panel" + key).classList.toggle("active", t === tab);
+      document.getElementById("tab"   + key).classList.toggle("active", t === tab);
     });
   }
 
@@ -458,32 +524,30 @@
 
   async function sendReply() {
     if (activeTab === "voice") {
-      if (!voiceData) return showToast("⚠️ اختر ملف صوتي");
+      if (!voiceData) return showToast("⚠️ اختر ملف صوتي أولاً");
       try {
-        const r = await fetch("/api/send-voice", {
+        const d = await fetch("/api/send-voice", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: replyPhone, data: voiceData, mimetype: voiceMime }),
-        });
-        const d = await r.json();
-        if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
-        else showToast("❌ " + (d.error || "فشل"));
+        }).then(r => r.json());
+        if (d.ok) { showToast("✅ تم إرسال الصوت"); closeModal(); }
+        else showToast("❌ " + (d.error || "فشل الإرسال"));
       } catch { showToast("❌ خطأ في الاتصال"); }
     } else {
       const text = document.getElementById("replyText").value.trim();
-      if (!text) return showToast("⚠️ اكتب رسالة");
+      if (!text) return showToast("⚠️ اكتب رسالة أولاً");
       try {
-        const r = await fetch("/api/send", {
+        const d = await fetch("/api/send", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: replyPhone, message: text }),
-        });
-        const d = await r.json();
-        if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
-        else showToast("❌ " + (d.error || "فشل"));
+        }).then(r => r.json());
+        if (d.ok) { showToast("✅ تم إرسال الرد"); closeModal(); }
+        else showToast("❌ " + (d.error || "فشل الإرسال"));
       } catch { showToast("❌ خطأ في الاتصال"); }
     }
   }
 
-  // ── Recording ─────────────────────────────────────────────────────────────
+  /* ── Recording ── */
   if (!navigator.mediaDevices || !window.isSecureContext) {
     document.getElementById("recordBtn").style.display = "none";
   }
@@ -514,13 +578,13 @@
       };
       mediaRecorder.start();
       recordSeconds = 0;
-      document.getElementById("recordBtn").textContent = "⏹️ إيقاف";
+      document.getElementById("recordBtn").textContent = "⏹️ إيقاف التسجيل";
       document.getElementById("recordBtn").classList.add("recording");
       document.getElementById("recordTimer").style.display = "block";
       recordInterval = setInterval(() => {
         recordSeconds++;
         const m = Math.floor(recordSeconds / 60), s = recordSeconds % 60;
-        document.getElementById("timerDisplay").textContent = `${m}:${String(s).padStart(2,"0")}`;
+        document.getElementById("timerDisplay").textContent = `${m}:${String(s).padStart(2, "0")}`;
       }, 1000);
     } catch { showToast("❌ تعذر الوصول للميكروفون"); }
   }
@@ -546,7 +610,7 @@
     reader.readAsDataURL(file);
   });
 
-  // ── Upload Modal ──────────────────────────────────────────────────────────
+  /* ── Upload Modal ── */
   function openUploadModal() {
     upFiles = [];
     document.getElementById("upPhone").value = "";
@@ -577,9 +641,9 @@
   function addUpFiles(files) {
     files.forEach(file => {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const idx = upFiles.length;
       upFiles.push({ file, mime: file.type || "video/mp4", data: null, name: file.name, mb });
       const reader = new FileReader();
-      const idx = upFiles.length - 1;
       reader.onload = e => { upFiles[idx].data = e.target.result.split(",")[1]; };
       reader.readAsDataURL(file);
     });
@@ -596,7 +660,7 @@
   function renderUpPreview() {
     document.getElementById("upPreview").innerHTML = upFiles.map((f, i) => `
       <div class="up-item">
-        <span class="up-icon">🎬</span>
+        <span>🎬</span>
         <span class="up-name">${escHtml(f.name)}</span>
         <span class="up-size">${f.mb} MB</span>
         <button class="rm" onclick="removeUpFile(${i})">✕</button>
@@ -605,7 +669,7 @@
 
   async function doUpload() {
     if (!upFiles.length) return showToast("⚠️ اختر فيديو أولاً");
-    if (upFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل التحميل");
+    if (upFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل التحضير");
     const phone = document.getElementById("upPhone").value.trim() || "000000000";
     const name  = document.getElementById("upName").value.trim()  || "يدوي";
     const prog  = document.getElementById("upProgress");
@@ -614,22 +678,20 @@
     let sent = 0, failed = 0;
     for (const f of upFiles) {
       try {
-        prog.textContent = `⏳ ${sent + failed + 1} / ${upFiles.length}`;
-        const r = await fetch("/api/videos/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        prog.textContent = `⏳ ${sent + failed + 1}/${upFiles.length}`;
+        const d = await fetch("/api/videos/upload", {
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone, name, data: f.data, mimetype: f.mime }),
-        });
-        const d = await r.json();
+        }).then(r => r.json());
         if (d.ok) sent++; else failed++;
       } catch { failed++; }
     }
     prog.textContent = `✅ تم رفع ${sent}${failed ? ` · ❌ فشل ${failed}` : ""}`;
     btn.disabled = false;
-    if (sent > 0) setTimeout(() => { closeUploadModal(); load(); loadStats(); }, 1200);
+    if (sent > 0) setTimeout(() => { closeUploadModal(); load(true); loadStats(); }, 1200);
   }
 
-  // ── Utils ─────────────────────────────────────────────────────────────────
+  /* ── Utils ── */
   function escHtml(str) {
     if (!str) return "";
     return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -641,7 +703,7 @@
     setTimeout(() => t.classList.remove("show"), 3000);
   }
 
-  // ── Close on backdrop ─────────────────────────────────────────────────────
+  /* ── Close on backdrop / ESC ── */
   document.getElementById("replyOverlay").addEventListener("click", e => {
     if (e.target === document.getElementById("replyOverlay")) closeModal();
   });
@@ -652,11 +714,17 @@
     if (e.key === "Escape") { closeModal(); closeUploadModal(); }
   });
 
-  document.getElementById("searchPhone").addEventListener("input", load);
+  document.getElementById("searchPhone").addEventListener("input", () => load());
 
+  /* ── Init ── */
   loadStats();
-  load();
-  setInterval(() => { loadStats(); load(); }, 30000);
+  load(true);
+
+  // تحديث كل 30 ثانية — فقط إذا لم يكن فيديو يشتغل
+  setInterval(() => {
+    loadStats();
+    if (!isAnyVideoPlaying() && !playAllActive) load();
+  }, 30000);
 </script>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -664,12 +732,10 @@
   const _sock = io();
   _sock.on("new_media", (data) => {
     if (data.type !== "video") return;
-    const t = document.getElementById("toast");
-    t.textContent = `🎬 فيديو جديد من ${data.name || data.phone}`;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3500);
+    showToast(`🎬 فيديو جديد من ${data.name || data.phone}`);
     loadStats();
-    load();
+    // تحديث القائمة فقط إذا لم يكن فيديو يشتغل
+    if (!isAnyVideoPlaying() && !playAllActive) load();
   });
 </script>
 <footer id="app-footer"></footer>

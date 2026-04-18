@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رد ذكي تلقائي — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      direction: rtl;
+    }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    header h1 { font-size: 1.3rem; }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      color: #075e54;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: #f5f5f5;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      border-left: 4px solid #128c7e;
+    }
+
+    .stat-box .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #075e54;
+    }
+
+    .stat-box .label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #25d366;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+
+    /* Progress */
+    .progress-wrap {
+      display: none;
+      margin: 20px 0;
+      padding: 16px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      border-left: 4px solid #25d366;
+    }
+
+    .progress-wrap.active {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 24px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #25d366, #128c7e);
+      width: 0%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .progress-text {
+      font-size: 0.9rem;
+      color: #2e7d32;
+      margin: 8px 0;
+    }
+
+    /* Messages List */
+    .messages-list {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .message-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 0.85rem;
+    }
+
+    .message-item:last-child {
+      border-bottom: none;
+    }
+
+    .message-item.success {
+      background: #f1f8e9;
+      border-left: 3px solid #25d366;
+    }
+
+    .message-item.error {
+      background: #ffebee;
+      border-left: 3px solid #e53935;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .message-name {
+      font-weight: 600;
+      color: #075e54;
+    }
+
+    .message-status {
+      font-size: 1.2rem;
+    }
+
+    .message-text {
+      color: #666;
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+
+    /* Info Box */
+    .info-box {
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #1565c0;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Credit Error */
+    .credit-error {
+      display: none;
+      background: #fff3e0;
+      border: 1px solid #ffb74d;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #e65100;
+    }
+    .credit-error.show { display: block; }
+    .credit-error strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+
+    /* Source badge */
+    .source-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .source-ai      { background: #e8f5e9; color: #2e7d32; }
+    .source-custom  { background: #e3f2fd; color: #1565c0; }
+    .source-default { background: #fff3e0; color: #e65100; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 400;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 16px;
+      }
+
+      .container {
+        padding: 0 12px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header id="app-header"></header>
+
+<div class="container">
+  <!-- Credit Error Alert -->
+  <div class="credit-error" id="creditError">
+    <strong>⚠️ الكريدت منتهي (Groq)</strong>
+    رصيد حساب Groq منتهي — الردود انتقلت للرسائل الافتراضية.
+    اشحن حسابك على: <a href="https://console.groq.com" target="_blank">console.groq.com</a>
+    أو غيّر المزود إلى OpenAI في ملف .env
+  </div>
+
+  <!-- Info -->
+  <div class="info-box">
+    <strong>🤖 رد ذكي تلقائي</strong>
+    يجيب على الرسائل بالأولوية: 1️⃣ ردود مبرمجة (keywords) → 2️⃣ ذكاء اصطناعي (Groq/OpenAI) → 3️⃣ رد افتراضي
+  </div>
+
+  <!-- Stats Card -->
+  <div class="card">
+    <h2>📊 الإحصائيات</h2>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="value" id="statTotal">—</div>
+        <div class="label">رسائل بدون رد</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="statProcessed">0</div>
+        <div class="label">معالجة</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="statSuccess">0</div>
+        <div class="label">ردود ناجحة</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="statFailed">0</div>
+        <div class="label">ردود فاشلة</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Card -->
+  <div class="card">
+    <h2>🎮 التحكم</h2>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btnStart" onclick="startAiReply()">
+        🚀 ابدأ الرد الذكي الآن
+      </button>
+      <button class="btn btn-secondary" onclick="refreshStatus()">
+        🔄 تحديث الحالة
+      </button>
+      <button class="btn btn-secondary" onclick="clearMessages()">
+        🗑️ مسح السجل
+      </button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-text" id="progressText">جاري... 0/0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%">
+          <span id="progressPercent">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages Card -->
+  <div class="card">
+    <h2>📬 سجل الردود</h2>
+    <div class="messages-list" id="messagesList">
+      جاري التحميل...
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let aiStatus = { running: false, done: 0, total: 0, ok: 0, fail: 0, messages: [] };
+  let pollInterval = null;
+
+  // ── Load initial stats ─────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const resp = await fetch("/api/messages/unanswered");
+      const unanswered = await resp.json();
+      document.getElementById("statTotal").textContent = unanswered.length;
+    } catch (err) {
+      console.error("خطأ تحميل الإحصائيات:", err);
+    }
+  }
+
+  // ── Start AI reply ─────────────────────────────────────────────────────────
+  async function startAiReply() {
+    const btn = document.getElementById("btnStart");
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch("/api/ai-auto-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      const data = await resp.json();
+
+      if (data.ok) {
+        showToast(`✅ ${data.message}`);
+        document.getElementById("progressWrap").classList.add("active");
+
+        // بدء المراقبة
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(refreshStatus, 1000);
+      } else {
+        showToast(`❌ ${data.error || data.message}`);
+      }
+    } catch (err) {
+      showToast(`❌ خطأ: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Refresh status ─────────────────────────────────────────────────────────
+  async function refreshStatus() {
+    try {
+      const resp = await fetch("/api/ai-auto-reply/status");
+      aiStatus = await resp.json();
+
+      // Update stats
+      document.getElementById("statProcessed").textContent = aiStatus.done;
+      document.getElementById("statSuccess").textContent = aiStatus.ok;
+      document.getElementById("statFailed").textContent = aiStatus.fail;
+
+      // Update progress
+      if (aiStatus.total > 0) {
+        const percent = Math.round((aiStatus.done / aiStatus.total) * 100);
+        document.getElementById("progressFill").style.width = percent + "%";
+        document.getElementById("progressPercent").textContent = percent + "%";
+        document.getElementById("progressText").textContent =
+          `${aiStatus.done}/${aiStatus.total} • ✅ ${aiStatus.ok} • ❌ ${aiStatus.fail}`;
+      }
+
+      // Update messages list
+      renderMessages();
+
+      // Show credit error if any
+      if (aiStatus.creditError) {
+        document.getElementById("creditError").classList.add("show");
+      }
+
+      // Hide progress when done
+      if (!aiStatus.running) {
+        document.getElementById("progressWrap").classList.remove("active");
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+        if (aiStatus.done > 0) {
+          const msg = aiStatus.creditError
+            ? `⚠️ اكتمل! ${aiStatus.ok} ردود — الكريدت منتهي، انتقل للافتراضي`
+            : `✅ اكتمل! تم الرد على ${aiStatus.ok} رسالة`;
+          showToast(msg);
+          loadStats();
+        }
+      }
+    } catch (err) {
+      console.error("خطأ تحديث الحالة:", err);
+    }
+  }
+
+  // ── Render messages ────────────────────────────────────────────────────────
+  function renderMessages() {
+    const list = document.getElementById("messagesList");
+
+    if (!aiStatus.messages.length) {
+      list.innerHTML = `<div style="padding:16px;text-align:center;color:#999">لا توجد ردود حتى الآن 📭</div>`;
+      return;
+    }
+
+    const sourceBadge = (src) => {
+      if (!src) return "";
+      if (src === "ai")      return `<span class="source-badge source-ai">🤖 AI</span>`;
+      if (src === "custom")  return `<span class="source-badge source-custom">📝 مبرمج</span>`;
+      if (src === "default") return `<span class="source-badge source-default">↩️ افتراضي</span>`;
+      return `<span class="source-badge source-default">${src}</span>`;
+    };
+
+    list.innerHTML = aiStatus.messages.map(msg => {
+      const isSuccess = msg.status === "✅";
+      const classname = isSuccess ? "success" : "error";
+      return `
+        <div class="message-item ${classname}">
+          <div class="message-header">
+            <span class="message-name">${msg.name} ${sourceBadge(msg.source)}</span>
+            <span class="message-status">${msg.status}</span>
+          </div>
+          <div class="message-text">
+            <strong>الرسالة:</strong> ${msg.originalMsg}
+            ${isSuccess
+              ? `<br><strong>الرد:</strong> ${msg.aiReply}`
+              : `<br><strong>الخطأ:</strong> ${msg.error}`}
+          </div>
+        </div>
+      `;
+    }).reverse().join("");
+  }
+
+  // ── Clear messages ─────────────────────────────────────────────────────────
+  function clearMessages() {
+    aiStatus.messages = [];
+    document.getElementById("statProcessed").textContent = "0";
+    document.getElementById("statSuccess").textContent = "0";
+    document.getElementById("statFailed").textContent = "0";
+    renderMessages();
+    showToast("✅ تم مسح السجل");
+  }
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  // Init
+  loadStats();
+  renderMessages();
+</script>
+
+<footer id="app-footer"></footer>
+<script src="/js/nav.js"></script>
+</body>
+</html>

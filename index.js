@@ -54,6 +54,49 @@ const config = {
     .split(",").map((n) => n.trim()).filter(Boolean),
 };
 
+// ─── جلب وحفظ صورة الزبون من واتساب ──────────────────────────────────────
+const https  = require("https");
+const http   = require("http");
+const photoDir = path.join(__dirname, "public", "uploads", "photos");
+if (!fs.existsSync(photoDir)) fs.mkdirSync(photoDir, { recursive: true });
+
+const photoQueue   = new Set();   // منع التكرار
+const PHOTO_TTL_MS = 24 * 3600 * 1000; // 24 ساعة
+
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const proto = url.startsWith("https") ? https : http;
+    const file  = fs.createWriteStream(dest);
+    proto.get(url, res => {
+      if (res.statusCode !== 200) { file.close(); fs.unlink(dest, ()=>{}); return reject(new Error("HTTP "+res.statusCode)); }
+      res.pipe(file);
+      file.on("finish", () => { file.close(); resolve(); });
+    }).on("error", e => { file.close(); fs.unlink(dest, ()=>{}); reject(e); });
+  });
+}
+
+async function syncContactPhoto(phone, client) {
+  if (photoQueue.has(phone)) return;
+  photoQueue.add(phone);
+  try {
+    const db = require("./db");
+    // تحقق من آخر تحديث
+    const [[row]] = await db.query("SELECT photo_at FROM contacts WHERE phone=? LIMIT 1",[phone]);
+    if (row?.photo_at && (Date.now() - new Date(row.photo_at).getTime()) < PHOTO_TTL_MS) return;
+
+    const wid = phone.includes("@") ? phone : phone + "@c.us";
+    const url = await client.getProfilePicUrl(wid).catch(()=>null);
+    if (!url) return;
+
+    const filename = phone + ".jpg";
+    const dest     = path.join(photoDir, filename);
+    await downloadFile(url, dest);
+    await db.query("UPDATE contacts SET photo=?, photo_at=NOW() WHERE phone=?", [filename, phone]);
+    console.log(`📸 صورة محفوظة: ${phone}`);
+  } catch { /* تجاهل — الزبون ربما أخفى صورته */ }
+  finally { photoQueue.delete(phone); }
+}
+
 // ─── تسجيل استخدام الردود المبرمجة ──────────────────────────────────────
 async function logResponseUsage(phone, keywordsLabel, matchedKw, replyText, source = "whatsapp") {
   try {
@@ -82,12 +125,33 @@ let autoReplyEnabled  = (() => {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, "responses.json"), "utf8")).autoReplyEnabled ?? false; }
   catch { return false; }
 })();
-let mediaSyncStatus   = { running: false, done: 0, total: 0, saved: 0, errors: 0, currentChat: "" };
+let aiAutoReplyEnabled = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "responses.json"), "utf8")).aiAutoReplyEnabled ?? true; }
+  catch { return true; }
+})();
+let mediaSyncStatus   = { running: false, done: 0, total: 0, saved: 0, errors: 0, skipped: 0, currentChat: "", lastError: "" };
 const pausedChats   = new Set();
 
 // منع تكرار نفس السؤال خلال 60 ثانية
 const lastMessages    = new Map();
 const REPEAT_DELAY_MS = 60 * 1000;
+
+// ── Cache بسيط للاستعلامات المتكررة ──────────────────────────────────────
+const queryCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 دقائق
+
+function getCachedQuery(key) {
+  const cached = queryCache.get(key);
+  if (cached && Date.now() - cached.time < CACHE_DURATION) {
+    return cached.data;
+  }
+  queryCache.delete(key);
+  return null;
+}
+
+function setCachedQuery(key, data) {
+  queryCache.set(key, { data, time: Date.now() });
+}
 
 function isDuplicate(contactId, message) {
   const normalized = message.toLowerCase().trim();
@@ -167,7 +231,7 @@ async function importWhatsAppHistory(client, botId) {
       const name  = chat.name || chat.contact?.pushname || phone;
 
       try {
-        const messages = await chat.fetchMessages({ limit: 100 });
+        const messages = await chat.fetchMessages({ limit: 30 });  // تقليل من 100 إلى 30
         for (const msg of messages) {
           const waMsgId = msg.id?._serialized;
           if (!waMsgId) continue;
@@ -191,7 +255,7 @@ async function importWhatsAppHistory(client, botId) {
             try {
               const media = await Promise.race([
                 msg.downloadMedia(),
-                new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000)),
+                new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),  // تقليل من 30s إلى 15s
               ]);
 
               if (media?.data) {
@@ -240,7 +304,7 @@ async function importWhatsAppHistory(client, botId) {
 function setupClient(botId) {
   const puppeteerOpts = {
     headless: true,
-    protocolTimeout: 120000,
+    protocolTimeout: 60000,  // تقليل من 120000
     args: [
       "--no-sandbox", "--disable-setuid-sandbox",
       "--disable-dev-shm-usage", "--disable-gpu",
@@ -257,13 +321,14 @@ function setupClient(botId) {
       "--hide-scrollbars", "--mute-audio",
       "--no-default-browser-check", "--no-pings",
       "--safebrowsing-disable-auto-update",
-      // ── تقليل استهلاك الذاكرة ────────────────────────────
-      "--disable-accelerated-2d-canvas",  // بدون GPU canvas
-      "--disable-webgl",                  // بدون WebGL
-      "--in-process-gpu",                 // GPU في نفس Process يوفر ~50MB
-      "--disable-canvas-aa",              // بدون anti-aliasing
+      // ── تسريع الاتصال ────────────────────────────
+      "--disable-accelerated-2d-canvas",
+      "--disable-webgl",
+      "--in-process-gpu",
+      "--disable-canvas-aa",
       "--disable-smooth-scrolling",
-      "--js-flags=--max-old-space-size=200",
+      "--disable-blink-features=AutomationControlled",  // إخفاء automation
+      "--js-flags=--max-old-space-size=512",  // زيادة من 256 إلى 512
     ],
   };
   if (CHROMIUM_PATH) puppeteerOpts.executablePath = CHROMIUM_PATH;
@@ -330,7 +395,7 @@ function setupClient(botId) {
       console.log(`⏭️  [${botId}] سجل الرسائل مستورد مسبقاً — تم التخطي`);
     }
 
-    // ── Watchdog: فحص حالة الاتصال كل 45 ثانية — إعادة تشغيل تلقائية إذا تجمّد ──
+    // ── Watchdog: فحص حالة الاتصال كل 90 ثانية — إعادة تشغيل تلقائية إذا تجمّد ──
     if (bot._keepaliveTimer) clearInterval(bot._keepaliveTimer);
     bot._watchdogFails = 0;
     bot._keepaliveTimer = setInterval(async () => {
@@ -338,7 +403,7 @@ function setupClient(botId) {
       try {
         const state = await Promise.race([
           c.getState(),
-          new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000)),
         ]);
         if (state === "CONNECTED") {
           bot._watchdogFails = 0; // إعادة العدّ عند النجاح
@@ -357,7 +422,7 @@ function setupClient(botId) {
         const delay = 15000 + Math.floor(Math.random() * 15000);
         setTimeout(() => setupClient(botId), delay);
       }
-    }, 45000);
+    }, 90000);  // تقليل الفحوصات من 45 إلى 90 ثانية
   });
 
   c.on("disconnected", (reason) => {
@@ -372,6 +437,18 @@ function setupClient(botId) {
       try { c.destroy().catch(() => {}); } catch {}
       setupClient(botId);
     }, delay);
+  });
+
+  // ── معالج لأخطاء غير متوقعة في الـ client (TargetCloseError, WebSocket, etc) ─
+  c.on("error", (err) => {
+    console.error(`⚠️  [${botId}] خطأ في client:`, err.message);
+    if (err.name === "TargetCloseError" || err.message?.includes("Target closed")) {
+      console.warn(`⚠️  [${botId}] فقدان معالج Chromium — إعادة تشغيل...`);
+      bot.botConnected = false;
+      if (bot._keepaliveTimer) { clearInterval(bot._keepaliveTimer); bot._keepaliveTimer = null; }
+      try { c.destroy().catch(() => {}); } catch {}
+      setTimeout(() => setupClient(botId), 5000);
+    }
   });
 
   c.on("message", msg => handleIncoming(msg, botId));
@@ -418,11 +495,11 @@ function setupClient(botId) {
       for (const lock of ["SingletonLock", "SingletonCookie", "SingletonSocket"]) {
         try { fs.unlinkSync(path.join(sessionDir, lock)); } catch {}
       }
-      setTimeout(() => { try { c.destroy().catch(() => {}); } catch {} setupClient(botId); }, 5000);
+      setTimeout(() => { try { c.destroy().catch(() => {}); } catch {} setupClient(botId); }, 2000);  // تقليل من 5s
       return;
     }
-    // إعادة المحاولة بعد 35-60 ثانية (عشوائي لتفادي تصادم البوتات)
-    const delay = 35000 + Math.floor(Math.random() * 25000);
+    // إعادة المحاولة بعد 20-35 ثانية (أسرع من قبل)
+    const delay = 20000 + Math.floor(Math.random() * 15000);  // تقليل من 35-60s
     setTimeout(() => {
       console.log(`\n🔄 [${botId}] إعادة محاولة التهيئة...`);
       try { c.destroy().catch(() => {}); } catch {}
@@ -479,6 +556,12 @@ async function handleIncoming(message, botId) {
       if (!mentioned && !bodyMention) return;
     }
     if (botPaused || pausedChats.has(chat.id._serialized)) return;
+
+    // ─── جلب صورة الزبون في الخلفية (بدون انتظار) ────────────────────────────
+    const botObj = bots.get(botId);
+    if (botObj?.client) {
+      setImmediate(() => syncContactPhoto(key, botObj.client));
+    }
 
     // ─── معالجة الوسائط (صور + صوت + فيديو + ملفات) ──────────────────────────
     if (message.hasMedia) {
@@ -590,34 +673,32 @@ async function handleIncoming(message, botId) {
 
     console.log(`\n📩 ${name} (${senderNumber}): ${body}`);
 
-    await chat.sendStateTyping();
-    await sleep(Math.random() * (config.delayMax - config.delayMin) + config.delayMin);
-
-    // الأولوية 1: الأجوبة المبرمجة (keywords)
+    // الأولوية 1: الأجوبة المبرمجة (keywords) — بدون delay
     const { text: customText, voiceFile, defaultText, matchedKw, keywordsLabel } = findCustomResponse(body);
     let source = "custom";
-
-    await chat.clearState();
 
     // replyText: نص الرد المُرسَل
     let replyText = "";
     let sentWaId  = null;
     if (voiceFile) {
-      // ملف صوتي مبرمج
+      // ملف صوتي مبرمج — بدون delay
       const media = MessageMedia.fromFilePath(voiceFile);
       await botReply(message, media, botId, { sendAudioAsVoice: true });
       replyText = customText || "🎤 رسالة صوتية";
       if (customText) { const s = await botReply(message, customText, botId); sentWaId = s?.id?._serialized || null; }
       console.log(`✅ [🎤 صوت مبرمج] → ${name}`);
     } else if (customText) {
-      // رد keyword مبرمج
+      // رد keyword مبرمج — بدون delay
       const s = await botReply(message, customText, botId);
       sentWaId  = s?.id?._serialized || null;
       replyText = customText;
       logResponseUsage(senderNumber, keywordsLabel, matchedKw, customText, "whatsapp");
       console.log(`✅ [مبرمج] → ${name}: ${customText.substring(0, 70)}`);
-    } else {
-      // الأولوية 2: الذكاء الاصطناعي
+    } else if (aiAutoReplyEnabled) {
+      // الأولوية 2: الذكاء الاصطناعي — مع typing indicator و delay
+      await chat.sendStateTyping();
+      await sleep(Math.random() * (config.delayMax - config.delayMin) + config.delayMin);
+      await chat.clearState();
       try {
         const aiReply = await generateResponse(contactId, name, body);
         const s = await botReply(message, aiReply, botId);
@@ -634,6 +715,13 @@ async function handleIncoming(message, botId) {
         source    = "default";
         console.log(`↩️  [افتراضي] → ${name}: ${defaultText.substring(0, 70)}`);
       }
+    } else {
+      // AI مطفأ — الرد الافتراضي مباشرة
+      const s = await botReply(message, defaultText, botId);
+      sentWaId  = s?.id?._serialized || null;
+      replyText = defaultText;
+      source    = "default";
+      console.log(`↩️  [افتراضي - AI مطفأ] → ${name}: ${defaultText.substring(0, 70)}`);
     }
 
     // حفظ رد البوت مع wa_msg_id لمنع التكرار حتى في حالة race condition مع message_create
@@ -858,7 +946,6 @@ async function handleAdminCommand(body, chat, contactId, botId) {
 
 // ─── Express Server + Socket.io ───────────────────────────────────────────
 
-const http = require("http");
 const { Server: SocketIO } = require("socket.io");
 const app  = express();
 
@@ -867,7 +954,6 @@ const SSL_CERT = process.env.SSL_CERT;
 const SSL_KEY  = process.env.SSL_KEY;
 
 if (SSL_CERT && SSL_KEY && fs.existsSync(SSL_CERT) && fs.existsSync(SSL_KEY)) {
-  const https = require("https");
   const sslOpts = { cert: fs.readFileSync(SSL_CERT), key: fs.readFileSync(SSL_KEY) };
   server = https.createServer(sslOpts, app);
   // HTTP → HTTPS redirect on port 80
@@ -944,11 +1030,23 @@ app.use(apiLimiter);
 // إرسال رسالة لكل المتصلين بغرفة هاتف معين
 function emitMessage(phone, msgObj) {
   io.to(`phone:${phone}`).emit("new_message", msgObj);
+  io.to("replies").emit("new_message", msgObj);  // ← user-reply page
 }
 
 fbSetIo(io);
 
 io.on("connection", (socket) => {
+  // user-reply: ينضم لغرفة replies تلقائياً
+  socket.on("join_replies", () => {
+    const cookieHeader = socket.handshake.headers.cookie || "";
+    const cookies = {};
+    cookieHeader.split(";").forEach(part => {
+      const [k, ...v] = part.trim().split("=");
+      if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
+    });
+    if (validTokens.has(cookies.auth_token)) socket.join("replies");
+  });
+
   // التحقق من الـ token عند الانضمام لغرفة (وليس عند الاتصال — لتفادي 400)
   socket.on("join", (phone) => {
     const cookieHeader = socket.handshake.headers.cookie || "";
@@ -1002,6 +1100,7 @@ function saveTokens(set) {
   } catch {}
 }
 const validTokens = loadTokens();
+const tokenRoles  = new Map(); // token → { role, name }
 
 function parseCookies(header = "") {
   const cookies = {};
@@ -1034,24 +1133,78 @@ app.use(express.static(path.join(__dirname, "public"), {
   },
 }));
 
-app.post("/api/login", loginLimiter, (req, res) => {
-  const { password } = req.body;
+app.post("/api/login", loginLimiter, async (req, res) => {
+  const { username, password } = req.body;
+  if (!password) return res.status(401).json({ error: "كلمة المرور مطلوبة" });
+
+  // أولاً: تحقق من جدول users
+  try {
+    const db   = require("./db");
+    const hash = crypto.createHash("sha256").update(password).digest("hex");
+    let query, params;
+    if (username) {
+      query  = "SELECT * FROM users WHERE username = ? AND active = 1 LIMIT 1";
+      params = [username];
+    } else {
+      // fallback: أي أدمن بهذه الكلمة
+      query  = "SELECT * FROM users WHERE role = 'admin' AND active = 1 LIMIT 1";
+      params = [];
+    }
+    const [rows] = await db.query(query, params);
+    if (rows.length && rows[0].password === hash) {
+      const token = crypto.randomBytes(32).toString("hex");
+      validTokens.add(token);
+      tokenRoles.set(token, { role: rows[0].role, name: rows[0].name });
+      saveTokens(validTokens);
+      res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
+      return res.json({ ok: true, name: rows[0].name, role: rows[0].role });
+    }
+  } catch (_) { /* DB غير جاهز — fallback */ }
+
+  // Fallback: كلمة مرور .env القديمة (للتوافق)
   const PASS = process.env.DASHBOARD_PASSWORD || "admin123";
-  if (password !== PASS) return res.status(401).json({ error: "كلمة المرور غير صحيحة" });
-  const token = crypto.randomBytes(32).toString("hex");
-  validTokens.add(token);
-  saveTokens(validTokens);
-  res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
-  res.json({ ok: true });
+  if (password === PASS && (!username || username === "admin")) {
+    const token = crypto.randomBytes(32).toString("hex");
+    validTokens.add(token);
+    tokenRoles.set(token, { role: "admin", name: "المدير" });
+    saveTokens(validTokens);
+    res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
+    return res.json({ ok: true, name: "المدير", role: "admin" });
+  }
+
+  res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
 });
 
 app.post("/api/logout", (req, res) => {
   const cookies = parseCookies(req.headers.cookie);
+  tokenRoles.delete(cookies.auth_token);
   validTokens.delete(cookies.auth_token);
   saveTokens(validTokens);
   res.setHeader("Set-Cookie", "auth_token=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0");
   res.json({ ok: true });
 });
+
+app.get("/api/me", (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const info    = tokenRoles.get(cookies.auth_token) || { role: "admin", name: "المدير" };
+  res.json(info);
+});
+
+// ── حماية صفحات الأدمن فقط ───────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie);
+  const info    = tokenRoles.get(cookies.auth_token) || { role: "admin" };
+  if (info.role !== "admin") return res.redirect("/user-reply");
+  next();
+}
+
+// صفحات محظورة على الـ agents
+app.get("/dashboard",      requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "dashboard.html")));
+app.get("/users",          requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "users.html")));
+app.get("/ai-reply",       requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "ai-reply.html")));
+app.get("/bulk-reply",     requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "bulk-reply.html")));
+app.get("/sync",           requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "sync.html")));
+app.get("/responses",      requireAdmin, (_req, res) => res.sendFile(path.join(__dirname, "public", "responses.html")));
 
 app.post("/api/admin/change-password", (req, res) => {
   const { current, newPass } = req.body;
@@ -1076,6 +1229,73 @@ app.post("/api/admin/change-password", (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── إدارة المستخدمين ──────────────────────────────────────────────────────
+
+app.get("/api/users", async (_req, res) => {
+  try {
+    const db = require("./db");
+    const [rows] = await db.query("SELECT id, name, username, role, active, created_at FROM users ORDER BY id");
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/users", async (req, res) => {
+  const { name, username, password, role = "agent" } = req.body;
+  if (!name || !username || !password) return res.status(400).json({ error: "الاسم واسم المستخدم وكلمة المرور مطلوبة" });
+  if (password.length < 4) return res.status(400).json({ error: "كلمة المرور يجب أن تكون 4 أحرف على الأقل" });
+  try {
+    const db   = require("./db");
+    const hash = crypto.createHash("sha256").update(password).digest("hex");
+    const [r]  = await db.query(
+      "INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)",
+      [name.trim(), username.trim().toLowerCase(), hash, role]
+    );
+    res.json({ ok: true, id: r.insertId });
+  } catch (e) {
+    if (e.code === "ER_DUP_ENTRY") return res.status(400).json({ error: "اسم المستخدم موجود بالفعل" });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, password, role, active } = req.body;
+  try {
+    const db     = require("./db");
+    const fields = [];
+    const vals   = [];
+    if (name !== undefined)   { fields.push("name = ?");   vals.push(name); }
+    if (role !== undefined)   { fields.push("role = ?");   vals.push(role); }
+    if (active !== undefined) { fields.push("active = ?"); vals.push(active ? 1 : 0); }
+    if (password) {
+      const hash = crypto.createHash("sha256").update(password).digest("hex");
+      fields.push("password = ?"); vals.push(hash);
+    }
+    if (!fields.length) return res.status(400).json({ error: "لا توجد بيانات للتحديث" });
+    vals.push(id);
+    await db.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, vals);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/api/users/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const db      = require("./db");
+    const [rows]  = await db.query("SELECT role FROM users WHERE id = ?", [id]);
+    if (rows[0]?.role === "admin") {
+      const [cnt] = await db.query("SELECT COUNT(*) AS c FROM users WHERE role = 'admin' AND active = 1");
+      if (cnt[0].c <= 1) return res.status(400).json({ error: "لا يمكن حذف آخر أدمن" });
+    }
+    await db.query("DELETE FROM users WHERE id = ?", [id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/users", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "users.html"));
 });
 
 // Facebook Webhook
@@ -1346,7 +1566,7 @@ app.get("/api/stats", async (_req, res) => {
   if (!_statsCache || now - _statsCacheAt > 5000) {
     const stats = await getStats();
     const connected = [...bots.values()].some(b => b.botConnected);
-    _statsCache = { ...stats, botPaused, autoReplyEnabled, botConnected: connected };
+    _statsCache = { ...stats, botPaused, autoReplyEnabled, aiAutoReplyEnabled, botConnected: connected, aiCreditError: aiReplyStatus.creditError || false };
     _statsCacheAt = now;
   }
   res.json(_statsCache);
@@ -1364,6 +1584,20 @@ app.post("/api/auto-reply/disable", (_req, res) => {
   const d = readResponses(); d.autoReplyEnabled = false; writeResponses(d);
   console.log("\n🔕 الردود التلقائية: مطفأة");
   res.json({ ok: true, autoReplyEnabled });
+});
+
+app.post("/api/ai-reply/enable", (_req, res) => {
+  aiAutoReplyEnabled = true;
+  const d = readResponses(); d.aiAutoReplyEnabled = true; writeResponses(d);
+  console.log("\n🤖 الذكاء الاصطناعي: مفعّل");
+  res.json({ ok: true, aiAutoReplyEnabled });
+});
+
+app.post("/api/ai-reply/disable", (_req, res) => {
+  aiAutoReplyEnabled = false;
+  const d = readResponses(); d.aiAutoReplyEnabled = false; writeResponses(d);
+  console.log("\n🔕 الذكاء الاصطناعي: مطفأ");
+  res.json({ ok: true, aiAutoReplyEnabled });
 });
 
 app.get("/api/qr", (_req, res) => {
@@ -1413,11 +1647,43 @@ app.post("/api/restart-bot/:id", async (req, res) => {
 });
 
 app.get("/api/contacts", async (req, res) => {
-  const limit  = Math.min(parseInt(req.query.limit  || "1000"), 2000);
+  const limit  = Math.min(parseInt(req.query.limit  || "200"), 2000);
   const offset = parseInt(req.query.offset || "0");
   const search = (req.query.search || "").trim().substring(0, 50);
   const list = await getAllContacts({ limit, offset, search });
+  res.setHeader("Cache-Control", "private, max-age=10");
   res.json(list);
+});
+
+// جلب صورة زبون واحد
+app.get("/api/contacts/:phone/photo", async (req, res) => {
+  const phone = req.params.phone.replace(/\D/g,"");
+  const key   = phone.length>9 ? phone.slice(-9) : phone;
+  const bot   = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
+  await syncContactPhoto(key, bot.client);
+  const db = require("./db");
+  const [[row]] = await db.query("SELECT photo FROM contacts WHERE phone=? LIMIT 1",[key]);
+  res.json({ photo: row?.photo ? `/uploads/photos/${row.photo}` : null });
+});
+
+// جلب صور جميع الزبائن في الخلفية
+app.post("/api/contacts/sync-photos", async (req, res) => {
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "البوت غير متصل" });
+  const db = require("./db");
+  const [rows] = await db.query(
+    "SELECT phone FROM contacts WHERE (photo IS NULL OR photo_at < DATE_SUB(NOW(),INTERVAL 24 HOUR)) AND (is_deleted IS NULL OR is_deleted=0) LIMIT 100"
+  );
+  res.json({ queued: rows.length });
+  // معالجة في الخلفية بدون حجب الاستجابة
+  (async () => {
+    for (const r of rows) {
+      await syncContactPhoto(r.phone, bot.client);
+      await new Promise(x=>setTimeout(x,500));
+    }
+    console.log(`📸 sync-photos: تم تحديث ${rows.length} صورة`);
+  })();
 });
 
 app.delete("/api/contacts/:phone", async (req, res) => {
@@ -2039,96 +2305,131 @@ app.post("/api/wa-sync-media", async (req, res) => {
   if (!connectedBots.length) return res.status(503).json({ error: "البوت غير متصل بواتساب" });
   if (mediaSyncStatus.running) return res.json({ ok: true, message: "المزامنة جارية بالفعل", status: mediaSyncStatus });
 
-  const msgLimit = parseInt(req.body?.limit) || 3000;
-  mediaSyncStatus = { running: true, done: 0, total: 0, saved: 0, errors: 0, currentChat: "" };
+  mediaSyncStatus = { running: true, done: 0, total: 0, saved: 0, errors: 0, skipped: 0, currentChat: "", lastError: "" };
   res.json({ ok: true, message: "بدأت المزامنة في الخلفية" });
 
   (async () => {
     try {
-      // جمع كل المحادثات من جميع البوتات مع إزالة التكرار
+      // ── التحقق من اتصال DB ─────────────────────────────────────────────────
+      try {
+        const pool = require("./db");
+        await pool.query("SELECT 1");
+      } catch (dbErr) {
+        mediaSyncStatus.running   = false;
+        mediaSyncStatus.lastError = "❌ قاعدة البيانات غير متصلة: " + dbErr.message;
+        console.error("wa-sync: DB غير متصل:", dbErr.message);
+        return;
+      }
+
+      // ── جمع كل المحادثات من جميع البوتات ─────────────────────────────────
       const seenPhones = new Set();
       const allChats   = [];
       for (const bot of connectedBots) {
         try {
           const chats = await Promise.race([
             bot.client.getChats(),
-            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000)),
           ]);
           for (const c of chats) {
             const cid = c.id?._serialized || "";
-            // فقط محادثات خاصة @c.us أو @lid — تجاهل @g.us و@broadcast وغيرها
             if (!cid.endsWith("@c.us") && !cid.endsWith("@lid")) continue;
             if (c.isGroup || c.isBroadcast) continue;
             const phone = normalizePhone(cid);
             if (!phone || phone.length < 7) continue;
             if (seenPhones.has(phone)) continue;
             seenPhones.add(phone);
-            allChats.push(c);
+            allChats.push({ chat: c, botClient: bot.client });
           }
-        } catch { /* bot timeout — skip */ }
+        } catch (e) {
+          console.warn("wa-sync: bot getChats فشل:", e.message);
+        }
       }
       mediaSyncStatus.total = allChats.length;
+      console.log(`\n📥 [wa-sync] ${allChats.length} محادثة — بدء المزامنة...`);
 
-      for (const chat of allChats) {
-        const phone = normalizePhone(chat.id._serialized);
+      for (const { chat, botClient } of allChats) {
+        if (!mediaSyncStatus.running) break;
+
+        const phone    = normalizePhone(chat.id._serialized);
         const chatName = chat.name || phone;
         mediaSyncStatus.currentChat = `${chatName} (${phone})`;
 
         try {
-          // سجّل الكونتكت في DB أولاً
-          await registerContact(phone, chatName, "");
+          // ── المرحلة 1: حفظ الكونتكت + آخر رسالة (من getChats مباشرة) ──────
+          // lastMessage متاحة دائماً بدون fetchMessages
+          const lastMsg = chat.lastMessage;
+          const lastBody = (lastMsg?.body || "").trim();
 
-          const msgs = await chat.fetchMessages({ limit: msgLimit });
-          for (const msg of msgs) {
-            try {
-              const dir     = msg.fromMe ? "out" : "in";
-              const msgTs   = msg.timestamp * 1000;
-              const waMsgId = msg.id._serialized;
-              const senderName = msg.fromMe ? "أنت" : chatName;
+          await registerContact(phone, chatName, lastBody);
 
-              // ── رسائل نصية ─────────────────────────────────────────────
-              if (!msg.hasMedia) {
-                const body = (msg.body || "").trim();
-                if (!body) continue;
-                await saveMessage(phone, senderName, dir, body,
-                  msg.fromMe ? "manual" : "user", msgTs, waMsgId);
-                mediaSyncStatus.saved++;
-                continue;
-              }
-
-              // ── وسائط: صور وفيديو فقط ──────────────────────────────────
-              if (!["image", "video"].includes(msg.type)) continue;
-
-              const exists = await checkMessageExists(phone, dir, msgTs);
-              if (exists) continue;
-
-              const media = await msg.downloadMedia();
-              if (!media) continue;
-
-              if (media.mimetype?.startsWith("image/")) {
-                const file = await saveImage(phone, chatName, media, msgTs);
-                if (file) {
-                  await saveMessage(phone, senderName, dir, `/uploads/images/${file}`,
-                    msg.fromMe ? "manual" : "user", msgTs, waMsgId);
-                  mediaSyncStatus.saved++;
-                }
-              } else if (media.mimetype?.startsWith("video/")) {
-                const file = await saveVideo(phone, chatName, media, msgTs);
-                if (file) {
-                  await saveMessage(phone, senderName, dir, `/uploads/videos/${file}`,
-                    msg.fromMe ? "manual" : "user", msgTs, waMsgId);
-                  mediaSyncStatus.saved++;
-                }
-              }
-            } catch { mediaSyncStatus.errors++; }
+          // حفظ آخر رسالة إذا كانت نصية
+          if (lastBody && lastMsg && !lastMsg.hasMedia) {
+            const dir        = lastMsg.fromMe ? "out" : "in";
+            const msgTs      = new Date((lastMsg.timestamp || Date.now() / 1000) * 1000);
+            const waMsgId    = lastMsg.id?._serialized;
+            const senderName = lastMsg.fromMe ? "أنت" : chatName;
+            await saveMessage(phone, senderName, dir, lastBody,
+              lastMsg.fromMe ? "manual" : "user", msgTs, waMsgId);
+            mediaSyncStatus.saved++;
           }
-        } catch { mediaSyncStatus.errors++; }
+
+          // ── المرحلة 2: fetchMessages للرسائل الأخيرة (30 فقط، بدون scroll) ─
+          // تخطي @lid — لا يدعم fetchMessages
+          if (!chat.id._serialized.endsWith("@lid")) {
+            try {
+              // limit صغير (30) → يأخذ فقط ما هو محمّل في الذاكرة بدون loadEarlierMsgs
+              const msgs = await Promise.race([
+                botClient.pupPage.evaluate(async (chatId) => {
+                  const chat = window.Store.Chat.get(window.Store.WidFactory.createWid(chatId));
+                  if (!chat) return [];
+                  return chat.msgs.getModelsArray()
+                    .filter(m => !m.isNotification)
+                    .slice(-30)
+                    .map(m => window.WWebJS.getMessageModel(m));
+                }, chat.id._serialized),
+                new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000)),
+              ]);
+
+              let chatSaved = 0;
+              for (const msgData of (msgs || [])) {
+                try {
+                  const body = (msgData.body || "").trim();
+                  if (!body || msgData.hasMedia) continue;
+                  const dir        = msgData.id?.fromMe ? "out" : "in";
+                  const msgTs      = new Date((msgData.t || Date.now() / 1000) * 1000);
+                  const waMsgId    = msgData.id?._serialized;
+                  const senderName = msgData.id?.fromMe ? "أنت" : chatName;
+                  await saveMessage(phone, senderName, dir, body,
+                    msgData.id?.fromMe ? "manual" : "user", msgTs, waMsgId);
+                  mediaSyncStatus.saved++;
+                  chatSaved++;
+                } catch { /* رسالة واحدة فشلت — تخطي */ }
+              }
+              if (chatSaved > 0) console.log(`✅ [wa-sync] ${chatName}: ${chatSaved} رسالة`);
+
+            } catch (fetchErr) {
+              // لا يهم — لدينا lastMessage بالفعل
+              console.debug(`[wa-sync] in-memory فشل لـ ${chatName}: ${fetchErr.message}`);
+            }
+          }
+
+        } catch (chatErr) {
+          mediaSyncStatus.errors++;
+          mediaSyncStatus.lastError = `خطأ في ${chatName}: ${chatErr.message}`;
+          console.error(`❌ [wa-sync] ${chatName}:`, chatErr.message);
+        }
 
         mediaSyncStatus.done++;
+        // تأخير قصير بين المحادثات
+        if (mediaSyncStatus.done % 50 === 0) await new Promise(r => setTimeout(r, 500));
       }
+
+      console.log(`\n✅ [wa-sync] اكتمل: ${mediaSyncStatus.saved} رسالة محفوظة، ${mediaSyncStatus.errors} أخطاء`);
+
     } catch (err) {
       mediaSyncStatus.errors++;
-      console.error("wa-sync-media error:", err.message);
+      mediaSyncStatus.lastError = err.message;
+      console.error("wa-sync خطأ عام:", err.message);
     } finally {
       mediaSyncStatus.running = false;
       mediaSyncStatus.currentChat = "";
@@ -2138,6 +2439,19 @@ app.post("/api/wa-sync-media", async (req, res) => {
 
 app.get("/api/wa-sync-status", (_req, res) => {
   res.json(mediaSyncStatus);
+});
+
+// ── إيقاف المزامنة يدوياً ──────────────────────────────────────────────────
+app.post("/api/wa-sync-stop", (_req, res) => {
+  if (mediaSyncStatus.running) {
+    mediaSyncStatus.running = false;
+    mediaSyncStatus.currentChat = "";
+    mediaSyncStatus.lastError = "⏹️ تم الإيقاف يدوياً";
+    console.log("⏹️ [wa-sync] إيقاف يدوي");
+    res.json({ ok: true, message: "تم إيقاف المزامنة" });
+  } else {
+    res.json({ ok: false, message: "المزامنة غير جارية" });
+  }
 });
 
 // ── تاريخ المحادثة من واتساب مباشرة (مدمج مع قاعدة البيانات) ─────────────
@@ -2342,6 +2656,164 @@ app.post("/api/bulk-reply", async (req, res) => {
 
 app.get("/api/bulk-reply/status", (_req, res) => {
   res.json(bulkReplyStatus);
+});
+
+// ── 🤖 رد ذكي تلقائي باستخدام AI على الرسائل غير المجاب عليها ──────────────
+let aiReplyStatus = { running: false, done: 0, total: 0, ok: 0, fail: 0, messages: [] };
+
+app.post("/api/ai-auto-reply", async (req, res) => {
+  if (aiReplyStatus.running) {
+    return res.json({ ok: true, message: "الرد الذكي جاري بالفعل", status: aiReplyStatus });
+  }
+
+  const bot = getActiveBot();
+  if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
+
+  try {
+    const pool = require("./db");
+
+    // جلب الرسائل غير المجاب عليها
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as count FROM messages m
+      WHERE m.direction = 'in'
+        AND m.created_at = (
+          SELECT MAX(m2.created_at) FROM messages m2
+          WHERE m2.contact = m.contact
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM messages m3
+          WHERE m3.contact = m.contact
+            AND m3.direction = 'out'
+            AND m3.created_at > m.created_at
+        )
+    `);
+
+    const count = countResult[0]?.count || 0;
+
+    if (count === 0) {
+      return res.json({ ok: true, message: "لا توجد رسائل بدون رد 🎉" });
+    }
+
+    const [unansweredMsgs] = await pool.query(`
+      SELECT
+        m.contact as phone,
+        COALESCE(c.name, m.contact) as name,
+        m.body as message,
+        m.created_at as timestamp
+      FROM messages m
+      LEFT JOIN contacts c ON c.phone = m.contact
+      WHERE m.direction = 'in'
+        AND m.created_at = (
+          SELECT MAX(m2.created_at) FROM messages m2
+          WHERE m2.contact = m.contact
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM messages m3
+          WHERE m3.contact = m.contact
+            AND m3.direction = 'out'
+            AND m3.created_at > m.created_at
+        )
+      ORDER BY m.created_at DESC
+      LIMIT 50
+    `);
+
+    aiReplyStatus = { running: true, done: 0, total: unansweredMsgs.length, ok: 0, fail: 0, messages: [], creditError: false };
+    res.json({ ok: true, message: `🤖 بدء الرد الذكي على ${unansweredMsgs.length} رسالة` });
+
+    // معالجة الرسائل بعد الرد الفوري
+    (async () => {
+      for (const msg of unansweredMsgs) {
+        try {
+          if (!msg.message?.trim()) {
+            aiReplyStatus.fail++;
+            aiReplyStatus.done++;
+            continue;
+          }
+
+          console.log(`\n🤖 [AI-Reply] معالجة رسالة من ${msg.name}: "${msg.message.substring(0, 60)}..."`);
+
+          let replyText = "";
+          let source = "ai";
+
+          // الأولوية 1: الأجوبة المبرمجة (keywords) — أسرع وبدون تكلفة API
+          const { text: customText, defaultText } = findCustomResponse(msg.message);
+          if (customText) {
+            replyText = customText;
+            source = "custom";
+            console.log(`✅ [AI-Reply] رد مبرمج → ${msg.name}`);
+          } else {
+            // الأولوية 2: الذكاء الاصطناعي — مع contactId صحيح
+            try {
+              replyText = await generateResponse(msg.phone, msg.name, msg.message);
+              if (!replyText?.trim()) throw new Error("رد فارغ من الـ AI");
+              console.log(`🤖 [AI-Reply] رد ذكي → ${msg.name}`);
+            } catch (aiErr) {
+              // تحقق من خطأ الكريدت
+              if (aiErr.message?.startsWith("CREDIT_LOW:")) {
+                aiReplyStatus.creditError = true;
+                const errMsg = aiErr.message.replace("CREDIT_LOW:", "");
+                console.warn(`⚠️  [AI-Reply] ${errMsg} — استخدام الرد الافتراضي`);
+              } else {
+                console.warn(`⚠️  [AI-Reply] AI فشل (${aiErr.message}) — استخدام الرد الافتراضي`);
+              }
+              // الأولوية 3: الرد الافتراضي
+              replyText = defaultText;
+              source = "default";
+            }
+          }
+
+          if (!replyText?.trim()) throw new Error("لا يوجد رد متاح");
+
+          // إرسال الرد
+          const chatId = msg.phone.includes("@") ? msg.phone : `${msg.phone}@c.us`;
+          await bot.client.sendMessage(chatId, replyText);
+
+          // حفظ الرد
+          await saveMessage(msg.phone, "البوت", "out", replyText, source, null, null);
+          emitMessage(msg.phone, { phone: msg.phone, name: "البوت", direction: "out", body: replyText, source, created_at: new Date().toISOString() });
+
+          aiReplyStatus.ok++;
+          aiReplyStatus.messages.push({
+            phone: msg.phone,
+            name: msg.name,
+            originalMsg: msg.message.substring(0, 50),
+            aiReply: replyText.substring(0, 50),
+            source,
+            status: "✅"
+          });
+
+          console.log(`✅ [AI-Reply] تم الرد على ${msg.name} [${source}]`);
+
+          // تأخير 2-3 ثوان بين الرسائل
+          await sleep(2000 + Math.random() * 1000);
+        } catch (err) {
+          aiReplyStatus.fail++;
+          aiReplyStatus.messages.push({
+            phone: msg.phone,
+            name: msg.name,
+            originalMsg: msg.message?.substring(0, 50) || "",
+            error: err.message,
+            status: "❌"
+          });
+          console.error(`❌ [AI-Reply] فشل الرد على ${msg.name}:`, err.message);
+        }
+        aiReplyStatus.done++;
+      }
+      console.log(`\n✅ [AI-Reply] اكتمل: ${aiReplyStatus.ok}/${aiReplyStatus.total}`);
+      if (aiReplyStatus.creditError) {
+        console.warn("⚠️  [AI-Reply] الكريدت منتهي — اشحن حسابك على groq.com");
+      }
+      aiReplyStatus.running = false;
+    })();
+
+  } catch (err) {
+    console.error("❌ [AI-Reply] خطأ:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/ai-auto-reply/status", (_req, res) => {
+  res.json(aiReplyStatus);
 });
 
 // ── CRUD الردود المبرمجة ───────────────────────────────────────────────────
@@ -2662,6 +3134,80 @@ app.get("/notes", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "notes.html"));
 });
 
+app.get("/user-reply", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "user-reply.html"));
+});
+
+// ─── Bot Health Check & Keepalive ────────────────────────────────────────
+
+app.get("/api/bot-status", (req, res) => {
+  const botId = req.query.botId || "default";
+  const bot = bots.get(botId);
+
+  if (!bot) {
+    return res.status(404).json({
+      ok: false,
+      connected: false,
+      message: "البوت غير موجود",
+    });
+  }
+
+  const uptime = Math.floor((Date.now() - (BOT_START_TIME * 1000)) / 1000);
+  const uptimeStr = uptime > 3600
+    ? `${Math.floor(uptime / 3600)}س ${Math.floor((uptime % 3600) / 60)}د`
+    : `${Math.floor(uptime / 60)}د`;
+
+  res.json({
+    ok: bot.botConnected,
+    connected: bot.botConnected,
+    botId,
+    phone: bot.botPhone || "—",
+    uptime: uptimeStr,
+    uptimeSec: uptime,
+    watchdogFails: bot._watchdogFails || 0,
+    lastPing: new Date().toISOString(),
+  });
+});
+
+// ─── Heartbeat/Ping لإبقاء الاتصال حياً ──────────────────────────────────
+
+app.post("/api/ping", (req, res) => {
+  const botId = req.body?.botId || "default";
+  const bot = bots.get(botId);
+
+  if (!bot) {
+    return res.status(503).json({ error: "البوت غير متصل" });
+  }
+
+  if (!bot.botConnected) {
+    return res.status(503).json({ error: "البوت غير متصل حالياً" });
+  }
+
+  // Trigger watchdog check
+  if (bot._keepaliveTimer) {
+    res.json({ ok: true, connected: true, message: "البوت نشط" });
+  } else {
+    res.status(503).json({ error: "watchdog غير فعال" });
+  }
+});
+
+// ─── Get All Bots Status ────────────────────────────────────────────────
+
+app.get("/api/bots-status", (req, res) => {
+  const botsStatus = Array.from(bots.values()).map(bot => ({
+    botId: bot.botId || "default",
+    connected: bot.botConnected,
+    phone: bot.botPhone || "—",
+    watchdogFails: bot._watchdogFails || 0,
+  }));
+
+  res.json({
+    ok: true,
+    bots: botsStatus,
+    totalBots: bots.size,
+  });
+});
+
 // ─── Public Contact Widget (no auth) ──────────────────────────────────────
 
 // Rate limit: 5 messages per hour per IP
@@ -2775,9 +3321,15 @@ app.post("/api/chat-widget", async (req, res) => {
   }
 });
 
-// Dashboard HTML
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+// Dashboard HTML — توجيه حسب الدور
+app.get("/", (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const info    = tokenRoles.get(cookies.auth_token) || { role: "admin" };
+  if (info.role === "admin") {
+    res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+  } else {
+    res.redirect("/user-reply");
+  }
 });
 
 const PORT     = parseInt(process.env.PORT) || (SSL_CERT && SSL_KEY ? 443 : 3000);

@@ -225,6 +225,10 @@ function renderContacts(list) {
       : botNum ? `<span class="bot-badge">${botNum}</span>` : "";
     const total    = c.totalMessages > 0 ? formatCount(c.totalMessages) : "";
     const msgCount = total ? `<span class="msg-count-badge">${total}</span>` : "";
+
+    // عرض رقم الهاتف بوضوح
+    const phoneDisplay = c.phone ? `<span class="contact-phone" title="رقم WhatsApp">📱 ${c.phone}</span>` : "";
+
     return `
       <div class="${classes}"
         data-phone="${escHtml(c.phone)}" data-name="${escHtml(c.name || c.phone)}"
@@ -234,8 +238,11 @@ function renderContacts(list) {
         <div class="contact-avatar" style="background:${color}">${initial}</div>
         <div class="contact-details">
           <div class="contact-top">
-            <span class="contact-name">${escHtml(c.name || c.phone)}</span>
-            <div style="display:flex;align-items:center;gap:4px;">
+            <div style="flex:1;min-width:0;">
+              <span class="contact-name">${escHtml(c.name || "غير معروف")}</span>
+              ${phoneDisplay}
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               ${botBadge}
               <span class="contact-time${isUnread ? " new" : ""}">${time}</span>
             </div>
@@ -284,3 +291,139 @@ function markContactReplied(phone) {
 
 // ── Search event ──────────────────────────────────────────────────────────
 document.getElementById("searchContact").addEventListener("input", applyFilter);
+
+// ── AUTO PRELOAD DATA ─────────────────────────────────────────────────────
+// تحميل مسبق لجميع البيانات في الخلفية عند فتح الصفحة
+const preloadCache = {
+  messages: new Map(),    // phone → messages[]
+  images: new Map(),      // phone → images[]
+  videos: new Map(),      // phone → videos[]
+  voices: new Map(),      // phone → voices[]
+  loaded: new Set(),      // هواتف تم تحميل بياناتها
+  inProgress: new Set(),  // هواتف قيد التحميل الآن
+};
+
+async function preloadDataForContact(phone, source = "whatsapp") {
+  const key = normalizeKey(phone);
+  if (!key || preloadCache.inProgress.has(key) || preloadCache.loaded.has(key)) return;
+
+  preloadCache.inProgress.add(key);
+
+  try {
+    const isMsng = source === "messenger";
+    const encodedPhone = encodeURIComponent(phone);
+
+    // تحميل آخر 150 رسالة
+    if (!isMsng) {
+      try {
+        const msgRes = await fetch(`/api/messages?phone=${encodedPhone}&limit=150&cache=${Date.now()}`,
+          { cache: "no-store" });
+        if (msgRes.ok) {
+          const msgs = await msgRes.json();
+          preloadCache.messages.set(key, Array.isArray(msgs) ? msgs : []);
+        }
+      } catch (e) {
+        console.warn(`[preload] Failed to load messages for ${phone}:`, e.message);
+      }
+
+      // تحميل الصور (أول 50)
+      try {
+        const imgRes = await fetch(`/api/images?phone=${encodedPhone}&limit=50`,
+          { cache: "no-store" });
+        if (imgRes.ok) {
+          const imgs = await imgRes.json();
+          preloadCache.images.set(key, Array.isArray(imgs) ? imgs : []);
+        }
+      } catch (e) {
+        console.warn(`[preload] Failed to load images for ${phone}:`, e.message);
+      }
+
+      // تحميل الفيديوهات والملفات الصوتية
+      Promise.all([
+        fetch(`/api/videos?phone=${encodedPhone}&limit=50`, { cache: "no-store" })
+          .then(r => r.ok ? r.json() : [])
+          .catch(() => [])
+          .then(v => preloadCache.videos.set(key, Array.isArray(v) ? v : [])),
+
+        fetch(`/api/voices?phone=${encodedPhone}&limit=50`, { cache: "no-store" })
+          .then(r => r.ok ? r.json() : [])
+          .catch(() => [])
+          .then(v => preloadCache.voices.set(key, Array.isArray(v) ? v : [])),
+      ]);
+    }
+  } catch (e) {
+    console.warn(`[preload] Error for ${phone}:`, e.message);
+  } finally {
+    preloadCache.inProgress.delete(key);
+    preloadCache.loaded.add(key);
+  }
+}
+
+async function autoPreloadAllContacts() {
+  if (!allContacts.length) return;
+
+  const progressBar = document.getElementById("preloadProgress");
+  const progressFill = document.getElementById("preloadBar");
+  const progressText = document.getElementById("preloadPercent");
+
+  if (progressBar) progressBar.style.display = "block";
+
+  console.log(`🔄 [preload] بدء تحميل مسبق لـ ${allContacts.length} محادثة...`);
+
+  // تحميل الأولى 10 بسرعة (على التوازي)
+  const first10 = allContacts.slice(0, 10);
+  await Promise.allSettled(
+    first10.map(c => preloadDataForContact(c.phone, c.source))
+  );
+
+  let progress = 10;
+  if (progressFill) progressFill.style.width = `${(progress / allContacts.length) * 100}%`;
+  if (progressText) progressText.textContent = `${Math.round((progress / allContacts.length) * 100)}%`;
+
+  // باقي البيانات في الخلفية (تسلسلي بتأخير صغير)
+  const remaining = allContacts.slice(10);
+  for (const contact of remaining) {
+    if (document.hidden) break; // توقف إذا أغلق المستخدم التبويب
+    preloadDataForContact(contact.phone, contact.source);
+    progress++;
+
+    // تحديث الشريط كل 5 جهات
+    if (progress % 5 === 0) {
+      const percent = Math.round((progress / allContacts.length) * 100);
+      if (progressFill) progressFill.style.width = `${percent}%`;
+      if (progressText) progressText.textContent = `${percent}%`;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 200)); // تأخير 200ms بين الجهات
+  }
+
+  // إخفاء الشريط بعد الانتهاء
+  if (progressFill) progressFill.style.width = "100%";
+  if (progressText) progressText.textContent = "✅ تم";
+  setTimeout(() => {
+    if (progressBar) progressBar.style.display = "none";
+  }, 1500);
+
+  console.log(`✅ [preload] تم تحميل جميع البيانات مسبقاً`);
+}
+
+// تفعيل التحميل المسبق عند تحديث جهات الاتصال
+const originalLoadContacts = window.loadContacts;
+window.loadContacts = async function() {
+  await originalLoadContacts.call(this);
+  // بدء التحميل المسبق بعد تحميل جهات الاتصال
+  setTimeout(() => autoPreloadAllContacts(), 500);
+};
+
+// أيضاً عند تحديث قائمة المحادثات
+const originalApplyFilter = window.applyFilter;
+window.applyFilter = function(resetPage = true) {
+  originalApplyFilter.call(this, resetPage);
+  // preload أي جهات جديدة في الصفحة الحالية
+  const visibleContacts = document.querySelectorAll(".contact-item");
+  visibleContacts.forEach(el => {
+    const phone = el.dataset.phone;
+    const source = el.dataset.source || "whatsapp";
+    if (phone) preloadDataForContact(phone, source);
+  });
+};

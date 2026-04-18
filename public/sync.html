@@ -67,7 +67,8 @@
     .btn:hover { opacity: 0.85; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-green  { background: #25d366; color: white; }
-    .btn-gray   { background: #aaa; color: white; margin-right: 10px; }
+    .btn-gray   { background: #aaa; color: white; }
+    .btn-red    { background: #e53935; color: white; }
 
     .notice {
       background: #fff8e1; border-right: 4px solid #ffc107;
@@ -104,21 +105,15 @@
     <p>هذه الأداة تمر على جميع محادثاتك في <b>جميع البوتات المتصلة</b> وتحفظ <b>جهات الاتصال + الرسائل النصية + الصور + الفيديوهات</b> القديمة في قاعدة البيانات حتى تظهر في لوحة التحكم والشات.</p>
 
     <div class="stats-row">
-      <div class="stat"><div class="num" id="sDone">—</div><div class="lbl">محادثة منتهية</div></div>
-      <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي المحادثات</div></div>
-      <div class="stat"><div class="num" id="sSaved">—</div><div class="lbl">رسائل محفوظة</div></div>
-      <div class="stat"><div class="num" id="sErrors">—</div><div class="lbl">أخطاء</div></div>
+      <div class="stat"><div class="num" id="sDone"    style="color:#075e54">—</div><div class="lbl">محادثة منتهية</div></div>
+      <div class="stat"><div class="num" id="sTotal"   style="color:#075e54">—</div><div class="lbl">إجمالي المحادثات</div></div>
+      <div class="stat"><div class="num" id="sSaved"   style="color:#25d366">—</div><div class="lbl">رسائل محفوظة</div></div>
+      <div class="stat"><div class="num" id="sSkipped" style="color:#ff9800">—</div><div class="lbl">تخطي (غير متاح)</div></div>
+      <div class="stat"><div class="num" id="sErrors"  style="color:#e53935">—</div><div class="lbl">أخطاء</div></div>
     </div>
 
-    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <label style="font-size:0.85rem;color:#555;font-weight:600">📩 عدد الرسائل لكل محادثة:</label>
-      <select id="msgLimit" style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:0.88rem;outline:none">
-        <option value="500">500 رسالة</option>
-        <option value="1000">1,000 رسالة</option>
-        <option value="3000" selected>3,000 رسالة (افتراضي)</option>
-        <option value="5000">5,000 رسالة</option>
-        <option value="99999">الكل (بطيء)</option>
-      </select>
+    <div style="background:#e8f5e9;border-right:3px solid #25d366;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.85rem;color:#2e7d32">
+      ⚡ <b>طريقة المزامنة الجديدة:</b> تحفظ جميع جهات الاتصال + آخر رسائلها مباشرة من الذاكرة — سريعة وموثوقة.
     </div>
 
     <div class="progress-text" id="progressText">اضغط "ابدأ المزامنة" للبدء</div>
@@ -127,7 +122,10 @@
       <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <button class="btn btn-green" id="startBtn" onclick="startSync()">▶ ابدأ المزامنة</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-green" id="startBtn" onclick="startSync()">▶ ابدأ المزامنة</button>
+      <button class="btn btn-gray"  id="stopBtn"  onclick="stopSync()" style="display:none">⏹️ إيقاف</button>
+    </div>
 
     <div class="done-msg"  id="doneMsg">✅ اكتملت المزامنة! يمكنك الآن مشاهدة جميع الوسائط في الصور والفيديوهات.</div>
     <div class="error-msg" id="errorMsg"></div>
@@ -135,10 +133,10 @@
     <div class="notice">
       ⚠️ <b>ملاحظات:</b><br>
       • المزامنة قد تأخذ وقتاً حسب عدد المحادثات وحجم الوسائط.<br>
-      • واتساب يحذف الوسائط القديمة من سيرفراته — بعض الملفات قد لا تكون متاحة للتحميل.<br>
+      • واتساب يحذف الوسائط القديمة من سيرفراته — بعض الملفات قد لا تكون متاحة.<br>
       • لن يتم حفظ نفس الرسالة مرتين (يتحقق من التكرار تلقائياً).<br>
-      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.<br>
-      • كلما زاد عدد الرسائل المطلوبة كلما استغرقت المزامنة وقتاً أطول.
+      • بعض المحادثات تُتخطى تلقائياً (<b>غير متاح</b>) — هذا طبيعي ولا يعني خطأ.<br>
+      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.
     </div>
   </div>
 </div>
@@ -149,34 +147,45 @@
   let pollInterval = null;
 
   async function startSync() {
-    const btn = document.getElementById("startBtn");
+    const btn  = document.getElementById("startBtn");
+    const stop = document.getElementById("stopBtn");
     btn.disabled = true;
     btn.textContent = "⏳ جاري البدء...";
-    document.getElementById("doneMsg").style.display = "none";
+    stop.style.display = "inline-block";
+    document.getElementById("doneMsg").style.display  = "none";
     document.getElementById("errorMsg").style.display = "none";
 
     try {
-      const limit = document.getElementById("msgLimit").value;
-      const res  = await fetch("/api/wa-sync-media", {
+      const res   = await fetch("/api/wa-sync-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit })
+        body: JSON.stringify({})
       });
       const data = await res.json();
       if (!res.ok || data.error) {
         showError(data.error || "فشل بدء المزامنة");
         btn.disabled = false;
         btn.textContent = "▶ ابدأ المزامنة";
+        stop.style.display = "none";
         return;
       }
       showToast("✅ " + data.message);
       document.getElementById("progressWrap").style.display = "block";
+      if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(pollStatus, 1500);
-    } catch {
-      showError("❌ تعذر الاتصال بالسيرفر");
+    } catch (e) {
+      showError("❌ تعذر الاتصال بالسيرفر: " + e.message);
       btn.disabled = false;
       btn.textContent = "▶ ابدأ المزامنة";
+      stop.style.display = "none";
     }
+  }
+
+  async function stopSync() {
+    try {
+      await fetch("/api/wa-sync-stop", { method: "POST" });
+      showToast("⏹️ تم إيقاف المزامنة");
+    } catch {}
   }
 
   async function pollStatus() {
@@ -184,10 +193,15 @@
       const res    = await fetch("/api/wa-sync-status");
       const status = await res.json();
 
-      document.getElementById("sDone").textContent   = status.done   ?? "—";
-      document.getElementById("sTotal").textContent  = status.total  ?? "—";
-      document.getElementById("sSaved").textContent  = status.saved  ?? "—";
-      document.getElementById("sErrors").textContent = status.errors ?? "—";
+      document.getElementById("sDone").textContent    = status.done    ?? "—";
+      document.getElementById("sTotal").textContent   = status.total   ?? "—";
+      document.getElementById("sSaved").textContent   = status.saved   ?? "—";
+      document.getElementById("sSkipped").textContent = status.skipped ?? "—";
+      document.getElementById("sErrors").textContent  = status.errors  ?? "—";
+
+      // إخفاء sErrors إذا صفر
+      document.getElementById("sErrors").closest(".stat").style.display =
+        (status.errors > 0) ? "" : "none";
 
       const pct = status.total > 0 ? Math.round((status.done / status.total) * 100) : 0;
       document.getElementById("progressBar").style.width = pct + "%";
@@ -198,11 +212,27 @@
       document.getElementById("currentChat").textContent =
         status.running && status.currentChat ? `📱 ${status.currentChat}` : "";
 
+      // عرض آخر خطأ
+      if (status.lastError) {
+        const errEl = document.getElementById("errorMsg");
+        errEl.textContent = status.lastError;
+        errEl.style.display = "block";
+      }
+
       if (!status.running) {
         clearInterval(pollInterval);
         document.getElementById("startBtn").disabled = false;
         document.getElementById("startBtn").textContent = "▶ إعادة المزامنة";
-        document.getElementById("doneMsg").style.display = "block";
+        document.getElementById("stopBtn").style.display = "none";
+
+        // نجاح أو إيقاف
+        if (!status.lastError || status.saved > 0) {
+          document.getElementById("doneMsg").style.display = "block";
+          const parts = [`✅ اكتملت المزامنة! ${status.saved} رسالة محفوظة`];
+          if (status.skipped > 0) parts.push(`${status.skipped} محادثة متخطاة (غير متاحة)`);
+          if (status.errors  > 0) parts.push(`${status.errors} أخطاء`);
+          document.getElementById("doneMsg").textContent = parts.join(" · ") + ".";
+        }
       }
     } catch { /* silent */ }
   }

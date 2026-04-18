@@ -117,6 +117,8 @@
     .tbar-btn.resume { background: #e8f5e9; color: #2e7d32; }
     .tbar-btn.ar-on  { background: #f3e5f5; color: #6a1b9a; }
     .tbar-btn.ar-off { background: #ffebee; color: var(--red); }
+    .tbar-btn.ai-on  { background: #e3f2fd; color: #1565c0; }
+    .tbar-btn.ai-off { background: #fafafa; color: #999; border: 1px solid #ddd; }
 
     /* ════════ PAGES ════════ */
     .page { display: none; padding: 24px 28px; flex: 1; }
@@ -488,7 +490,8 @@
     </button>
 
     <div class="sb-section">التواصل</div>
-    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات</span></a>
+    <a class="sb-link" href="/user-reply"><span class="ico">✉️</span><span>الردود المباشرة</span></a>
+    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات الكامل</span></a>
     <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
     <a class="sb-link" href="/calls"><span class="ico">📞</span><span>المكالمات</span></a>
     <a class="sb-link" href="/groups"><span class="ico">👥</span><span>المجموعات</span></a>
@@ -503,6 +506,7 @@
     <a class="sb-link" href="/videos"><span class="ico">🎬</span><span>الفيديوهات</span></a>
 
     <div class="sb-section">الإعدادات</div>
+    <a class="sb-link" href="/users"><span class="ico">👤</span><span>المستخدمون</span></a>
     <a class="sb-link" href="/notes"><span class="ico">📝</span><span>الملاحظات</span></a>
     <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
     <a class="sb-link" href="/sync"><span class="ico">🔄</span><span>المزامنة</span></a>
@@ -535,7 +539,8 @@
     <div class="topbar-actions">
       <button class="tbar-btn pause"  onclick="pauseBot()">⏸ إيقاف</button>
       <button class="tbar-btn resume" onclick="resumeBot()">▶ استئناف</button>
-      <button id="btnAutoReply" class="tbar-btn ar-on" onclick="toggleAutoReply()">🤖 الردود: شغالة</button>
+      <button id="btnAutoReply" class="tbar-btn ar-on" onclick="toggleAutoReply()">📝 Keywords: شغالة</button>
+      <button id="btnAiReply"   class="tbar-btn ai-on" onclick="toggleAiReply()">🤖 AI: شغال</button>
       <button class="tbar-btn resume" onclick="loadData()">🔄</button>
     </div>
   </div>
@@ -719,7 +724,8 @@
         <div style="display:flex;flex-direction:column;gap:10px">
           <button class="form-btn" style="background:#fff3e0;color:#e65100" onclick="pauseBot()">⏸ إيقاف البوت مؤقتاً</button>
           <button class="form-btn" style="background:#e8f5e9;color:#2e7d32" onclick="resumeBot()">▶ استئناف البوت</button>
-          <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">🤖 تبديل الردود التلقائية</button>
+          <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">📝 تبديل Keywords</button>
+          <button id="adBtnAI" class="form-btn" style="background:#e3f2fd;color:#1565c0" onclick="toggleAiReply()">🤖 تبديل الذكاء الاصطناعي</button>
           <a href="/qr" class="form-btn fb-teal" style="text-align:center;text-decoration:none;display:block">📲 ربط رقم جديد (QR)</a>
           <a href="/sync" class="form-btn" style="background:#e3f2fd;color:var(--blue);text-align:center;text-decoration:none;display:block">🔄 مزامنة الرسائل القديمة</a>
           <button class="form-btn" style="background:#f3e5f5;color:#6a1b9a" onclick="openBroadcast()">📢 إرسال تذكير جماعي</button>
@@ -893,8 +899,14 @@
 
       /* Topbar auto-reply btn */
       const arBtn = document.getElementById("btnAutoReply");
-      arBtn.textContent  = arOn ? "🤖 الردود: شغالة" : "🔕 الردود: مطفأة";
-      arBtn.className = "tbar-btn " + (arOn ? "ar-on" : "ar-off");
+      arBtn.textContent = arOn ? "📝 Keywords: شغالة" : "📝 Keywords: مطفأة";
+      arBtn.className   = "tbar-btn " + (arOn ? "ar-on" : "ar-off");
+
+      /* Topbar AI reply btn */
+      const aiOn  = stats.aiAutoReplyEnabled !== false;
+      const aiBtn = document.getElementById("btnAiReply");
+      aiBtn.textContent = aiOn ? "🤖 AI: شغال" : "🤖 AI: مطفأ";
+      aiBtn.className   = "tbar-btn " + (aiOn ? "ai-on" : "ai-off");
 
       /* Admin page info */
       document.getElementById("adBotStatus").textContent  = stats.botPaused ? "⏸ موقوف" : "🟢 شغال";
@@ -1068,7 +1080,15 @@
     const arBtn = document.getElementById("btnAutoReply");
     const isOn  = arBtn.className.includes("ar-on");
     await fetch(isOn ? "/api/auto-reply/disable" : "/api/auto-reply/enable", { method:"POST" });
-    showToast(isOn ? "🔕 الردود مطفأة" : "🤖 الردود مفعّلة");
+    showToast(isOn ? "🔕 Keywords مطفأة" : "📝 Keywords مفعّلة");
+    loadData();
+  }
+
+  async function toggleAiReply() {
+    const aiBtn = document.getElementById("btnAiReply");
+    const isOn  = aiBtn.className.includes("ai-on");
+    await fetch(isOn ? "/api/ai-reply/disable" : "/api/ai-reply/enable", { method:"POST" });
+    showToast(isOn ? "🔕 AI مطفأ" : "🤖 AI مفعّل");
     loadData();
   }
 

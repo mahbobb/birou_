@@ -74,79 +74,114 @@ async function loadMessages(scrollToBottom = false) {
 
     // Messenger أو WhatsApp
     const isMsng = (typeof selectedSource !== "undefined" && selectedSource === "messenger");
-    const url = isMsng
-      ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`
-      : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`;
 
-    if (isFullLoad) {
-      wrap.innerHTML = `
-        <div style="text-align:center;color:#8696a0;padding:40px;font-size:0.85rem">
-          ⏳ جاري تحميل المحادثة...
-        </div>
-      `;
+    // ── استخدام البيانات المحملة مسبقاً إن أمكن ──
+    let msgs = [];
+    if (isFullLoad && !isMsng && typeof preloadCache !== "undefined") {
+      const key = normalizeKey(selectedPhone);
+      const cached = preloadCache.messages.get(key);
+      if (cached && cached.length > 0) {
+        console.log(`💾 [cache] استخدام الرسائل المحملة مسبقاً (${cached.length} رسالة)`);
+        msgs = cached
+          .filter(isValidMessageObject)
+          .reverse();
+
+        const seenId = new Set();
+        const seenSig = new Set();
+        msgs = msgs.filter(m => {
+          const idKey = String(m.id ?? "");
+          if (idKey && seenId.has(idKey)) return false;
+          if (idKey) seenId.add(idKey);
+          const minute = Math.floor(new Date(m.created_at).getTime() / 60000);
+          const sig = buildMessageSignature(m, minute);
+          if (seenSig.has(sig)) return false;
+          seenSig.add(sig);
+          return true;
+        });
+
+        socketSeenId.clear();
+        socketSeenSig.clear();
+        seenId.forEach(k => socketSeenId.add(k));
+        seenSig.forEach(k => socketSeenSig.add(k));
+      }
     }
 
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const raw = await res.json();
-    const list = Array.isArray(raw) ? raw : [];
-
-    const seenId = new Set();
-    const seenSig = new Set();
-
-    const msgs = list
-      .filter((m) => isValidMessageObject(m))
-      .filter((m) => {
-        const idKey = String(m.id ?? "");
-        if (idKey && seenId.has(idKey)) return false;
-        if (idKey) seenId.add(idKey);
-
-        const minute = Math.floor(new Date(m.created_at).getTime() / 60000);
-        const sig = buildMessageSignature(m, minute);
-        if (seenSig.has(sig)) return false;
-        seenSig.add(sig);
-
-        return true;
-      })
-      .reverse();
-
-    if (isFullLoad) {
-      socketSeenId.clear();
-      socketSeenSig.clear();
-    }
-
-    seenId.forEach((k) => socketSeenId.add(k));
-    seenSig.forEach((k) => socketSeenSig.add(k));
-
-    if (!msgs.length) {
-      // إذا لم تأتِ رسائل من آخر 24 ساعة — احمّل آخر 100 رسالة بدون فلتر الوقت
-      if (isFullLoad && chatFromDate) {
-        chatFromDate = "";
-        hasOlderMessages = false;
-        const isMsng2 = (typeof selectedSource !== "undefined" && selectedSource === "messenger");
-        const url2 = isMsng2
-          ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=100`
-          : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=100`;
-        try {
-          const res2 = await fetch(url2, { cache: "no-store" });
-          const raw2 = await res2.json();
-          const list2 = (Array.isArray(raw2) ? raw2 : []).filter(isValidMessageObject).reverse();
-          if (list2.length) {
-            lastDateRendered = "";
-            list2.forEach(m => { const k = String(m.id ?? ""); if (k) socketSeenId.add(k); });
-            wrap.innerHTML = renderMessages(list2);
-            markUnansweredMessages();
-            requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
-            lastMessageId = getLastDbId(list2) || 0;
-            return;
-          }
-        } catch {}
+    // إذا لم نستخدم cache - احمّل من الخادم
+    if (msgs.length === 0) {
+      if (isFullLoad) {
+        wrap.innerHTML = `
+          <div style="text-align:center;color:#8696a0;padding:40px;font-size:0.85rem">
+            ⏳ جاري تحميل المحادثة...
+          </div>
+        `;
       }
-      if (lastMessageId === 0 || isFullLoad) {
-        wrap.innerHTML = `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
+
+      const url = isMsng
+        ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`
+        : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`;
+
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const raw = await res.json();
+      const list = Array.isArray(raw) ? raw : [];
+
+      const seenId = new Set();
+      const seenSig = new Set();
+
+      msgs = list
+        .filter((m) => isValidMessageObject(m))
+        .filter((m) => {
+          const idKey = String(m.id ?? "");
+          if (idKey && seenId.has(idKey)) return false;
+          if (idKey) seenId.add(idKey);
+
+          const minute = Math.floor(new Date(m.created_at).getTime() / 60000);
+          const sig = buildMessageSignature(m, minute);
+          if (seenSig.has(sig)) return false;
+          seenSig.add(sig);
+
+          return true;
+        })
+        .reverse();
+
+      if (isFullLoad) {
+        socketSeenId.clear();
+        socketSeenSig.clear();
       }
-      return;
+
+      seenId.forEach((k) => socketSeenId.add(k));
+      seenSig.forEach((k) => socketSeenSig.add(k));
+
+      if (!msgs.length) {
+        // إذا لم تأتِ رسائل من آخر 24 ساعة — احمّل آخر 100 رسالة بدون فلتر الوقت
+        if (isFullLoad && chatFromDate) {
+          chatFromDate = "";
+          hasOlderMessages = false;
+          const isMsng2 = (typeof selectedSource !== "undefined" && selectedSource === "messenger");
+          const url2 = isMsng2
+            ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=100`
+            : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=100`;
+          try {
+            const res2 = await fetch(url2, { cache: "no-store" });
+            const raw2 = await res2.json();
+            const list2 = (Array.isArray(raw2) ? raw2 : []).filter(isValidMessageObject).reverse();
+            if (list2.length) {
+              lastDateRendered = "";
+              list2.forEach(m => { const k = String(m.id ?? ""); if (k) socketSeenId.add(k); });
+              wrap.innerHTML = renderMessages(list2);
+              markUnansweredMessages();
+              requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
+              lastMessageId = getLastDbId(list2) || 0;
+              return;
+            }
+          } catch {}
+        }
+        if (lastMessageId === 0 || isFullLoad) {
+          wrap.innerHTML = `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
+        }
+        return;
+      }
     }
 
     const newLastDbId = getLastDbId(msgs);
@@ -260,6 +295,18 @@ function renderSingleMessage(m) {
       ? `<span class="source-badge">${escHtml(srcLabel(m.source))}</span>`
       : "";
 
+  // ── عرض رقم البوت المستقبل ────────────────────────────────
+  let botPhoneDisplay = "";
+  if (typeof _botPhones !== "undefined" && typeof selectedPhone !== "undefined") {
+    // إذا كانت الرسالة واردة (من الزبون)، عرض رقم البوت المستقبل
+    if (direction === "in" && Object.keys(_botPhones).length > 0) {
+      const botNum = Object.values(_botPhones)[0]; // أول بوت متصل
+      if (botNum) {
+        botPhoneDisplay = `<span class="bot-phone-badge" title="رقم البوت المستقبل">🤖 +${botNum}</span>`;
+      }
+    }
+  }
+
   const ticks =
     direction === "out" ? `<span class="msg-ticks">✓✓</span>` : "";
 
@@ -274,15 +321,21 @@ function renderSingleMessage(m) {
     content = `
       <div class="img-wrap" onclick="openLightbox('${safe}')">
         <img src="${safe}" loading="lazy" alt="">
-        <div class="img-meta">${src} ${time} ${ticks}</div>
+        <div class="img-meta">${botPhoneDisplay} ${src} ${time} ${ticks}</div>
       </div>`;
   } else if (isVideoPath(body)) {
     const safe = escAttr(body);
     content = `
       <div class="vid-wrap">
-        <video src="${safe}" controls preload="metadata" playsinline
-          style="max-width:280px;max-height:220px;border-radius:8px;display:block;background:#000;outline:none">
-        </video>
+        <div class="vid-container">
+          <video src="${safe}" controls preload="metadata" playsinline
+            style="max-width:280px;max-height:220px;border-radius:8px;display:block;background:#000;outline:none"
+            onloadedmetadata="extractVideoThumbnail(this)">
+          </video>
+          <a href="${safe}" target="_blank" rel="noopener noreferrer" class="vid-download-btn" title="تحميل">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          </a>
+        </div>
       </div>`;
   } else if (isVoicePath(body)) {
     const safe = escAttr(body);
@@ -354,7 +407,7 @@ function renderSingleMessage(m) {
         </div>
       </div>
       ${content}
-      ${skipMeta ? "" : `<div class="msg-meta">${src} ${time} ${ticks}</div>`}
+      ${skipMeta ? "" : `<div class="msg-meta">${botPhoneDisplay} ${src} ${time} ${ticks}</div>`}
     </div>
   `;
 

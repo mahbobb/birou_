@@ -20,5 +20,9 @@ module.exports = {
     max_memory_restart: "1200M",
     kill_timeout: 5000,
     listen_timeout: 10000,
+
+    // ─── Hostinger VPS: تجاهل SIGINT ──────────────────
+    kill_retry_time: 3000,
+    shutdown_with_message: false,
   }],
 };

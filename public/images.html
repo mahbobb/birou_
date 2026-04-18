@@ -72,6 +72,21 @@
       gap: 14px;
     }
 
+    /* Pagination */
+    .pagination-wrap {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 16px 24px; background: white;
+      border-top: 1px solid #ddd;
+    }
+    .pg-btn {
+      padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+      background: white; color: #333; cursor: pointer; font-size: 0.88rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .pg-btn:hover { background: #f0f2f5; border-color: #128c7e; }
+    .pg-btn.active { background: #128c7e; color: white; border-color: #128c7e; }
+    .pg-btn:disabled { opacity: 0.5; cursor: default; }
+
     .img-card {
       background: white; border-radius: 12px; overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
@@ -243,6 +258,13 @@
   </div>
 </div>
 
+<!-- Pagination -->
+<div class="pagination-wrap" id="pagination-wrap">
+  <button class="pg-btn" id="pg-prev" onclick="prevPage()">← السابقة</button>
+  <div id="pg-numbers"></div>
+  <button class="pg-btn" id="pg-next" onclick="nextPage()">التالية →</button>
+</div>
+
 <!-- Lightbox -->
 <div id="lightbox">
   <button class="lb-close" onclick="closeLb()">✕</button>
@@ -283,6 +305,8 @@
   let selectedIds = new Set();
   let upFiles    = [];
   let lbCurrentId = null;
+  const ITEMS_PER_PAGE = 50;
+  let currentPage = 1;
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   async function loadStats() {
@@ -296,14 +320,71 @@
   // ── Load gallery ──────────────────────────────────────────────────────────
   async function load() {
     const phone = document.getElementById("searchPhone").value.trim();
-    let url = "/api/images?limit=200";
+    let url = "/api/images?limit=10000";
     if (phone) url += `&phone=${encodeURIComponent(phone)}`;
     try {
       allImages = await fetch(url).then(r => r.json());
       selectedIds.clear();
       updateSelUI();
-      renderGallery(allImages);
+      currentPage = 1;
+      renderPage();
+      updatePagination();
     } catch { showToast("❌ خطأ في تحميل الصور"); }
+  }
+
+  function getPageImages() {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return allImages.slice(start, end);
+  }
+
+  function renderPage() {
+    renderGallery(getPageImages());
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function updatePagination() {
+    const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+    const pgNumbers = document.getElementById("pg-numbers");
+
+    if (totalPages <= 1) {
+      document.getElementById("pagination-wrap").style.display = "none";
+      return;
+    }
+    document.getElementById("pagination-wrap").style.display = "flex";
+
+    let html = "";
+    for (let i = 1; i <= totalPages; i++) {
+      const active = i === currentPage ? " active" : "";
+      html += `<button class="pg-btn${active}" onclick="goToPage(${i})">${i}</button>`;
+    }
+    pgNumbers.innerHTML = html;
+
+    document.getElementById("pg-prev").disabled = currentPage === 1;
+    document.getElementById("pg-next").disabled = currentPage === totalPages;
+  }
+
+  function nextPage() {
+    const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderPage();
+      updatePagination();
+    }
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPage();
+      updatePagination();
+    }
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    renderPage();
+    updatePagination();
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -525,8 +606,25 @@
   }
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
+  let touchStartX = 0;
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { closeLb(); closeUploadModal(); }
+    if (e.key === "ArrowRight") prevPage();  // RTL: flèche droite = page précédente
+    if (e.key === "ArrowLeft") nextPage();   // RTL: flèche gauche = page suivante
+  });
+
+  // ── Touch/Swipe support pour mobile ────────────────────────────────────────
+  document.addEventListener("touchstart", e => {
+    touchStartX = e.touches[0].clientX;
+  });
+
+  document.addEventListener("touchend", e => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {  // 50px minimum swipe distance
+      if (diff > 0) nextPage();   // Swipe gauche = page suivante
+      if (diff < 0) prevPage();   // Swipe droite = page précédente
+    }
   });
 
   document.getElementById("searchPhone").addEventListener("input", load);
@@ -539,7 +637,7 @@
 
   loadStats();
   load();
-  setInterval(() => { loadStats(); load(); }, 30000);
+  setInterval(() => { loadStats(); load(); }, 120000);  // Rafraîchir toutes les 2 minutes au lieu de 30s
 </script>
 
 <script src="/socket.io/socket.io.js"></script>

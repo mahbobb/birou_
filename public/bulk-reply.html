@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رد جماعي على الرسائل — واتساب بوت</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      direction: rtl;
+    }
+
+    header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    header h1 { font-size: 1.3rem; }
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      margin-right: 10px;
+      font-size: 0.85rem;
+      padding: 5px 10px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      gap: 16px;
+      padding: 20px 24px 10px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 22px;
+      flex: 1;
+      min-width: 110px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .stat-card .num { font-size: 1.7rem; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 0.78rem; color: #666; margin-top: 3px; }
+
+    /* Layout */
+    .main-wrap {
+      display: flex;
+      gap: 16px;
+      padding: 20px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Left Panel - List */
+    .left-panel {
+      flex: 1;
+      min-width: 300px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      max-height: 70vh;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #075e54;
+    }
+
+    .search-box {
+      padding: 10px 14px;
+      border-bottom: 1px solid #eee;
+      background: white;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      outline: none;
+    }
+    .search-box input:focus { border-color: #128c7e; }
+
+    .contacts-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+    .contact-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .contact-item:hover { background: #f5f5f5; }
+    .contact-item.active {
+      background: #e8f5e9;
+      border-right: 3px solid #128c7e;
+    }
+
+    .contact-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #128c7e, #075e54);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .contact-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #1a1a2e;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .contact-msg {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-time {
+      font-size: 0.7rem;
+      color: #ccc;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    /* Right Panel - Reply */
+    .right-panel {
+      flex: 1;
+      min-width: 300px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      max-height: 70vh;
+      overflow: hidden;
+    }
+
+    .reply-form {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .reply-to {
+      padding: 10px 12px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #2e7d32;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .reply-textarea {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      direction: rtl;
+    }
+    .reply-textarea:focus { border-color: #128c7e; }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-green { background: #25d366; color: white; }
+    .btn-blue { background: #128c7e; color: white; }
+    .btn-gray { background: #ccc; color: #333; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+
+    .char-count {
+      font-size: 0.75rem;
+      color: #999;
+      text-align: left;
+    }
+
+    .bulk-actions {
+      padding: 14px 16px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: #fafafa;
+    }
+
+    /* Selection */
+    .selection-info {
+      font-size: 0.82rem;
+      color: #666;
+      flex: 1;
+    }
+
+    /* Template buttons */
+    .template-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      background: white;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .template-btn:hover { background: #f0f2f5; border-color: #128c7e; color: #128c7e; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 400;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main-wrap {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .left-panel, .right-panel {
+        max-height: none;
+        flex: unset;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; padding: 12px 16px; }
+      .main-wrap { padding: 12px 16px; }
+      .reply-form { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="app-header"></header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">الرسائل بلا رد</div></div>
+  <div class="stat-card"><div class="num" id="sContacts">—</div><div class="label">جهات الاتصال</div></div>
+  <div class="stat-card"><div class="num" id="sSelected">0</div><div class="label">محددة للرد</div></div>
+</div>
+
+<!-- Main Content -->
+<div class="main-wrap">
+  <!-- Left: Contacts List -->
+  <div class="left-panel">
+    <div class="panel-header">📱 الرسائل بلا رد</div>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 ابحث عن جهة اتصال...">
+    </div>
+    <div class="contacts-list" id="contactsList">
+      <div class="empty-state">جاري التحميل...</div>
+    </div>
+  </div>
+
+  <!-- Right: Reply Form -->
+  <div class="right-panel">
+    <div class="panel-header">✉️ كتابة الرد</div>
+    <div class="reply-form">
+      <div class="reply-to" id="replyTo">اختر جهة اتصال من القائمة</div>
+
+      <div class="form-group">
+        <label>الرسالة</label>
+        <textarea
+          id="replyText"
+          class="reply-textarea"
+          placeholder="اكتب رسالتك هنا..."
+          disabled
+        ></textarea>
+        <div class="char-count"><span id="charCount">0</span>/1000</div>
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="sendToAll" style="width:16px;height:16px">
+          إرسال نفس الرسالة لـ الكل
+        </label>
+      </div>
+
+      <div class="bulk-actions">
+        <div class="selection-info" id="selectionInfo"></div>
+        <button class="template-btn" onclick="insertTemplate('شكراً لا تواصلك معنا')">شكراً</button>
+        <button class="template-btn" onclick="insertTemplate('الرجاء المحاولة لاحقاً 🙏')">لاحقا</button>
+        <button class="template-btn" onclick="insertTemplate('كيف يمكننا مساعدتك؟')">مساعدة</button>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-blue" id="btnSendReply" onclick="sendReply()" disabled>
+          📤 إرسال الرد
+        </button>
+        <button class="btn btn-gray" onclick="clearForm()">🔄 مسح</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let unansweredData = [];
+  let selectedContact = null;
+  let selectedContacts = new Set();
+
+  // ── Load data ──────────────────────────────────────────────────────────────
+  async function loadUnanswered() {
+    try {
+      const resp = await fetch("/api/messages/unanswered?limit=1000");
+      unansweredData = await resp.json();
+      document.getElementById("sTotal").textContent = unansweredData.length;
+
+      const uniqueContacts = [...new Set(unansweredData.map(m => m.phone))].length;
+      document.getElementById("sContacts").textContent = uniqueContacts;
+
+      renderContactsList();
+    } catch (err) {
+      console.error("خطأ تحميل:", err);
+      showToast("❌ خطأ في تحميل الرسائل");
+    }
+  }
+
+  // ── Render contacts list ───────────────────────────────────────────────────
+  function renderContactsList(filter = "") {
+    const list = document.getElementById("contactsList");
+    const grouped = {};
+
+    unansweredData.forEach(msg => {
+      const phone = msg.phone || "Unknown";
+      if (!grouped[phone]) {
+        grouped[phone] = { phone, name: msg.name, lastMsg: msg.lastBody, time: msg.lastAt };
+      }
+    });
+
+    let contacts = Object.values(grouped);
+    if (filter) {
+      contacts = contacts.filter(c =>
+        c.name.toLowerCase().includes(filter.toLowerCase()) ||
+        c.phone.includes(filter)
+      );
+    }
+
+    if (!contacts.length) {
+      list.innerHTML = `<div class="empty-state">لا توجد نتائج</div>`;
+      return;
+    }
+
+    list.innerHTML = contacts.map(c => {
+      const initials = c.name.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase();
+      const isSelected = selectedContact?.phone === c.phone;
+      return `
+        <div class="contact-item ${isSelected ? "active" : ""}" onclick="selectContact('${c.phone}', '${c.name}')">
+          <div class="contact-avatar">${initials}</div>
+          <div class="contact-info">
+            <div class="contact-name">${c.name}</div>
+            <div class="contact-msg">${c.lastMsg.substring(0, 40)}...</div>
+          </div>
+          <div class="contact-time">${formatTime(c.time)}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // ── Select contact ────────────────────────────────────────────────────────
+  function selectContact(phone, name) {
+    selectedContact = { phone, name };
+    const countMsg = unansweredData.filter(m => m.phone === phone).length;
+    document.getElementById("replyTo").textContent = `📱 ${name} (${countMsg} ${countMsg === 1 ? "رسالة" : "رسائل"})`;
+    document.getElementById("replyText").disabled = false;
+    document.getElementById("btnSendReply").disabled = false;
+    document.getElementById("replyText").value = "";
+    document.getElementById("charCount").textContent = "0";
+    renderContactsList(document.getElementById("searchInput").value);
+    updateSelectionInfo();
+  }
+
+  // ── Insert template ───────────────────────────────────────────────────────
+  function insertTemplate(text) {
+    const ta = document.getElementById("replyText");
+    if (ta.disabled) {
+      showToast("⚠️ اختر جهة اتصال أولاً");
+      return;
+    }
+    ta.value = text;
+    ta.focus();
+    updateCharCount();
+  }
+
+  // ── Update char count ─────────────────────────────────────────────────────
+  document.getElementById("replyText").addEventListener("input", updateCharCount);
+  function updateCharCount() {
+    const count = document.getElementById("replyText").value.length;
+    document.getElementById("charCount").textContent = count;
+  }
+
+  // ── Send reply ────────────────────────────────────────────────────────────
+  async function sendReply() {
+    const text = document.getElementById("replyText").value.trim();
+    const sendToAll = document.getElementById("sendToAll").checked;
+
+    if (!text) {
+      showToast("⚠️ اكتب رسالة");
+      return;
+    }
+
+    if (!selectedContact && !sendToAll) {
+      showToast("⚠️ اختر جهة اتصال");
+      return;
+    }
+
+    const btn = document.getElementById("btnSendReply");
+    btn.disabled = true;
+    btn.textContent = "⏳ جاري...";
+
+    try {
+      let sent = 0;
+
+      if (sendToAll) {
+        // Use bulk API for faster processing
+        const resp = await fetch("/api/bulk-reply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, delay: 3 }),
+        });
+        const data = await resp.json();
+        if (data.ok) sent = unansweredData.length;
+        showToast(`✅ تم بدء الإرسال الجماعي`);
+      } else {
+        const targets = [selectedContact.phone];
+        for (const phone of targets) {
+          const resp = await fetch("/api/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, message: text }),
+          });
+          if ((await resp.json()).ok) sent++;
+        }
+        showToast(`✅ تم إرسال ${sent}/${targets.length} رسالة`);
+      }
+
+      clearForm();
+      setTimeout(loadUnanswered, 2000);
+    } catch (err) {
+      showToast("❌ خطأ الإرسال: " + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "📤 إرسال الرد";
+    }
+  }
+
+  // ── Clear form ────────────────────────────────────────────────────────────
+  function clearForm() {
+    document.getElementById("replyText").value = "";
+    document.getElementById("charCount").textContent = "0";
+    document.getElementById("sendToAll").checked = false;
+    updateSelectionInfo();
+  }
+
+  // ── Update selection info ─────────────────────────────────────────────────
+  function updateSelectionInfo() {
+    const sendToAll = document.getElementById("sendToAll").checked;
+    const info = document.getElementById("selectionInfo");
+
+    if (sendToAll) {
+      const uniquePhones = [...new Set(unansweredData.map(m => m.phone))];
+      info.textContent = `سيتم الإرسال إلى ${uniquePhones.length} جهات`;
+    } else if (selectedContact) {
+      const count = unansweredData.filter(m => m.phone === selectedContact.phone).length;
+      info.textContent = `سيتم الإرسال إلى: ${selectedContact.name}`;
+    } else {
+      info.textContent = "";
+    }
+  }
+
+  document.getElementById("sendToAll").addEventListener("change", updateSelectionInfo);
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    renderContactsList(e.target.value);
+  });
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function formatTime(timestamp) {
+    if (!timestamp) return "—";
+    const d = new Date(timestamp);
+    const now = new Date();
+    const diff = now - d;
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (days > 0) return `${days}د`;
+    if (hours > 0) return `${hours}س`;
+    return "الآن";
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  loadUnanswered();
+  setInterval(loadUnanswered, 60000);
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // Auto reload when new message arrives
+  const sock = io();
+  sock.on("new_msg", () => {
+    loadUnanswered();
+  });
+</script>
+
+<footer id="app-footer"></footer>
+<script src="/js/nav.js"></script>
+</body>
+</html>
