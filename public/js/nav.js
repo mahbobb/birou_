@@ -271,7 +271,7 @@ document.head.appendChild(style);
       const resp = await fetch("/api/ping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ botId: "default" }),
+        body: JSON.stringify({ botId: "bot1" }),
       });
       updateStatusIndicator(resp.ok);
     } catch (err) {
