@@ -1009,6 +1009,11 @@ function renderMsgs(msgs){
   area.innerHTML=html;
 }
 
+function msgId(m){
+  if(m.wa_msg_id) return m.wa_msg_id;
+  return (m.direction||"")+"_"+(m.body||"").slice(0,30)+"_"+(m.created_at||"").slice(0,16);
+}
+
 function bubbleHTML(m){
   const out = m.direction==="out";
   const dir = out?"out":"in";
@@ -1037,7 +1042,7 @@ function bubbleHTML(m){
   }
   const tick = out?`<span class="btick">✓✓</span>`:"";
 
-  return `<div class="row ${dir}">
+  return `<div class="row ${dir}" data-mid="${esc(msgId(m))}">
     <div class="bbl${extra}">
       ${content}
       <div class="bmeta">${src}${tick}<span class="btime">${tm}</span></div>
@@ -1130,6 +1135,8 @@ function buildVideo(src){
 // ── Append single bubble ──────────────────────────────────
 function addBubble(d){
   const area=document.getElementById("msgs");
+  const mid=msgId(d);
+  if(mid && area.querySelector(`[data-mid="${CSS.escape(mid)}"]`)) return; // تجنّب التكرار
   const atBot=area.scrollHeight-area.scrollTop-area.clientHeight<120;
   area.insertAdjacentHTML("beforeend",bubbleHTML(d));
   if(atBot) scrollBot(false);
