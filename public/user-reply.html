@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#075e54">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>الردود — واتساب</title>
 <style>
 /* ─── Reset & Variables ─── */
@@ -15,9 +19,14 @@
   --bd:#e9edef;--tx:#111b21;--mt:#667781;
   --hv:#f5f6f6;--sw:360px;
 }
-html,body{height:100%;overflow:hidden;
+html,body{
+  height:100%;overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
-  background:var(--dk);color:var(--tx)}
+  background:var(--dk);color:var(--tx);
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+  overscroll-behavior:none;
+}
 
 /* ─── Layout ─── */
 #app{display:flex;height:100%}
@@ -69,7 +78,7 @@ html,body{height:100%;overflow:hidden;
 .tab.on{background:var(--dk);color:#fff;font-weight:600}
 
 /* contact list */
-#clist{flex:1;overflow-y:auto}
+#clist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 #clist::-webkit-scrollbar{width:5px}
 #clist::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
 
@@ -157,7 +166,7 @@ html,body{height:100%;overflow:hidden;
 .ch-btn:hover{background:rgba(0,0,0,.07)}
 
 /* messages */
-#msgs{flex:1;overflow-y:auto;padding:8px 6%;display:flex;flex-direction:column;gap:2px}
+#msgs{flex:1;overflow-y:auto;padding:8px 6%;display:flex;flex-direction:column;gap:2px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 #msgs::-webkit-scrollbar{width:5px}
 #msgs::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
 
@@ -402,12 +411,82 @@ html,body{height:100%;overflow:hidden;
 /* ─── Mobile ─── */
 @media(max-width:680px){
   :root{--sw:100%}
-  #lp{position:absolute;inset:0;z-index:10;transition:transform .2s}
-  #lp.hide{transform:translateX(100%)}
-  #rp{width:100%}
-  #btnBack{display:block!important}
-  #msgs{padding:8px 2%}
-  .bbl{max-width:82%}
+
+  /* Layout */
+  #app{position:relative;overflow:hidden}
+  #lp{
+    position:absolute;inset:0;z-index:10;
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #lp.hide{transform:translateX(105%)}
+  #rp{width:100%;position:absolute;inset:0}
+
+  /* Back button */
+  #btnBack{
+    display:flex!important;align-items:center;justify-content:center;
+    width:40px;height:40px;font-size:1.3rem;margin-left:-4px;
+  }
+
+  /* Chat header */
+  .ch-head{padding:0 10px;gap:8px}
+  .ch-name{font-size:.9rem}
+  .ch-sub{font-size:.72rem}
+  .ch-btn{padding:6px;font-size:.9rem}
+
+  /* Messages */
+  #msgs{padding:8px 3%;padding-bottom:4px}
+  .bbl{max-width:86%}
+  .msg-img{max-width:220px;max-height:220px}
+  .audbbl{min-width:200px}
+
+  /* Input bar — above keyboard */
+  .ibar{
+    padding:6px 8px;
+    padding-bottom:calc(6px + env(safe-area-inset-bottom));
+    gap:6px;
+  }
+  .itxt{padding:8px 14px;font-size:.88rem}
+  .isend{width:42px;height:42px}
+
+  /* Attach btn */
+  #attBtn{width:38px!important;height:38px!important;font-size:1rem!important}
+  .att-menu{min-width:160px;bottom:52px}
+  .att-item{padding:10px 14px;font-size:.85rem}
+
+  /* Quick bar */
+  .qbar{padding:5px 10px}
+  .qbtn{padding:4px 10px;font-size:.75rem}
+
+  /* Voice recording */
+  .rec-bar{padding:5px 10px}
+  .rec-lbl{font-size:.75rem}
+
+  /* Modals */
+  .modal-box{
+    min-width:unset;width:calc(100vw - 24px);
+    padding:20px 18px;border-radius:16px;
+    max-height:88vh;overflow-y:auto;
+  }
+  #respModal .modal-box{width:calc(100vw - 20px);max-height:85vh}
+
+  /* Contacts list */
+  .ci{padding:10px 14px}
+  .ci-av{width:44px;height:44px;font-size:.95rem}
+  .lp-tabs{gap:6px;padding:6px 12px;overflow-x:auto;flex-wrap:nowrap}
+  .tab{padding:4px 10px;font-size:.75rem;white-space:nowrap}
+
+  /* Toast */
+  #toast{bottom:calc(70px + env(safe-area-inset-bottom));font-size:.8rem}
+  #uploadBar{bottom:calc(66px + env(safe-area-inset-bottom))}
+}
+
+/* Extra small phones */
+@media(max-width:380px){
+  .bbl{max-width:90%}
+  .ch-name{font-size:.85rem}
+  .audbbl{min-width:170px}
+  .lp-title{font-size:.92rem}
 }
 </style>
 </head>
