@@ -283,7 +283,7 @@ document.head.appendChild(style);
   // Status check
   setInterval(async () => {
     try {
-      const resp = await fetch("/api/bot-status?botId=default");
+      const resp = await fetch("/api/bot-status?botId=bot1");
       const data = await resp.json();
       updateStatusIndicator(data.ok && data.connected);
 
@@ -299,7 +299,7 @@ document.head.appendChild(style);
   }, STATUS_CHECK_INTERVAL);
 
   // First check immediately
-  fetch("/api/bot-status?botId=default")
+  fetch("/api/bot-status?botId=bot1")
     .then(r => r.json())
     .then(data => updateStatusIndicator(data.ok && data.connected))
     .catch(() => updateStatusIndicator(false));

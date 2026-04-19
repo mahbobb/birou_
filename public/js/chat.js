@@ -19,10 +19,10 @@ function escAttr(s) {
   return String(s || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-fetch("/api/bots").then(r => r.json()).then(data => {
-  Object.entries(data).forEach(([id, info]) => {
-    if (info.phone) _botPhones[id] = info.phone
-  })
+fetch("/api/bots-status").then(r => r.json()).then(data => {
+  (Array.isArray(data) ? data : Object.entries(data).map(([id,info])=>({...info,botId:id}))).forEach(bot => {
+    if (bot.phone || bot.botPhone) _botPhones[bot.botId || bot.id] = bot.phone || bot.botPhone;
+  });
 }).catch(() => {})
 
 // ─────────────────────────────────────────
