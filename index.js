@@ -1021,10 +1021,10 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-// 200 طلب / دقيقة للـ API الإدارية
+// 600 طلب / دقيقة للـ API الإدارية (المستخدم الواحد يحتاج مساحة للـ preload)
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 200,
+  max: 600,
   message: { error: "طلبات كثيرة، أبطئ قليلاً" },
   standardHeaders: true,
   legacyHeaders: false,

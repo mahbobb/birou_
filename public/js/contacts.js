@@ -310,50 +310,17 @@ async function preloadDataForContact(phone, source = "whatsapp") {
   preloadCache.inProgress.add(key);
 
   try {
-    const isMsng = source === "messenger";
-    const encodedPhone = encodeURIComponent(phone);
+    if (source === "messenger") return; // messenger لا يحتاج preload هنا
 
-    // تحميل آخر 150 رسالة
-    if (!isMsng) {
-      try {
-        const msgRes = await fetch(`/api/messages?phone=${encodedPhone}&limit=150&cache=${Date.now()}`,
-          { cache: "no-store" });
-        if (msgRes.ok) {
-          const msgs = await msgRes.json();
-          preloadCache.messages.set(key, Array.isArray(msgs) ? msgs : []);
-        }
-      } catch (e) {
-        console.warn(`[preload] Failed to load messages for ${phone}:`, e.message);
-      }
-
-      // تحميل الصور (أول 50)
-      try {
-        const imgRes = await fetch(`/api/images?phone=${encodedPhone}&limit=50`,
-          { cache: "no-store" });
-        if (imgRes.ok) {
-          const imgs = await imgRes.json();
-          preloadCache.images.set(key, Array.isArray(imgs) ? imgs : []);
-        }
-      } catch (e) {
-        console.warn(`[preload] Failed to load images for ${phone}:`, e.message);
-      }
-
-      // تحميل الفيديوهات والملفات الصوتية
-      Promise.all([
-        fetch(`/api/videos?phone=${encodedPhone}&limit=50`, { cache: "no-store" })
-          .then(r => r.ok ? r.json() : [])
-          .catch(() => [])
-          .then(v => preloadCache.videos.set(key, Array.isArray(v) ? v : [])),
-
-        fetch(`/api/voices?phone=${encodedPhone}&limit=50`, { cache: "no-store" })
-          .then(r => r.ok ? r.json() : [])
-          .catch(() => [])
-          .then(v => preloadCache.voices.set(key, Array.isArray(v) ? v : [])),
-      ]);
+    // فقط الرسائل — الصور/الصوت/الفيديو تُحمَّل عند الطلب الفعلي
+    const r = await fetch(`/api/messages?phone=${encodeURIComponent(phone)}&limit=60`,
+      { cache: "no-store" });
+    if (r.ok) {
+      const msgs = await r.json();
+      preloadCache.messages.set(key, Array.isArray(msgs) ? msgs : []);
     }
-  } catch (e) {
-    console.warn(`[preload] Error for ${phone}:`, e.message);
-  } finally {
+  } catch { /* تجاهل */ }
+  finally {
     preloadCache.inProgress.delete(key);
     preloadCache.loaded.add(key);
   }
@@ -362,49 +329,15 @@ async function preloadDataForContact(phone, source = "whatsapp") {
 async function autoPreloadAllContacts() {
   if (!allContacts.length) return;
 
-  const progressBar = document.getElementById("preloadProgress");
-  const progressFill = document.getElementById("preloadBar");
-  const progressText = document.getElementById("preloadPercent");
+  // نحمّل فقط أول 25 محادثة (الأكثر نشاطاً) بتأخير 800ms بين كل واحدة
+  // هذا يُنتج بحد أقصى ~31 طلب/دقيقة بدلاً من مئات الطلبات
+  const toPreload = allContacts.slice(0, 25);
 
-  if (progressBar) progressBar.style.display = "block";
-
-  console.log(`🔄 [preload] بدء تحميل مسبق لـ ${allContacts.length} محادثة...`);
-
-  // تحميل الأولى 10 بسرعة (على التوازي)
-  const first10 = allContacts.slice(0, 10);
-  await Promise.allSettled(
-    first10.map(c => preloadDataForContact(c.phone, c.source))
-  );
-
-  let progress = 10;
-  if (progressFill) progressFill.style.width = `${(progress / allContacts.length) * 100}%`;
-  if (progressText) progressText.textContent = `${Math.round((progress / allContacts.length) * 100)}%`;
-
-  // باقي البيانات في الخلفية (تسلسلي بتأخير صغير)
-  const remaining = allContacts.slice(10);
-  for (const contact of remaining) {
-    if (document.hidden) break; // توقف إذا أغلق المستخدم التبويب
-    preloadDataForContact(contact.phone, contact.source);
-    progress++;
-
-    // تحديث الشريط كل 5 جهات
-    if (progress % 5 === 0) {
-      const percent = Math.round((progress / allContacts.length) * 100);
-      if (progressFill) progressFill.style.width = `${percent}%`;
-      if (progressText) progressText.textContent = `${percent}%`;
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 200)); // تأخير 200ms بين الجهات
+  for (const contact of toPreload) {
+    if (document.hidden) break;
+    await preloadDataForContact(contact.phone, contact.source);
+    await new Promise(r => setTimeout(r, 800));
   }
-
-  // إخفاء الشريط بعد الانتهاء
-  if (progressFill) progressFill.style.width = "100%";
-  if (progressText) progressText.textContent = "✅ تم";
-  setTimeout(() => {
-    if (progressBar) progressBar.style.display = "none";
-  }, 1500);
-
-  console.log(`✅ [preload] تم تحميل جميع البيانات مسبقاً`);
 }
 
 // تفعيل التحميل المسبق عند تحديث جهات الاتصال
