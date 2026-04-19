@@ -675,7 +675,7 @@ html,body{
 // ══════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════
-let contacts = [], curTab = "all", selPhone = "", myRole = "agent";
+let contacts = [], curTab = "all", selCid = null, myRole = "agent";
 let socket;
 const COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
 
@@ -690,12 +690,12 @@ let   prefetchRunning = false;
 
 function cacheOk(p){ return msgCache.has(p) && (Date.now()-( cacheTS.get(p)||0)) < CACHE_TTL; }
 
-async function fetchMsgs(p){
-  const r = await fetch(`/api/messages?phone=${encodeURIComponent(p)}&limit=60`);
+async function fetchMsgs(cid){
+  const r = await fetch(`/api/messages?cid=${encodeURIComponent(cid)}&limit=60`);
   const d = await r.json();
-  msgCache.set(p, Array.isArray(d)?d:[]);
-  cacheTS.set(p, Date.now());
-  return msgCache.get(p);
+  msgCache.set(cid, Array.isArray(d)?d:[]);
+  cacheTS.set(cid, Date.now());
+  return msgCache.get(cid);
 }
 
 function setPfBar(pct){
@@ -707,11 +707,11 @@ function setPfBar(pct){
 async function runPrefetch(){
   if(prefetchRunning) return;
   prefetchRunning = true;
-  const phones = contacts.slice(0,40).map(c=>c.phone).filter(p=>!cacheOk(p));
-  const total = phones.length;
+  const cids = contacts.slice(0,40).map(c=>c.cid).filter(cid=>cid && !cacheOk(cid));
+  const total = cids.length;
   let done = 0;
-  for(const p of phones){
-    try{ await fetchMsgs(p); } catch{/*ignore*/}
+  for(const cid of cids){
+    try{ await fetchMsgs(cid); } catch{/*ignore*/}
     done++;
     setPfBar(Math.round((done/total)*100));
     await new Promise(r=>setTimeout(r,100));
@@ -766,34 +766,40 @@ function initSocket(){
 
 function setStatus(on){
   const el = document.getElementById("chSub");
-  if(selPhone && el) el.textContent = on?"متصل":"غير متصل";
+  if(selCid && el) el.textContent = on?"متصل":"غير متصل";
 }
 
 function onNewMsg(d){
   // normalize field name — server emits waMsgId, DB returns wa_msg_id
   if(d.waMsgId && !d.wa_msg_id) d.wa_msg_id = d.waMsgId;
   const ts  = d.created_at||new Date().toISOString();
-  let idx   = contacts.findIndex(c=>c.phone===d.phone);
+  const key = d.cid;   // server sends cid (لا هاتف حقيقي) لصفحة user-reply
+
+  let idx = key != null ? contacts.findIndex(c=>c.cid===key) : -1;
 
   if(idx === -1){
-    // زبون جديد — أضفه للقائمة مباشرة بدون loadContacts
-    contacts.unshift({
-      phone: d.phone, name: d.name||d.phone,
-      lastMessage: d.body, lastMessageAt: ts, lastSeen: ts,
-      _unread: d.direction==="in" ? 1 : 0,
-      _lastDir: d.direction
-    });
+    // زبون جديد — نُحدّث القائمة من السيرفر
+    if(key != null){
+      contacts.unshift({
+        cid: key, phone: "", name: d.name||"زبون",
+        lastMessage: d.body, lastMessageAt: ts, lastSeen: ts,
+        _unread: d.direction==="in" ? 1 : 0,
+        _lastDir: d.direction
+      });
+    } else {
+      loadContacts(false); return;
+    }
   } else {
     Object.assign(contacts[idx],{ lastMessage:d.body, lastMessageAt:ts, lastSeen:ts, _lastDir:d.direction });
-    if(d.direction==="in" && d.phone!==selPhone)
+    if(d.direction==="in" && key!==selCid)
       contacts[idx]._unread=(contacts[idx]._unread||0)+1;
     contacts.unshift(contacts.splice(idx,1)[0]);
   }
   renderContacts();
 
   // تحديث الـ cache (مع dedup)
-  if(msgCache.has(d.phone)){
-    const arr=msgCache.get(d.phone);
+  if(key != null && msgCache.has(key)){
+    const arr=msgCache.get(key);
     const isDup = arr.some(m=>
       (m.wa_msg_id && m.wa_msg_id===d.wa_msg_id) ||
       (m.direction===d.direction && m.body===d.body &&
@@ -801,7 +807,7 @@ function onNewMsg(d){
     );
     if(!isDup){
       arr.push({...d, created_at:ts});
-      cacheTS.set(d.phone, Date.now());
+      cacheTS.set(key, Date.now());
     }
   }
 
@@ -812,7 +818,7 @@ function onNewMsg(d){
     return;
   }
 
-  if(d.phone===selPhone) addBubble(d);
+  if(key===selCid) addBubble(d);
   else playNotif();
 }
 
@@ -825,19 +831,19 @@ async function loadContacts(show=true){
   try{
     const r    = await fetch("/api/contacts?limit=200&sort=recent");
     const data = await r.json();
-    const prev = new Map(contacts.map(c=>[c.phone,c._unread||0]));
+    const prev = new Map(contacts.map(c=>[c.cid, c._unread||0]));
     const raw  = Array.isArray(data)?data:(data.contacts||[]);
-    // إزالة التكرار — نحتفظ بأحدث سجل لكل رقم (آخر 9 أرقام كمفتاح)
+    // إزالة التكرار — نستخدم cid كمفتاح
     const seen = new Map();
     raw.forEach(c=>{
-      const key = String(c.phone||"").replace(/\D/g,"").slice(-9);
+      const key = c.cid != null ? c.cid : String(c.phone||"").replace(/\D/g,"").slice(-9);
       const existing = seen.get(key);
       if(!existing || (c.lastMessageAt||"") > (existing.lastMessageAt||""))
         seen.set(key, c);
     });
     contacts = [...seen.values()];
     contacts.forEach(c=>{
-      c._unread   = prev.get(c.phone)||0;
+      c._unread   = prev.get(c.cid)||0;
       c._lastDir  = c.lastDirection||null; // من قاعدة البيانات
     });
     renderContacts();
@@ -853,6 +859,7 @@ function filterC(){
     if(curTab==="unread" && !c._unread && !isUnanswered(c)) return false;
     if(!q) return true;
     const n = dname(c).toLowerCase();
+    // admin يبحث بالهاتف أو الاسم، agent بالاسم فقط
     return n.includes(q) || (myRole==="admin" && (c.phone||"").includes(q));
   });
   renderList(list);
@@ -897,13 +904,13 @@ function ciHTML(c){
     ? (lm.includes("/images/")?"📷 صورة":lm.includes("/voices/")?"🎤 رسالة صوتية":lm.includes("/videos/")?"🎬 فيديو":"📎 ملف")
     : (lm.length>40?lm.slice(0,40)+"…":lm);
   const tm   = fmtT(c.lastMessageAt||c.lastSeen);
-  const act  = c.phone===selPhone;
+  const act  = c.cid===selCid;
   const unrd = c._unread>0;
   const unan = isUnanswered(c);
   const avContent = c.photo
     ? `<img src="/uploads/photos/${esc(c.photo)}" alt="" onerror="this.parentElement.innerHTML='${esc(ini)}';">`
     : esc(ini);
-  return `<div class="ci${act?" on":""}${unan?" unans":""}" onclick="openChat('${esc(c.phone)}','${esc(nm)}')">
+  return `<div class="ci${act?" on":""}${unan?" unans":""}" onclick="openChat(${c.cid},'${esc(nm)}')">
     <div class="ci-av" style="background:${col}">${avContent}</div>
     <div class="ci-body">
       <div class="ci-top">
@@ -922,63 +929,67 @@ function ciHTML(c){
 // ══════════════════════════════════════════════════════════
 //  OPEN / CLOSE CHAT
 // ══════════════════════════════════════════════════════════
-function openChat(phone, name){
-  selPhone = phone;
-  const c  = contacts.find(x=>x.phone===phone);
+function openChat(cid, name){
+  selCid = cid;
+  const c = contacts.find(x=>x.cid===cid);
   if(c) c._unread=0;
   renderContacts();
 
-  const col  = colorOf(phone);
-  const lbl  = name && !isPhone(name) ? name : (myRole==="admin"?phone:"زبون");
+  const col  = colorOf(String(cid));
+  const lbl  = name && !isPhone(name) ? name : (myRole==="admin" ? (c?.phone||String(cid)) : "زبون");
   const chAv = document.getElementById("chAv");
   chAv.style.background = col;
-  const cObj = contacts.find(x=>x.phone===phone);
-  if(cObj?.photo){
-    chAv.innerHTML = `<img src="/uploads/photos/${esc(cObj.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${esc(lbl.slice(0,2))}'">`;
+  if(c?.photo){
+    chAv.innerHTML = `<img src="/uploads/photos/${esc(c.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${esc(lbl.slice(0,2))}'">`;
   } else {
     chAv.textContent = lbl.slice(0,2);
   }
   document.getElementById("chName").textContent = lbl;
-  document.getElementById("chSub").textContent  = myRole==="admin" ? "+"+phone.replace(/\D/g,"") : "";
+  // admin: نعرض الهاتف (الحقيقي من contacts)، agent: لا شيء
+  document.getElementById("chSub").textContent  = myRole==="admin" ? (c?.phone||"") : "";
 
   document.getElementById("empty").style.display = "none";
   document.getElementById("chat").style.display  = "flex";
   document.getElementById("lp").classList.add("hide");
 
-  loadMsgs(phone);
+  loadMsgs(cid);
   renderQBar();
   document.getElementById("itxt").focus();
 }
 
 function backToList(){
-  selPhone="";
+  selCid=null;
   document.getElementById("lp").classList.remove("hide");
   document.getElementById("chat").style.display  = "none";
   document.getElementById("empty").style.display = "flex";
 }
 
 function refreshChat(){
-  if(!selPhone) return;
-  cacheTS.delete(selPhone);
-  loadMsgs(selPhone);
+  if(!selCid) return;
+  cacheTS.delete(selCid);
+  loadMsgs(selCid);
 }
 
 function openFull(){
-  if(selPhone) window.open("/chat#"+selPhone,"_blank");
+  if(selCid){
+    const c = contacts.find(x=>x.cid===selCid);
+    // admin فقط لديه btnFull ظاهر، ويملك الهاتف الحقيقي
+    if(c?.phone) window.open("/chat#"+c.phone,"_blank");
+  }
 }
 
 // ══════════════════════════════════════════════════════════
 //  MESSAGES
 // ══════════════════════════════════════════════════════════
-async function loadMsgs(phone){
+async function loadMsgs(cid){
   const area = document.getElementById("msgs");
 
   // عرض من الـ cache فوراً
-  if(msgCache.has(phone)){
-    renderMsgs(msgCache.get(phone));
+  if(msgCache.has(cid)){
+    renderMsgs(msgCache.get(cid));
     scrollBot(true);
-    if(!cacheOk(phone)){
-      fetchMsgs(phone).then(msgs=>{ if(selPhone===phone){ renderMsgs(msgs); scrollBot(false); } }).catch(()=>{});
+    if(!cacheOk(cid)){
+      fetchMsgs(cid).then(msgs=>{ if(selCid===cid){ renderMsgs(msgs); scrollBot(false); } }).catch(()=>{});
     }
     return;
   }
@@ -986,10 +997,10 @@ async function loadMsgs(phone){
   // أول مرة
   area.innerHTML='<div style="padding:32px;text-align:center;color:var(--mt);font-size:.85rem">⏳ جاري التحميل...</div>';
   try{
-    const msgs = await fetchMsgs(phone);
-    if(selPhone===phone){ renderMsgs(msgs); scrollBot(true); }
+    const msgs = await fetchMsgs(cid);
+    if(selCid===cid){ renderMsgs(msgs); scrollBot(true); }
   } catch{
-    if(selPhone===phone)
+    if(selCid===cid)
       area.innerHTML='<div style="padding:32px;text-align:center;color:red;font-size:.85rem">❌ خطأ في التحميل</div>';
   }
 }
@@ -1189,14 +1200,14 @@ function useQ(i){
 async function sendMsg(){
   const inp=document.getElementById("itxt");
   const txt=inp.value.trim();
-  if(!txt||!selPhone) return;
+  if(!txt||!selCid) return;
   const btn=document.getElementById("sendBtn");
   btn.disabled=true; inp.value=""; autoH(inp);
   try{
     const r=await fetch("/api/send",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({phone:selPhone,message:txt})
+      body:JSON.stringify({cid:selCid,message:txt})
     });
     const d=await r.json();
     if(!d.ok&&!d.sent){ toast("❌ "+(d.error||"فشل الإرسال")); inp.value=txt; }
@@ -1205,9 +1216,9 @@ async function sendMsg(){
       _localOut.set(txt, (_localOut.get(txt)||0)+1);
       setTimeout(()=>{ const c=_localOut.get(txt); if(c<=1) _localOut.delete(txt); else _localOut.set(txt,c-1); }, 15000);
       addBubble(msg); scrollBot(false);
-      if(msgCache.has(selPhone)) msgCache.get(selPhone).push(msg);
+      if(msgCache.has(selCid)) msgCache.get(selCid).push(msg);
       // تحديث قائمة الزبائن + تعليم "تم الرد"
-      const ci=contacts.find(c=>c.phone===selPhone);
+      const ci=contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=txt; ci.lastMessageAt=msg.created_at; ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
     }
   } catch(e){ toast("❌ "+e.message); inp.value=txt; }
@@ -1270,7 +1281,7 @@ function doLogout(){
 //  ATTACH MENU
 // ══════════════════════════════════════════════════════════
 function togAtt(){
-  if(!selPhone){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast("اختر محادثة أولاً"); return; }
   document.getElementById("attMenu").classList.toggle("open");
 }
 
@@ -1293,7 +1304,7 @@ function pickFile(accept){
 // ══════════════════════════════════════════════════════════
 async function handleFile(inp){
   const file = inp.files[0];
-  if(!file || !selPhone) return;
+  if(!file || !selCid) return;
   if(file.size > 64*1024*1024){ toast("❌ الملف أكبر من 64 MB"); return; }
 
   showUpload("⏳ جاري رفع الملف...");
@@ -1306,8 +1317,8 @@ async function handleFile(inp){
       const isVoice = mime.startsWith("audio/");
       const url  = isVoice ? "/api/send-voice" : "/api/send-media";
       const body = isVoice
-        ? { phone: selPhone, data: b64, mimetype: mime }
-        : { phone: selPhone, data: b64, mimetype: mime, ext, filename: file.name };
+        ? { cid: selCid, data: b64, mimetype: mime }
+        : { cid: selCid, data: b64, mimetype: mime, ext, filename: file.name };
       const r = await fetch(url,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -1322,7 +1333,7 @@ async function handleFile(inp){
         setTimeout(()=>{ const c=_localOut.get(msgBody); if(c<=1) _localOut.delete(msgBody); else _localOut.set(msgBody,c-1); }, 15000);
         addBubble({ direction:"out", body: msgBody, source:"user", created_at: new Date().toISOString() });
         scrollBot(false);
-        const ci = contacts.find(c=>c.phone===selPhone);
+        const ci = contacts.find(c=>c.cid===selCid);
         if(ci){ ci.lastMessage=msgBody; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
       } else {
         toast("❌ "+(d.error||"فشل الإرسال"));
@@ -1345,7 +1356,7 @@ function hideUpload(){
 //  LOCATION — خريطة جوجل
 // ══════════════════════════════════════════════════════════
 function openLocModal(){
-  if(!selPhone){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast("اختر محادثة أولاً"); return; }
   document.getElementById("attMenu").classList.remove("open");
   openModal("locModal");
   setTimeout(()=>document.getElementById("locQuery").focus(),100);
@@ -1363,7 +1374,7 @@ async function sendLocation(){
     const r = await fetch("/api/send",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ phone: selPhone, message: text })
+      body: JSON.stringify({ cid: selCid, message: text })
     });
     const d = await r.json();
     if(d.ok){
@@ -1371,7 +1382,7 @@ async function sendLocation(){
       setTimeout(()=>{ const c=_localOut.get(text); if(c<=1) _localOut.delete(text); else _localOut.set(text,c-1); }, 15000);
       addBubble({ direction:"out", body: text, source:"user", created_at: new Date().toISOString() });
       scrollBot(false);
-      const ci = contacts.find(c=>c.phone===selPhone);
+      const ci = contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=`📍 ${q}`; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
     } else { toast("❌ "+(d.error||"فشل الإرسال")); }
   } catch(e){ toast("❌ "+e.message); }
@@ -1384,7 +1395,7 @@ async function sendLocation(){
 let ALL_RESP = [];
 
 async function openRespModal(){
-  if(!selPhone){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast("اختر محادثة أولاً"); return; }
   openModal("respModal");
   document.getElementById("respSrch").value="";
   if(!ALL_RESP.length){
@@ -1443,11 +1454,11 @@ let _recMime    = "";
 let _recStream  = null;
 let _recTimer   = null;
 let _recSec     = 0;
-let _recPhone   = null;
+let _recCid     = null;   // cid للمحادثة الحالية عند التسجيل
 let _recSending = false;
 
 function toggleRecord(){
-  if(!selPhone){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast("اختر محادثة أولاً"); return; }
   if(_recMR?.state==="recording") stopAndSend();
   else startRecord();
 }
@@ -1476,15 +1487,15 @@ async function startRecord(){
       const reader = new FileReader();
       reader.onload = async ev=>{
         const b64 = ev.target.result.split(",")[1];
-        await _doSendVoice(b64, _recMime, _recPhone);
+        await _doSendVoice(b64, _recMime, _recCid);
       };
       reader.onerror = ()=>{ recShowNormal(); toast("❌ خطأ في قراءة الصوت"); };
       reader.readAsDataURL(blob);
     };
 
     _recMR.start(100);
-    _recPhone = selPhone;
-    _recSec   = 0;
+    _recCid = selCid;
+    _recSec = 0;
     recShowActive();
     _recTimer = setInterval(()=>{
       _recSec++;
@@ -1500,7 +1511,7 @@ async function startRecord(){
 
 function stopAndSend(){
   if(_recSending||_recMR?.state!=="recording") return;
-  _recPhone = selPhone;
+  _recCid = selCid;
   clearInterval(_recTimer);
   _recMR.stop();
 }
@@ -1512,7 +1523,7 @@ function cancelRecord(){
     _recMR.ondataavailable=null; _recMR.onstop=null; _recMR.stop();
   }
   _recStopStream();
-  _recChunks=[]; _recPhone=null;
+  _recChunks=[]; _recCid=null;
   recShowNormal();
 }
 
@@ -1521,14 +1532,14 @@ function _recStopStream(){
   _recStream=null;
 }
 
-async function _doSendVoice(b64, mime, phone){
-  if(!b64||!phone){ recShowNormal(); return; }
+async function _doSendVoice(b64, mime, cid){
+  if(!b64||!cid){ recShowNormal(); return; }
   _recSending=true;
   try{
     const r=await fetch("/api/send-voice",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({phone,data:b64,mimetype:mime||"audio/webm"})
+      body:JSON.stringify({cid,data:b64,mimetype:mime||"audio/webm"})
     });
     const d=await r.json();
     recShowNormal();
@@ -1539,11 +1550,11 @@ async function _doSendVoice(b64, mime, phone){
       setTimeout(()=>{ const c=_localOut.get(vBody); if(c<=1) _localOut.delete(vBody); else _localOut.set(vBody,c-1); }, 15000);
       addBubble({direction:"out",body:vBody,source:"user",created_at:new Date().toISOString()});
       scrollBot(false);
-      const ci=contacts.find(c=>c.phone===phone);
+      const ci=contacts.find(c=>c.cid===cid);
       if(ci){ci.lastMessage="🎤 رسالة صوتية";ci.lastMessageAt=new Date().toISOString();ci._lastDir="out";ci.lastDirection="out";renderContacts();}
     } else { toast("❌ "+(d.error||"فشل الإرسال")); }
   } catch(e){ recShowNormal(); toast("❌ "+e.message); }
-  finally{ _recSending=false; _recPhone=null; }
+  finally{ _recSending=false; _recCid=null; }
 }
 
 function recShowActive(){

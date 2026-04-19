@@ -1040,8 +1040,21 @@ app.use(apiLimiter);
 
 // إرسال رسالة لكل المتصلين بغرفة هاتف معين
 function emitMessage(phone, msgObj) {
-  io.to(`phone:${phone}`).emit("new_message", msgObj);
-  io.to("replies").emit("new_message", msgObj);  // ← user-reply page
+  io.to(`phone:${phone}`).emit("new_message", msgObj);   // chat.html (admin) — هاتف كامل
+  _cidEmit(phone, msgObj);                               // user-reply — cid فقط
+}
+
+async function _cidEmit(phone, msgObj) {
+  let cid = _cidCache.get(phone);
+  if (!cid) {
+    try {
+      const pool = require("./db");
+      const [[row]] = await pool.query("SELECT id FROM contacts WHERE phone=? LIMIT 1", [phone]);
+      if (row?.id) { cid = row.id; _cidCache.set(phone, cid); }
+    } catch {}
+  }
+  // نُرسل cid بدون الهاتف الحقيقي لصفحة user-reply
+  io.to("replies").emit("new_message", { ...msgObj, cid, phone: undefined });
 }
 
 fbSetIo(io);
@@ -1120,6 +1133,29 @@ function parseCookies(header = "") {
     if (k) cookies[k.trim()] = decodeURIComponent(v.join("="));
   });
   return cookies;
+}
+
+// ── Role & phone-masking helpers ──────────────────────────────────────────
+function getRole(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  return (tokenRoles.get(cookies.auth_token) || { role: "admin" }).role;
+}
+
+function maskPhone(phone) {
+  const s = String(phone || "").replace(/\D/g, "");
+  if (s.length <= 4) return "**" + s.slice(-2);
+  return s.slice(0, 2) + "*".repeat(Math.max(4, s.length - 4)) + s.slice(-2);
+}
+
+const _cidCache = new Map(); // phone → contact id (في الذاكرة)
+
+async function resolveCid(cid) {
+  const pool = require("./db");
+  const [[row]] = await pool.query(
+    "SELECT phone FROM contacts WHERE id = ? LIMIT 1",
+    [parseInt(cid) || 0]
+  );
+  return row?.phone || null;
 }
 
 function requireAuth(req, res, next) {
@@ -1658,10 +1694,15 @@ app.post("/api/restart-bot/:id", async (req, res) => {
 });
 
 app.get("/api/contacts", async (req, res) => {
+  const role   = getRole(req);
   const limit  = Math.min(parseInt(req.query.limit  || "200"), 2000);
   const offset = parseInt(req.query.offset || "0");
   const search = (req.query.search || "").trim().substring(0, 50);
-  const list = await getAllContacts({ limit, offset, search });
+  const list   = await getAllContacts({ limit, offset, search });
+  // للـ agents: نُخفي الهاتف الحقيقي ونستبدله بنسخة مُقنّعة
+  if (role !== "admin") {
+    list.forEach(c => { c.phone = maskPhone(c.phone); });
+  }
   res.setHeader("Cache-Control", "private, max-age=10");
   res.json(list);
 });
@@ -1856,8 +1897,9 @@ app.post("/api/unblock/:phone", async (req, res) => {
 });
 
 app.post("/api/send", async (req, res) => {
-  const { phone: rawPhone, message, botId } = req.body;
-  if (!rawPhone || !message) return res.status(400).json({ error: "phone و message مطلوبين" });
+  let { phone: rawPhone, cid, message, botId } = req.body;
+  if (!rawPhone && cid) rawPhone = await resolveCid(cid);
+  if (!rawPhone || !message) return res.status(400).json({ error: "phone/cid و message مطلوبين" });
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
   try {
@@ -1883,8 +1925,9 @@ function convertToOgg(inputPath, outputPath) {
 }
 
 app.post("/api/send-voice", async (req, res) => {
-  const { phone: rawPhone, data, mimetype, botId } = req.body;
-  if (!rawPhone || !data) return res.status(400).json({ error: "phone و data مطلوبين" });
+  let { phone: rawPhone, cid, data, mimetype, botId } = req.body;
+  if (!rawPhone && cid) rawPhone = await resolveCid(cid);
+  if (!rawPhone || !data) return res.status(400).json({ error: "phone/cid و data مطلوبين" });
   const mimeOk = /^audio\/(ogg|webm|mp4|mpeg|wav|aac|opus)/.test(mimetype || "");
   if (mimetype && !mimeOk) return res.status(400).json({ error: "نوع الملف غير مسموح" });
   const bot = getActiveBot(botId);
@@ -1932,8 +1975,9 @@ app.post("/api/send-voice", async (req, res) => {
 });
 
 app.post("/api/send-media", async (req, res) => {
-  const { phone: rawPhone, data, mimetype, ext, filename: origName, botId } = req.body;
-  if (!rawPhone || !data || !mimetype) return res.status(400).json({ error: "phone, data و mimetype مطلوبين" });
+  let { phone: rawPhone, cid, data, mimetype, ext, filename: origName, botId } = req.body;
+  if (!rawPhone && cid) rawPhone = await resolveCid(cid);
+  if (!rawPhone || !data || !mimetype) return res.status(400).json({ error: "phone/cid, data و mimetype مطلوبين" });
   const allowedMime = /^(image\/(jpeg|png|gif|webp)|video\/(mp4|webm|quicktime)|audio\/(ogg|webm|mpeg|mp4)|application\/(pdf))$/;
   if (!allowedMime.test(mimetype)) return res.status(400).json({ error: "نوع الملف غير مسموح" });
   const bot = getActiveBot(botId);
@@ -1985,7 +2029,9 @@ app.post("/api/resume", (_req, res) => {
 });
 
 app.get("/api/messages", async (req, res) => {
-  const { phone, search, limit = 50, offset = 0, from_date } = req.query;
+  let { phone, cid, search, limit = 50, offset = 0, from_date } = req.query;
+  if (!phone && cid) phone = await resolveCid(cid);
+  if (!phone) return res.json([]);
   const [list, total] = await Promise.all([
     getMessages({ phone, search, limit: parseInt(limit), offset: parseInt(offset), from_date: from_date || null }),
     getMessagesCount({ phone, search, from_date: from_date || null }),

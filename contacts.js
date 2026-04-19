@@ -65,7 +65,7 @@ async function getAllContacts({ limit = 1000, offset = 0, search = "" } = {}) {
       : [lim, offset];
 
     const [rows] = await pool.query(`
-      SELECT c.phone, c.name,
+      SELECT c.id AS cid, c.phone, c.name,
              c.first_seen        AS firstSeen,
              c.last_seen         AS lastSeen,
              c.total_messages    AS totalMessages,
