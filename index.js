@@ -93,6 +93,8 @@ async function syncContactPhoto(phone, client) {
     await downloadFile(url, dest);
     await db.query("UPDATE contacts SET photo=?, photo_at=NOW() WHERE phone=?", [filename, phone]);
     console.log(`📸 صورة محفوظة: ${phone}`);
+    // إشعار user-reply بتحديث الصورة في الوقت الفعلي
+    _emitPhotoUpdate(phone, filename);
   } catch { /* تجاهل — الزبون ربما أخفى صورته */ }
   finally { photoQueue.delete(phone); }
 }
@@ -1057,6 +1059,21 @@ async function _cidEmit(phone, msgObj) {
   io.to("replies").emit("new_message", { ...msgObj, cid, phone: undefined });
 }
 
+// إشعار user-reply بتحديث صورة زبون
+async function _emitPhotoUpdate(phone, filename) {
+  let cid = _cidCache.get(phone);
+  if (!cid) {
+    try {
+      const pool = require("./db");
+      const [[row]] = await pool.query("SELECT id FROM contacts WHERE phone=? LIMIT 1", [phone]);
+      if (row?.id) { cid = row.id; _cidCache.set(phone, cid); }
+    } catch {}
+  }
+  if (cid) {
+    io.to("replies").emit("contact_photo", { cid, photo: filename });
+  }
+}
+
 fbSetIo(io);
 
 io.on("connection", (socket) => {
@@ -1717,6 +1734,23 @@ app.get("/api/contacts/:phone/photo", async (req, res) => {
   const db = require("./db");
   const [[row]] = await db.query("SELECT photo FROM contacts WHERE phone=? LIMIT 1",[key]);
   res.json({ photo: row?.photo ? `/uploads/photos/${row.photo}` : null });
+});
+
+// جلب صورة زبون بـ cid (يُستدعى من user-reply عند فتح محادثة)
+app.post("/api/contacts/photo-by-cid", async (req, res) => {
+  const { cid } = req.body;
+  if (!cid) return res.status(400).json({ error: "cid مطلوب" });
+  const bot = getActiveBot();
+  if (!bot) return res.json({ ok: false });
+  try {
+    const pool = require("./db");
+    const [[row]] = await pool.query("SELECT phone FROM contacts WHERE id = ? LIMIT 1", [parseInt(cid)]);
+    if (!row?.phone) return res.json({ ok: false });
+    setImmediate(() => syncContactPhoto(row.phone, bot.client));
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: false });
+  }
 });
 
 // جلب صور جميع الزبائن في الخلفية

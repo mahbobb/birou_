@@ -762,6 +762,12 @@ function initSocket(){
   });
   socket.on("disconnect", ()=>setStatus(false));
   socket.on("new_message", onNewMsg);
+  socket.on("contact_photo", ({cid, photo})=>{
+    // تحديث الصورة في الوقت الفعلي دون إعادة تحميل
+    const c = contacts.find(x=>x.cid===cid);
+    if(c) c.photo = photo;
+    updateAvatar(cid, photo);
+  });
 }
 
 function setStatus(on){
@@ -910,7 +916,7 @@ function ciHTML(c){
   const avContent = c.photo
     ? `<img src="/uploads/photos/${esc(c.photo)}" alt="" onerror="this.parentElement.innerHTML='${esc(ini)}';">`
     : esc(ini);
-  return `<div class="ci${act?" on":""}${unan?" unans":""}" onclick="openChat(${c.cid},'${esc(nm)}')">
+  return `<div class="ci${act?" on":""}${unan?" unans":""}" data-cid="${c.cid}" onclick="openChat(${c.cid},'${esc(nm)}')">
     <div class="ci-av" style="background:${col}">${avContent}</div>
     <div class="ci-body">
       <div class="ci-top">
@@ -955,6 +961,12 @@ function openChat(cid, name){
   loadMsgs(cid);
   renderQBar();
   document.getElementById("itxt").focus();
+  // جلب صورة هذا الزبون من واتساب في الخلفية إذا لم تكن محدّثة
+  fetch("/api/contacts/photo-by-cid",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({cid})
+  }).catch(()=>{});
 }
 
 function backToList(){
@@ -1161,6 +1173,30 @@ function addBubble(d){
 function scrollBot(instant){
   const a=document.getElementById("msgs");
   a.scrollTo({top:a.scrollHeight,behavior:instant?"instant":"smooth"});
+}
+
+// تحديث أفاتار زبون في قائمة المحادثات وفي رأس الشات دون إعادة رسم
+function updateAvatar(cid, photo){
+  const url = `/uploads/photos/${esc(photo)}?t=${Date.now()}`;
+  const c   = contacts.find(x=>x.cid===cid);
+  const nm  = c ? dname(c) : "زبون";
+  const ini = nm.slice(0,2);
+  const err = `this.parentElement.innerHTML='${esc(ini)}'`;
+
+  // 1) قائمة المحادثات
+  const ciEl = document.querySelector(`.ci[data-cid="${cid}"]`);
+  if(ciEl){
+    const av = ciEl.querySelector(".ci-av");
+    if(av) av.innerHTML = `<img src="${url}" alt="" onerror="${err}">`;
+  }
+
+  // 2) رأس الشات إذا كانت هذه المحادثة مفتوحة
+  if(selCid===cid){
+    const chAv = document.getElementById("chAv");
+    const lbl  = document.getElementById("chName").textContent||ini;
+    const err2 = `this.parentElement.innerHTML='${esc(lbl.slice(0,2))}'`;
+    chAv.innerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="${err2}">`;
+  }
 }
 
 // ══════════════════════════════════════════════════════════
