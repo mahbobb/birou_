@@ -770,6 +770,8 @@ function setStatus(on){
 }
 
 function onNewMsg(d){
+  // normalize field name — server emits waMsgId, DB returns wa_msg_id
+  if(d.waMsgId && !d.wa_msg_id) d.wa_msg_id = d.waMsgId;
   const ts  = d.created_at||new Date().toISOString();
   let idx   = contacts.findIndex(c=>c.phone===d.phone);
 
@@ -1013,6 +1015,7 @@ function renderMsgs(msgs){
 
 function msgId(m){
   if(m.wa_msg_id) return m.wa_msg_id;
+  if(m.waMsgId)   return m.waMsgId;   // socket emits camelCase
   return (m.direction||"")+"_"+(m.body||"").slice(0,30)+"_"+(m.created_at||"").slice(0,16);
 }
 
