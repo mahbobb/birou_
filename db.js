@@ -7,12 +7,12 @@ const pool = mysql.createPool({
   password:           process.env.DB_PASSWORD || "",
   database:           process.env.DB_NAME     || "whatsapp_bot",
   waitForConnections: true,
-  connectionLimit:    30,  // زيادة من 20 إلى 30
+  connectionLimit:    30,
   queueLimit:         0,
   charset:            "utf8mb4",
   enableKeepAlive:    true,
-  keepAliveInitialDelay: 10000,
-  timeout:            10000,  // timeout الاتصال 10 ثواني
+  keepAliveInitialDelay: 30000,
+  connectTimeout:     20000,
   authPlugins: {
     mysql_native_password: () => () => {},
   },
