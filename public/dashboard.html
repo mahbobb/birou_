@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#075e54">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>لوحة التحكم — واتساب بوت</title>
   <link rel="stylesheet" href="/css/nav.css">
   <style>
@@ -23,7 +27,12 @@
       --sidebar-w: 230px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); direction: rtl; display: flex; min-height: 100vh; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text);
+      direction: rtl; display: flex; min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
 
     /* ════════ SIDEBAR ════════ */
     .sidebar {
@@ -451,6 +460,43 @@
       .quick-grid { grid-template-columns: repeat(2, 1fr); }
       .stat-body .num { font-size: 1.2rem; }
       .tbar-btn { padding: 4px 6px; font-size: 0.68rem; }
+    }
+
+    /* ════════ iPhone safe area + scroll improvements ════════ */
+    @supports (padding: env(safe-area-inset-bottom)) {
+      .sidebar { padding-bottom: env(safe-area-inset-bottom); }
+      .main { padding-bottom: env(safe-area-inset-bottom); }
+      @media (max-width: 480px) {
+        .topbar {
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-right: max(12px, env(safe-area-inset-right));
+          padding-left:  max(12px, env(safe-area-inset-left));
+        }
+      }
+    }
+
+    /* ════════ Better touch targets ════════ */
+    @media (max-width: 480px) {
+      .sb-link { min-height: 44px; }
+      .t-btn, .tbar-btn { min-height: 38px; }
+      .action-btn { min-height: 32px; padding: 6px 10px; }
+      input, select, textarea { font-size: 16px !important; } /* prevent iOS zoom */
+
+      /* Modals — full screen on small phones */
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal {
+        width: 100% !important; max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 90vh; overflow-y: auto;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+      }
+
+      /* Table scroll hint */
+      .table-wrap { -webkit-overflow-scrolling: touch; }
+
+      /* Better scrolling */
+      .page { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .sb-nav { -webkit-overflow-scrolling: touch; }
     }
   </style>
 </head>
@@ -1292,6 +1338,13 @@
       if (window.innerWidth <= 480) closeSidebar();
     });
   });
+
+  // Swipe right to close sidebar on mobile
+  let _tsx = 0;
+  document.getElementById("mainSidebar").addEventListener("touchstart", e => { _tsx = e.touches[0].clientX; }, { passive: true });
+  document.getElementById("mainSidebar").addEventListener("touchend", e => {
+    if (e.changedTouches[0].clientX - _tsx > 60) closeSidebar();
+  }, { passive: true });
 
   loadData();
   setInterval(loadData, 30000);
