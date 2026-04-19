@@ -13,9 +13,6 @@ const pool = mysql.createPool({
   enableKeepAlive:    true,
   keepAliveInitialDelay: 30000,
   connectTimeout:     20000,
-  authPlugins: {
-    mysql_native_password: () => () => {},
-  },
 });
 
 // ─── إنشاء الجداول مع UNIQUE constraints ─────────────────────────────────
