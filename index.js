@@ -995,7 +995,18 @@ app.use((_req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Permissions-Policy", "camera=(), geolocation=()");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.setHeader("Content-Security-Policy",
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.socket.io; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "img-src 'self' data: blob: https:; " +
+    "media-src 'self' blob:; " +
+    "connect-src 'self' wss: ws:; " +
+    "frame-ancestors 'none';"
+  );
   next();
 });
 
@@ -1156,7 +1167,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       validTokens.add(token);
       tokenRoles.set(token, { role: rows[0].role, name: rows[0].name });
       saveTokens(validTokens);
-      res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
+      res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`);
       return res.json({ ok: true, name: rows[0].name, role: rows[0].role });
     }
   } catch (_) { /* DB غير جاهز — fallback */ }
@@ -1168,7 +1179,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     validTokens.add(token);
     tokenRoles.set(token, { role: "admin", name: "المدير" });
     saveTokens(validTokens);
-    res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800`);
+    res.setHeader("Set-Cookie", `auth_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`);
     return res.json({ ok: true, name: "المدير", role: "admin" });
   }
 
@@ -1874,6 +1885,8 @@ function convertToOgg(inputPath, outputPath) {
 app.post("/api/send-voice", async (req, res) => {
   const { phone: rawPhone, data, mimetype, botId } = req.body;
   if (!rawPhone || !data) return res.status(400).json({ error: "phone و data مطلوبين" });
+  const mimeOk = /^audio\/(ogg|webm|mp4|mpeg|wav|aac|opus)/.test(mimetype || "");
+  if (mimetype && !mimeOk) return res.status(400).json({ error: "نوع الملف غير مسموح" });
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
   try {
@@ -1921,6 +1934,8 @@ app.post("/api/send-voice", async (req, res) => {
 app.post("/api/send-media", async (req, res) => {
   const { phone: rawPhone, data, mimetype, ext, filename: origName, botId } = req.body;
   if (!rawPhone || !data || !mimetype) return res.status(400).json({ error: "phone, data و mimetype مطلوبين" });
+  const allowedMime = /^(image\/(jpeg|png|gif|webp)|video\/(mp4|webm|quicktime)|audio\/(ogg|webm|mpeg|mp4)|application\/(pdf))$/;
+  if (!allowedMime.test(mimetype)) return res.status(400).json({ error: "نوع الملف غير مسموح" });
   const bot = getActiveBot(botId);
   if (!bot) return res.status(503).json({ error: "لا يوجد بوت متصل" });
   try {
