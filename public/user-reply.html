@@ -999,8 +999,10 @@ function renderMsgs(msgs){
     return;
   }
   let html="", lastDate="";
-  // API يرجع تنازلياً — نعكس
-  const sorted=[...msgs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  // API يرجع تنازلياً — نعكس + إزالة التكرار
+  const _seen=new Set();
+  const unique=[...msgs].filter(m=>{ const k=msgId(m); if(_seen.has(k)) return false; _seen.add(k); return true; });
+  const sorted=unique.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   sorted.forEach(m=>{
     const ds = m.created_at?new Date(m.created_at).toLocaleDateString("ar-MA"):"";
     if(ds!==lastDate){ html+=`<div class="dsep"><span>${ds}</span></div>`; lastDate=ds; }
