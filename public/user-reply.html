@@ -604,6 +604,8 @@ const COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00
 const msgCache  = new Map();   // phone → msgs[]
 const cacheTS   = new Map();   // phone → timestamp
 const CACHE_TTL = 90000;       // 90 ثانية
+// ── Dedup: رسائل أُرسلت محلياً (تجنّب التكرار من socket) ──
+const _localOut = new Map();   // body → count
 let   prefetchQ = [];
 let   prefetchRunning = false;
 
@@ -708,13 +710,25 @@ function onNewMsg(d){
   }
   renderContacts();
 
-  // تحديث الـ cache
+  // تحديث الـ cache (مع dedup)
   if(msgCache.has(d.phone)){
     const arr=msgCache.get(d.phone);
-    if(!arr.some(m=>m.wa_msg_id&&m.wa_msg_id===d.wa_msg_id)){
+    const isDup = arr.some(m=>
+      (m.wa_msg_id && m.wa_msg_id===d.wa_msg_id) ||
+      (m.direction===d.direction && m.body===d.body &&
+       Math.abs(new Date(m.created_at)-new Date(ts))<15000)
+    );
+    if(!isDup){
       arr.push({...d, created_at:ts});
       cacheTS.set(d.phone, Date.now());
     }
+  }
+
+  // تجاهل الرسائل الصادرة التي أُضيفت محلياً (optimistic UI)
+  if(d.direction==="out" && _localOut.has(d.body)){
+    const c=_localOut.get(d.body);
+    if(c<=1) _localOut.delete(d.body); else _localOut.set(d.body,c-1);
+    return;
   }
 
   if(d.phone===selPhone) addBubble(d);
@@ -1097,6 +1111,8 @@ async function sendMsg(){
     if(!d.ok&&!d.sent){ toast("❌ "+(d.error||"فشل الإرسال")); inp.value=txt; }
     else{
       const msg={direction:"out",body:txt,source:"user",created_at:new Date().toISOString()};
+      _localOut.set(txt, (_localOut.get(txt)||0)+1);
+      setTimeout(()=>{ const c=_localOut.get(txt); if(c<=1) _localOut.delete(txt); else _localOut.set(txt,c-1); }, 15000);
       addBubble(msg); scrollBot(false);
       if(msgCache.has(selPhone)) msgCache.get(selPhone).push(msg);
       // تحديث قائمة الزبائن + تعليم "تم الرد"
@@ -1211,6 +1227,8 @@ async function handleFile(inp){
       if(d.ok){
         toast("✅ تم الإرسال");
         const msgBody = d.url || file.name;
+        _localOut.set(msgBody, (_localOut.get(msgBody)||0)+1);
+        setTimeout(()=>{ const c=_localOut.get(msgBody); if(c<=1) _localOut.delete(msgBody); else _localOut.set(msgBody,c-1); }, 15000);
         addBubble({ direction:"out", body: msgBody, source:"user", created_at: new Date().toISOString() });
         scrollBot(false);
         const ci = contacts.find(c=>c.phone===selPhone);
@@ -1258,6 +1276,8 @@ async function sendLocation(){
     });
     const d = await r.json();
     if(d.ok){
+      _localOut.set(text, (_localOut.get(text)||0)+1);
+      setTimeout(()=>{ const c=_localOut.get(text); if(c<=1) _localOut.delete(text); else _localOut.set(text,c-1); }, 15000);
       addBubble({ direction:"out", body: text, source:"user", created_at: new Date().toISOString() });
       scrollBot(false);
       const ci = contacts.find(c=>c.phone===selPhone);
@@ -1423,7 +1443,10 @@ async function _doSendVoice(b64, mime, phone){
     recShowNormal();
     if(d.ok){
       toast("✅ تم إرسال الصوت");
-      addBubble({direction:"out",body:d.url||"🎤",source:"user",created_at:new Date().toISOString()});
+      const vBody=d.url||"🎤";
+      _localOut.set(vBody, (_localOut.get(vBody)||0)+1);
+      setTimeout(()=>{ const c=_localOut.get(vBody); if(c<=1) _localOut.delete(vBody); else _localOut.set(vBody,c-1); }, 15000);
+      addBubble({direction:"out",body:vBody,source:"user",created_at:new Date().toISOString()});
       scrollBot(false);
       const ci=contacts.find(c=>c.phone===phone);
       if(ci){ci.lastMessage="🎤 رسالة صوتية";ci.lastMessageAt=new Date().toISOString();ci._lastDir="out";ci.lastDirection="out";renderContacts();}
