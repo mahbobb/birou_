@@ -518,6 +518,15 @@ async function handleIncoming(message, botId) {
     if (message.timestamp < BOT_START_TIME) return;
     if (!message.id) return; // تجاهل رسائل النظام بدون معرّف
 
+    // منع التكرار: WA Web.js قد يُعيد إطلاق نفس حدث "message" عند إعادة الاتصال
+    const _inSerial = message.id._serialized;
+    if (_processedInIds.has(_inSerial)) return;
+    _processedInIds.add(_inSerial);
+    if (_processedInIds.size > 1000) {
+      const _firstIn = _processedInIds.values().next().value;
+      _processedInIds.delete(_firstIn);
+    }
+
     // getChat / getContact قد يرميان خطأ داخلياً لبعض أنواع الرسائل (broadcast, status, LID)
     let chat, contact;
     try {
@@ -608,8 +617,9 @@ async function handleIncoming(message, botId) {
         if (autoReplyEnabled) {
           const r = "📸 وصلتنا صورتك، شكرا! إذا عندك أي سؤال على الشقق كلمنا على 0680040002 😊";
           const s1 = await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s1?.id?._serialized || null);
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
+          const s1Id = s1?.id?._serialized || null;
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s1Id);
+          emitMessage(key, { waMsgId: s1Id, phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
@@ -624,8 +634,9 @@ async function handleIncoming(message, botId) {
         if (autoReplyEnabled) {
           const r = "🎤 وصلتنا رسالتك الصوتية! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
           const s2 = await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s2?.id?._serialized || null);
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
+          const s2Id = s2?.id?._serialized || null;
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s2Id);
+          emitMessage(key, { waMsgId: s2Id, phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
@@ -640,8 +651,9 @@ async function handleIncoming(message, botId) {
         if (autoReplyEnabled) {
           const r = "🎬 وصلنا الفيديو ديالك، شكرا! إذا عندك سؤال على الشقق كلمنا على 0680040002 😊";
           const s3 = await botReply(message, r, botId);
-          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s3?.id?._serialized || null);
-          emitMessage(key, { phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
+          const s3Id = s3?.id?._serialized || null;
+          await saveMessage(senderNumber, "البوت", "out", r, "default", null, s3Id);
+          emitMessage(key, { waMsgId: s3Id, phone: key, name: "البوت", direction: "out", body: r, source: "default", created_at: new Date().toISOString() });
         }
         return;
       }
@@ -728,7 +740,7 @@ async function handleIncoming(message, botId) {
 
     // حفظ رد البوت مع wa_msg_id لمنع التكرار حتى في حالة race condition مع message_create
     await saveMessage(senderNumber, "البوت", "out", replyText, source, null, sentWaId);
-    emitMessage(key, { phone: key, name: "البوت", direction: "out", body: replyText, source, created_at: new Date().toISOString() });
+    emitMessage(key, { waMsgId: sentWaId, phone: key, name: "البوت", direction: "out", body: replyText, source, created_at: new Date().toISOString() });
 
   } catch (err) {
     console.error("\n❌ خطأ:", err.stack || err.message);
@@ -736,6 +748,9 @@ async function handleIncoming(message, botId) {
 }
 
 // ─── رسائل المدير اليدوية (من الهاتف مباشرة) ─────────────────────────────
+
+// منع تكرار معالجة نفس رسالة الواردة (مثلاً عند إعادة اتصال WA Web.js)
+const _processedInIds = new Set();
 
 // منع تكرار معالجة نفس رسالة الصادرة
 const _processedOutIds = new Set();
@@ -1940,9 +1955,10 @@ app.post("/api/send", async (req, res) => {
     const outPhone = normalizeOutPhone(cleanPhone(rawPhone));
     const key      = phoneKey(outPhone);
     const jid      = outPhone + "@c.us";
-    await botSend(jid, message, {}, botId);
-    await saveMessage(key, "أنت", "out", message, "manual");
-    emitMessage(key, { phone: key, name: "أنت", direction: "out", body: message, source: "manual", created_at: new Date().toISOString() });
+    const sent = await botSend(jid, message, {}, botId);
+    const waId = sent?.id?._serialized || null;
+    await saveMessage(key, "أنت", "out", message, "manual", null, waId);
+    emitMessage(key, { waMsgId: waId, phone: key, name: "أنت", direction: "out", body: message, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2001,7 +2017,7 @@ app.post("/api/send-voice", async (req, res) => {
     const sentMsg = await botSend(jid, media, { sendAudioAsVoice: true }, botId);
     const waId = sentMsg?.id?._serialized || null;
     await saveMessage(key, "أنت", "out", fileUrl, "manual", null, waId);
-    emitMessage(key, { phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
+    emitMessage(key, { waMsgId: waId, phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
     res.json({ ok: true, url: fileUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2038,12 +2054,13 @@ app.post("/api/send-media", async (req, res) => {
     const opts  = isAudio ? { sendAudioAsVoice: false }
                 : (!isImage && !isVideo) ? { sendMediaAsDocument: true }
                 : {};
-    await botSend(jid, media, opts, botId);
+    const sentMedia = await botSend(jid, media, opts, botId);
+    const mediaWaId = sentMedia?.id?._serialized || null;
 
     // حفظ في قاعدة البيانات
     const msgBody = (isImage || isVideo) ? fileUrl : `📎 ${origName || filename}`;
-    await saveMessage(key, "أنت", "out", msgBody, "manual");
-    emitMessage(key, { phone: key, name: "أنت", direction: "out", body: msgBody, source: "manual", created_at: new Date().toISOString() });
+    await saveMessage(key, "أنت", "out", msgBody, "manual", null, mediaWaId);
+    emitMessage(key, { waMsgId: mediaWaId, phone: key, name: "أنت", direction: "out", body: msgBody, source: "manual", created_at: new Date().toISOString() });
 
     res.json({ ok: true, url: fileUrl });
   } catch (err) {
