@@ -1239,6 +1239,12 @@ async function sendMsg(){
   if(!txt||!selCid) return;
   const btn=document.getElementById("sendBtn");
   btn.disabled=true; inp.value=""; autoH(inp);
+
+  // سجّل قبل الـ fetch حتى لو وصل socket event قبل HTTP response
+  _localOut.set(txt, (_localOut.get(txt)||0)+1);
+  const _rmLocal=()=>{ const c=_localOut.get(txt); if(!c||c<=1) _localOut.delete(txt); else _localOut.set(txt,c-1); };
+  const _rmTimer=setTimeout(_rmLocal, 15000);
+
   try{
     const r=await fetch("/api/send",{
       method:"POST",
@@ -1246,18 +1252,19 @@ async function sendMsg(){
       body:JSON.stringify({cid:selCid,message:txt})
     });
     const d=await r.json();
-    if(!d.ok&&!d.sent){ toast("❌ "+(d.error||"فشل الإرسال")); inp.value=txt; }
+    if(!d.ok&&!d.sent){
+      toast("❌ "+(d.error||"فشل الإرسال")); inp.value=txt;
+      clearTimeout(_rmTimer); _rmLocal(); // تراجع فوري عن التسجيل
+    }
     else{
       const msg={direction:"out",body:txt,source:"user",created_at:new Date().toISOString()};
-      _localOut.set(txt, (_localOut.get(txt)||0)+1);
-      setTimeout(()=>{ const c=_localOut.get(txt); if(c<=1) _localOut.delete(txt); else _localOut.set(txt,c-1); }, 15000);
       addBubble(msg); scrollBot(false);
       if(msgCache.has(selCid)) msgCache.get(selCid).push(msg);
       // تحديث قائمة الزبائن + تعليم "تم الرد"
       const ci=contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=txt; ci.lastMessageAt=msg.created_at; ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
     }
-  } catch(e){ toast("❌ "+e.message); inp.value=txt; }
+  } catch(e){ toast("❌ "+e.message); inp.value=txt; clearTimeout(_rmTimer); _rmLocal(); }
   finally{ btn.disabled=false; inp.focus(); }
 }
 
@@ -1406,6 +1413,9 @@ async function sendLocation(){
   const text    = `📍 *${q}*\n${mapsUrl}`;
   const btn = document.getElementById("sendBtn");
   btn.disabled = true;
+  _localOut.set(text, (_localOut.get(text)||0)+1);
+  const _rmLoc=()=>{ const c=_localOut.get(text); if(!c||c<=1) _localOut.delete(text); else _localOut.set(text,c-1); };
+  const _rmLocTimer=setTimeout(_rmLoc, 15000);
   try{
     const r = await fetch("/api/send",{
       method:"POST",
@@ -1414,14 +1424,12 @@ async function sendLocation(){
     });
     const d = await r.json();
     if(d.ok){
-      _localOut.set(text, (_localOut.get(text)||0)+1);
-      setTimeout(()=>{ const c=_localOut.get(text); if(c<=1) _localOut.delete(text); else _localOut.set(text,c-1); }, 15000);
       addBubble({ direction:"out", body: text, source:"user", created_at: new Date().toISOString() });
       scrollBot(false);
       const ci = contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=`📍 ${q}`; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
-    } else { toast("❌ "+(d.error||"فشل الإرسال")); }
-  } catch(e){ toast("❌ "+e.message); }
+    } else { toast("❌ "+(d.error||"فشل الإرسال")); clearTimeout(_rmLocTimer); _rmLoc(); }
+  } catch(e){ toast("❌ "+e.message); clearTimeout(_rmLocTimer); _rmLoc(); }
   finally{ btn.disabled=false; }
 }
 
