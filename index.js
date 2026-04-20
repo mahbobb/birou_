@@ -1959,7 +1959,7 @@ app.post("/api/send", async (req, res) => {
     const waId = sent?.id?._serialized || null;
     await saveMessage(key, "أنت", "out", message, "manual", null, waId);
     emitMessage(key, { waMsgId: waId, phone: key, name: "أنت", direction: "out", body: message, source: "manual", created_at: new Date().toISOString() });
-    res.json({ ok: true });
+    res.json({ ok: true, wa_msg_id: waId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -2018,7 +2018,7 @@ app.post("/api/send-voice", async (req, res) => {
     const waId = sentMsg?.id?._serialized || null;
     await saveMessage(key, "أنت", "out", fileUrl, "manual", null, waId);
     emitMessage(key, { waMsgId: waId, phone: key, name: "أنت", direction: "out", body: fileUrl, source: "manual", created_at: new Date().toISOString() });
-    res.json({ ok: true, url: fileUrl });
+    res.json({ ok: true, url: fileUrl, wa_msg_id: waId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -2062,7 +2062,7 @@ app.post("/api/send-media", async (req, res) => {
     await saveMessage(key, "أنت", "out", msgBody, "manual", null, mediaWaId);
     emitMessage(key, { waMsgId: mediaWaId, phone: key, name: "أنت", direction: "out", body: msgBody, source: "manual", created_at: new Date().toISOString() });
 
-    res.json({ ok: true, url: fileUrl });
+    res.json({ ok: true, url: fileUrl, wa_msg_id: mediaWaId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

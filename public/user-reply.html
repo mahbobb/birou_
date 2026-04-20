@@ -1257,7 +1257,8 @@ async function sendMsg(){
       clearTimeout(_rmTimer); _rmLocal(); // تراجع فوري عن التسجيل
     }
     else{
-      const msg={direction:"out",body:txt,source:"user",created_at:new Date().toISOString()};
+      // wa_msg_id من السيرفر يضمن نفس الـ ID مع DB → يمنع التكرار مع renderMsgs
+      const msg={direction:"out",body:txt,source:"user",created_at:new Date().toISOString(),wa_msg_id:d.wa_msg_id||null};
       addBubble(msg); scrollBot(false);
       if(msgCache.has(selCid)) msgCache.get(selCid).push(msg);
       // تحديث قائمة الزبائن + تعليم "تم الرد"
@@ -1374,7 +1375,7 @@ async function handleFile(inp){
         const msgBody = d.url || file.name;
         _localOut.set(msgBody, (_localOut.get(msgBody)||0)+1);
         setTimeout(()=>{ const c=_localOut.get(msgBody); if(c<=1) _localOut.delete(msgBody); else _localOut.set(msgBody,c-1); }, 15000);
-        addBubble({ direction:"out", body: msgBody, source:"user", created_at: new Date().toISOString() });
+        addBubble({ direction:"out", body: msgBody, source:"user", created_at: new Date().toISOString(), wa_msg_id: d.wa_msg_id||null });
         scrollBot(false);
         const ci = contacts.find(c=>c.cid===selCid);
         if(ci){ ci.lastMessage=msgBody; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
@@ -1592,7 +1593,7 @@ async function _doSendVoice(b64, mime, cid){
       const vBody=d.url||"🎤";
       _localOut.set(vBody, (_localOut.get(vBody)||0)+1);
       setTimeout(()=>{ const c=_localOut.get(vBody); if(c<=1) _localOut.delete(vBody); else _localOut.set(vBody,c-1); }, 15000);
-      addBubble({direction:"out",body:vBody,source:"user",created_at:new Date().toISOString()});
+      addBubble({direction:"out",body:vBody,source:"user",created_at:new Date().toISOString(),wa_msg_id:d.wa_msg_id||null});
       scrollBot(false);
       const ci=contacts.find(c=>c.cid===cid);
       if(ci){ci.lastMessage="🎤 رسالة صوتية";ci.lastMessageAt=new Date().toISOString();ci._lastDir="out";ci.lastDirection="out";renderContacts();}
