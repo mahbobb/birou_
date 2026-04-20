@@ -1200,6 +1200,32 @@ function requireAuth(req, res, next) {
 }
 
 app.use(requireAuth);
+
+// ─── صفحات Admin فقط — agents يُحوَّلون لـ /user-reply ────────────────────
+const ADMIN_PAGES = new Set([
+  "/dashboard","/chat","/messages","/images","/voices","/videos",
+  "/calls","/groups","/grp-chat","/qr","/sync","/responses",
+  "/ai-reply","/bulk-reply","/users","/facebook","/messenger-bulk",
+  "/bookings-admin","/notes","/widget","/booking","/contact",
+]);
+
+app.use((req, res, next) => {
+  // تطبيع المسار — /chat.html → /chat
+  const p = req.path.toLowerCase().replace(/\.html$/, "");
+  if (!ADMIN_PAGES.has(p)) return next();
+  const cookies = parseCookies(req.headers.cookie);
+  const { role } = tokenRoles.get(cookies.auth_token) || { role: "admin" };
+  if (role !== "admin") return res.redirect("/user-reply");
+  next();
+});
+
+// تحويل / بحسب الدور
+app.get("/", (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const { role } = tokenRoles.get(cookies.auth_token) || { role: "admin" };
+  res.redirect(role === "admin" ? "/dashboard" : "/user-reply");
+});
+
 // ملفات ثابتة — cache يوم كامل للـ JS/CSS/images، بدون cache للـ HTML
 app.use(express.static(path.join(__dirname, "public"), {
   extensions: ["html"],
