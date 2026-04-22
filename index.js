@@ -132,6 +132,7 @@ let aiAutoReplyEnabled = (() => {
   catch { return true; }
 })();
 let mediaSyncStatus   = { running: false, done: 0, total: 0, saved: 0, errors: 0, skipped: 0, currentChat: "", lastError: "" };
+let fullSyncStatus    = { running: false, done: 0, total: 0, savedText: 0, savedImages: 0, savedVoices: 0, savedVideos: 0, errors: 0, skipped: 0, currentChat: "", lastError: "" };
 const pausedChats   = new Set();
 
 // منع تكرار نفس السؤال خلال 60 ثانية
@@ -2590,6 +2591,162 @@ app.post("/api/wa-sync-stop", (_req, res) => {
   } else {
     res.json({ ok: false, message: "المزامنة غير جارية" });
   }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  FULL SYNC — نصوص + صور + صوت + فيديو لجميع المحادثات
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post("/api/wa-sync-full", async (req, res) => {
+  const connectedBots = [...bots.values()].filter(b => b.botConnected);
+  if (!connectedBots.length) return res.status(503).json({ error: "البوت غير متصل بواتساب" });
+  if (fullSyncStatus.running) return res.json({ ok: true, message: "المزامنة جارية بالفعل", status: fullSyncStatus });
+
+  const msgLimit = Math.min(parseInt(req.body?.msgLimit) || 100, 500);
+  fullSyncStatus = { running: true, done: 0, total: 0, savedText: 0, savedImages: 0, savedVoices: 0, savedVideos: 0, errors: 0, skipped: 0, currentChat: "", lastError: "" };
+  res.json({ ok: true, message: "بدأت المزامنة الكاملة في الخلفية" });
+
+  (async () => {
+    try {
+      // ── جمع كل المحادثات الفردية من جميع البوتات ─────────────────────────
+      const seenPhones = new Set();
+      const allChats   = [];
+      for (const bot of connectedBots) {
+        try {
+          const chats = await Promise.race([
+            bot.client.getChats(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 30000)),
+          ]);
+          for (const c of chats) {
+            const cid = c.id?._serialized || "";
+            if (!cid.endsWith("@c.us")) continue; // فقط محادثات فردية
+            if (c.isGroup || c.isBroadcast) continue;
+            const phone = normalizePhone(cid);
+            if (!phone || phone.length < 7) continue;
+            if (seenPhones.has(phone)) continue;
+            seenPhones.add(phone);
+            allChats.push({ chat: c, bot });
+          }
+        } catch (e) {
+          console.warn("full-sync: getChats فشل:", e.message);
+        }
+      }
+      fullSyncStatus.total = allChats.length;
+      console.log(`\n📥 [full-sync] ${allChats.length} محادثة — بدء المزامنة الكاملة...`);
+
+      for (const { chat, bot } of allChats) {
+        if (!fullSyncStatus.running) break;
+
+        const phone    = normalizePhone(chat.id._serialized);
+        const chatName = chat.name || phone;
+        fullSyncStatus.currentChat = `${chatName} (${phone})`;
+
+        try {
+          await registerContact(phone, chatName, "");
+
+          // جلب الرسائل الفعلية من واتساب
+          let msgs = [];
+          try {
+            msgs = await Promise.race([
+              chat.fetchMessages({ limit: msgLimit }),
+              new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 20000)),
+            ]);
+          } catch (fe) {
+            fullSyncStatus.skipped++;
+            console.debug(`[full-sync] fetchMessages فشل لـ ${chatName}: ${fe.message}`);
+            fullSyncStatus.done++;
+            continue;
+          }
+
+          for (const msg of msgs) {
+            if (!fullSyncStatus.running) break;
+            try {
+              const dir        = msg.fromMe ? "out" : "in";
+              const src        = dir === "out" ? "manual" : "user";
+              const msgTs      = new Date(msg.timestamp * 1000);
+              const waId       = msg.id?._serialized;
+              const senderName = dir === "out" ? "أنت" : chatName;
+              const mType      = msg.type || "";
+
+              if (msg.hasMedia) {
+                const isImage = mType === "image";
+                const isVoice = mType === "ptt" || mType === "audio";
+                const isVideo = mType === "video" || mType === "gif";
+                const isDoc   = mType === "document" || mType === "sticker";
+
+                try {
+                  const media = await Promise.race([
+                    msg.downloadMedia(),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 15000)),
+                  ]);
+
+                  if (!media?.data) throw new Error("بيانات فارغة");
+
+                  if (isImage) {
+                    const f = await saveImage(phone, chatName, media, msgTs);
+                    if (f) { await saveMessage(phone, senderName, dir, `/uploads/images/${f}`, src, msgTs, waId); fullSyncStatus.savedImages++; }
+                  } else if (isVoice) {
+                    const f = await saveVoice(phone, chatName, media);
+                    if (f) { await saveMessage(phone, senderName, dir, `/uploads/voices/${f}`, src, msgTs, waId); fullSyncStatus.savedVoices++; }
+                  } else if (isVideo) {
+                    const f = await saveVideo(phone, chatName, media, msgTs);
+                    if (f) { await saveMessage(phone, senderName, dir, `/uploads/videos/${f}`, src, msgTs, waId); fullSyncStatus.savedVideos++; }
+                  } else if (isDoc) {
+                    const lbl = mType === "sticker" ? "🎭 ملصق" : "📎 مستند";
+                    await saveMessage(phone, senderName, dir, lbl, src, msgTs, waId);
+                    fullSyncStatus.savedText++;
+                  }
+                } catch {
+                  // الوسائط منتهية الصلاحية على سيرفرات واتساب
+                  const lbl = isImage ? "📷 صورة" : isVoice ? "🎤 رسالة صوتية" : isVideo ? "🎬 فيديو" : "📎 ملف";
+                  await saveMessage(phone, senderName, dir, lbl, src, msgTs, waId);
+                  fullSyncStatus.skipped++;
+                }
+              } else {
+                const body = (msg.body || "").trim();
+                if (body) {
+                  await saveMessage(phone, senderName, dir, body, src, msgTs, waId);
+                  fullSyncStatus.savedText++;
+                }
+              }
+            } catch { /* رسالة واحدة فشلت — نكمل */ }
+          }
+
+          if (msgs.length > 0) {
+            const last = msgs[msgs.length - 1];
+            await registerContact(phone, chatName, last.body || "");
+          }
+
+        } catch (chatErr) {
+          fullSyncStatus.errors++;
+          fullSyncStatus.lastError = `${chatName}: ${chatErr.message}`;
+          console.error(`❌ [full-sync] ${chatName}:`, chatErr.message);
+        }
+
+        fullSyncStatus.done++;
+        // تأخير بين المحادثات لتفادي rate limit
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      console.log(`\n✅ [full-sync] اكتمل — نص:${fullSyncStatus.savedText} صور:${fullSyncStatus.savedImages} صوت:${fullSyncStatus.savedVoices} فيديو:${fullSyncStatus.savedVideos} تخطي:${fullSyncStatus.skipped}`);
+
+    } catch (err) {
+      fullSyncStatus.errors++;
+      fullSyncStatus.lastError = err.message;
+      console.error("full-sync خطأ عام:", err.message);
+    } finally {
+      fullSyncStatus.running = false;
+    }
+  })();
+});
+
+app.get("/api/wa-sync-full-status", (_req, res) => res.json(fullSyncStatus));
+
+app.post("/api/wa-sync-full-stop", (_req, res) => {
+  fullSyncStatus.running     = false;
+  fullSyncStatus.currentChat = "";
+  console.log("⏹️ [full-sync] إيقاف يدوي");
+  res.json({ ok: true });
 });
 
 // ── تاريخ المحادثة من واتساب مباشرة (مدمج مع قاعدة البيانات) ─────────────

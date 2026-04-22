@@ -141,10 +141,60 @@
   </div>
 </div>
 
+<!-- ═══ بطاقة المزامنة الكاملة ═══ -->
+<div class="container" style="margin-top:0">
+  <div class="card">
+    <h2>🗂️ مزامنة كاملة — نصوص + صور + صوت + فيديو</h2>
+    <p>تمر على كل محادثة وتنزّل <b>جميع الرسائل</b> (نصوص، صور، أصوات، فيديوهات) وتحفظها في قاعدة البيانات ومجلدات الملفات. أبطأ من المزامنة السريعة لكن أكثر شمولاً.</p>
+
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="fDone"   style="color:#075e54">—</div><div class="lbl">محادثة</div></div>
+      <div class="stat"><div class="num" id="fTotal"  style="color:#075e54">—</div><div class="lbl">الإجمالي</div></div>
+      <div class="stat"><div class="num" id="fText"   style="color:#128c7e">—</div><div class="lbl">💬 نصوص</div></div>
+      <div class="stat"><div class="num" id="fImages" style="color:#1976d2">—</div><div class="lbl">📷 صور</div></div>
+      <div class="stat"><div class="num" id="fVoices" style="color:#e91e63">—</div><div class="lbl">🎤 أصوات</div></div>
+      <div class="stat"><div class="num" id="fVideos" style="color:#ff5722">—</div><div class="lbl">🎬 فيديو</div></div>
+      <div class="stat"><div class="num" id="fSkip"   style="color:#ff9800">—</div><div class="lbl">⚠️ منتهية</div></div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <label style="font-size:.85rem;color:#555">رسائل لكل محادثة:</label>
+      <select id="msgLimit" style="padding:6px 10px;border-radius:8px;border:1.5px solid #ddd;font-size:.88rem">
+        <option value="50">50 رسالة</option>
+        <option value="100" selected>100 رسالة</option>
+        <option value="200">200 رسالة</option>
+        <option value="500">500 رسالة (بطيء)</option>
+      </select>
+    </div>
+
+    <div class="progress-text" id="fProgressText">اضغط "ابدأ المزامنة الكاملة" للبدء</div>
+    <div class="current-chat" id="fCurrentChat"></div>
+    <div class="progress-wrap" id="fProgressWrap">
+      <div class="progress-bar" id="fProgressBar"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-green" id="fStartBtn" onclick="startFullSync()">🗂️ ابدأ المزامنة الكاملة</button>
+      <button class="btn btn-red"   id="fStopBtn"  onclick="stopFullSync()" style="display:none">⏹️ إيقاف</button>
+    </div>
+
+    <div class="done-msg"  id="fDoneMsg"></div>
+    <div class="error-msg" id="fErrorMsg"></div>
+
+    <div class="notice" style="margin-top:16px">
+      ⚠️ <b>ملاحظات:</b><br>
+      • تنزيل الوسائط قد يستغرق وقتاً طويلاً (واتساب يحدّ السرعة).<br>
+      • الوسائط القديمة (+30 يوم) قد تكون محذوفة من سيرفرات واتساب — ستُسجَّل كـ "📷 صورة" بدون ملف.<br>
+      • يمكنك إيقاف المزامنة في أي وقت والاستئناف لاحقاً — الرسائل المحفوظة تبقى.
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
   let pollInterval = null;
+  let fullPollInterval = null;
 
   async function startSync() {
     const btn  = document.getElementById("startBtn");
@@ -272,6 +322,70 @@
   function logout() {
     fetch("/api/logout", { method: "POST" }).then(() => location.href = '/login');
   }
+
+  // ══ Full Sync ══
+  async function startFullSync() {
+    const btn  = document.getElementById("fStartBtn");
+    const stop = document.getElementById("fStopBtn");
+    btn.disabled = true; btn.textContent = "⏳ جاري البدء...";
+    stop.style.display = "inline-block";
+    document.getElementById("fDoneMsg").style.display  = "none";
+    document.getElementById("fErrorMsg").style.display = "none";
+    const limit = document.getElementById("msgLimit").value;
+    try {
+      const r = await fetch("/api/wa-sync-full", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ msgLimit: parseInt(limit) })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) { showFError(d.error || "فشل"); btn.disabled=false; btn.textContent="🗂️ ابدأ المزامنة الكاملة"; stop.style.display="none"; return; }
+      showToast("✅ " + d.message);
+      document.getElementById("fProgressWrap").style.display = "block";
+      if (fullPollInterval) clearInterval(fullPollInterval);
+      fullPollInterval = setInterval(pollFullStatus, 2000);
+    } catch(e) { showFError("❌ " + e.message); btn.disabled=false; btn.textContent="🗂️ ابدأ المزامنة الكاملة"; stop.style.display="none"; }
+  }
+
+  async function stopFullSync() {
+    try { await fetch("/api/wa-sync-full-stop", { method:"POST" }); showToast("⏹️ تم إيقاف المزامنة"); } catch {}
+  }
+
+  async function pollFullStatus() {
+    try {
+      const s = await (await fetch("/api/wa-sync-full-status")).json();
+      document.getElementById("fDone").textContent   = s.done   ?? "—";
+      document.getElementById("fTotal").textContent  = s.total  ?? "—";
+      document.getElementById("fText").textContent   = s.savedText   ?? "—";
+      document.getElementById("fImages").textContent = s.savedImages ?? "—";
+      document.getElementById("fVoices").textContent = s.savedVoices ?? "—";
+      document.getElementById("fVideos").textContent = s.savedVideos ?? "—";
+      document.getElementById("fSkip").textContent   = s.skipped ?? "—";
+
+      const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : 0;
+      document.getElementById("fProgressBar").style.width = pct + "%";
+      document.getElementById("fProgressText").textContent = s.running
+        ? `جاري المعالجة: ${s.done} / ${s.total} محادثة (${pct}%)`
+        : `منتهية: ${s.done} / ${s.total} محادثة`;
+      document.getElementById("fCurrentChat").textContent = s.running && s.currentChat ? `📱 ${s.currentChat}` : "";
+
+      if (s.lastError) { const e=document.getElementById("fErrorMsg"); e.textContent=s.lastError; e.style.display="block"; }
+
+      if (!s.running) {
+        clearInterval(fullPollInterval);
+        document.getElementById("fStartBtn").disabled = false;
+        document.getElementById("fStartBtn").textContent = "🗂️ إعادة المزامنة الكاملة";
+        document.getElementById("fStopBtn").style.display = "none";
+        const total = (s.savedText||0)+(s.savedImages||0)+(s.savedVoices||0)+(s.savedVideos||0);
+        if (total > 0 || s.done > 0) {
+          const dm = document.getElementById("fDoneMsg");
+          dm.style.display = "block";
+          dm.textContent = `✅ اكتملت! نصوص: ${s.savedText} · صور: ${s.savedImages} · أصوات: ${s.savedVoices} · فيديو: ${s.savedVideos}`;
+        }
+      }
+    } catch {}
+  }
+
+  function showFError(msg) { const e=document.getElementById("fErrorMsg"); e.textContent=msg; e.style.display="block"; }
 
   loadInitialStatus();
 </script>
