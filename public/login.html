@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الدخول</title>
+  <title>Connexion — WhatsApp Bot</title>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -12,16 +13,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: #0b141a;
       font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
     }
     .card {
-      background: #fff;
+      background: #202c33;
       border-radius: 16px;
       padding: 40px 36px;
       width: 360px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      position: relative;
     }
+    .lang-btn {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.13);
+      color: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.14); color: #e9edef; }
     .logo {
       text-align: center;
       margin-bottom: 28px;
@@ -33,12 +50,12 @@
     }
     .logo h1 {
       font-size: 20px;
-      color: #1a1a2e;
+      color: #e9edef;
       font-weight: 700;
     }
     .logo p {
       font-size: 13px;
-      color: #888;
+      color: #8696a0;
       margin-top: 4px;
     }
     .form-group {
@@ -48,13 +65,15 @@
       display: block;
       font-size: 13px;
       font-weight: 600;
-      color: #444;
+      color: #aebac1;
       margin-bottom: 7px;
     }
     input[type="password"], input[type="text"] {
       width: 100%;
       padding: 11px 14px;
-      border: 1.5px solid #ddd;
+      background: #111b21;
+      border: 1.5px solid #2a3942;
+      color: #e9edef;
       border-radius: 8px;
       font-size: 15px;
       direction: ltr;
@@ -62,12 +81,13 @@
       outline: none;
     }
     input[type="password"]:focus, input[type="text"]:focus {
-      border-color: #25d366;
+      border-color: #00a884;
     }
+    input::placeholder { color: #3d5a69; }
     .btn-login {
       width: 100%;
       padding: 13px;
-      background: #25d366;
+      background: #00a884;
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -77,12 +97,12 @@
       transition: background 0.2s;
       margin-top: 6px;
     }
-    .btn-login:hover { background: #1da851; }
-    .btn-login:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-login:hover { background: #02c698; }
+    .btn-login:disabled { background: #2a3942; color: #8696a0; cursor: not-allowed; }
     .error-msg {
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1px solid #f5c6cb;
+      background: rgba(229,57,53,0.12);
+      color: #ff6b6b;
+      border: 1px solid rgba(229,57,53,0.28);
       border-radius: 8px;
       padding: 10px 14px;
       font-size: 13px;
@@ -91,37 +111,83 @@
       text-align: center;
     }
     .error-msg.show { display: block; }
+
+    [data-lv]{display:none!important}
+    html[data-lang="ar"] [data-lv="ar"]                    {display:revert!important}
+    html[data-lang="fr"] [data-lv="fr"],
+    html:not([data-lang]) [data-lv="fr"]                   {display:revert!important}
+    html[data-lang="en"] [data-lv="en"]                    {display:revert!important}
   </style>
 </head>
 <body>
   <div class="card">
+    <button class="lang-btn" onclick="_cycleLang()">🌐 <span id="langLabel">عر</span></button>
+
     <div class="logo">
-      <span class="logo-icon">🤖</span>
-      <h1>لوحة تحكم البوت</h1>
-      <p>abrajeimmo.com — مراكش</p>
+      <svg viewBox="0 0 35 35" width="56" height="56" fill="#00a884" style="display:block;margin:0 auto 12px">
+        <path d="M17.5 0C7.835 0 0 7.835 0 17.5c0 3.093.811 6.001 2.232 8.528L0 35l9.197-2.41A17.457 17.457 0 0 0 17.5 35C27.165 35 35 27.165 35 17.5S27.165 0 17.5 0z"/>
+        <path d="M26.07 21.677c-.355-.178-2.1-1.036-2.424-1.154-.323-.118-.559-.178-.794.178-.236.355-.914 1.154-1.12 1.389-.206.236-.413.266-.768.089-2.071-1.036-3.43-1.848-4.79-4.191-.362-.622.362-.578.931-1.733a.652.652 0 0 0-.03-.614c-.089-.178-.794-1.912-1.087-2.615-.286-.687-.577-.591-.794-.603-.206-.012-.443-.015-.679-.015-.236 0-.62.089-.944.443-.324.355-1.238 1.21-1.238 2.95s1.267 3.42 1.443 3.657c.178.236 2.49 3.797 6.033 5.328 2.243.968 3.12 1.05 4.242.883.682-.103 2.1-.859 2.396-1.69.295-.83.295-1.543.207-1.69-.087-.158-.323-.247-.678-.425z" fill="#fff"/>
+      </svg>
+      <h1>
+        <span data-lv="ar">لوحة تحكم البوت</span>
+        <span data-lv="fr">WhatsApp Bot</span>
+        <span data-lv="en">WhatsApp Bot</span>
+      </h1>
+      <p>abraje.uno — Marrakech</p>
     </div>
 
-    <div class="error-msg" id="errorMsg">كلمة المرور غير صحيحة</div>
+    <div class="error-msg" id="errorMsg"></div>
 
     <div class="form-group">
-      <label for="usernameInput">اسم المستخدم</label>
+      <label for="usernameInput">
+        <span data-lv="ar">اسم المستخدم</span>
+        <span data-lv="fr">Nom d'utilisateur</span>
+        <span data-lv="en">Username</span>
+      </label>
       <input type="text" id="usernameInput" placeholder="admin" autofocus autocomplete="username">
     </div>
 
     <div class="form-group">
-      <label for="passwordInput">كلمة المرور</label>
+      <label for="passwordInput">
+        <span data-lv="ar">كلمة المرور</span>
+        <span data-lv="fr">Mot de passe</span>
+        <span data-lv="en">Password</span>
+      </label>
       <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
     </div>
 
-    <button class="btn-login" id="loginBtn" onclick="doLogin()">دخول</button>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">
+      <span data-lv="ar">دخول</span>
+      <span data-lv="fr">Connexion</span>
+      <span data-lv="en">Sign In</span>
+    </button>
   </div>
 
   <script>
+    const _LANGS = ['ar','fr','en'];
+    const _LANG_LABELS = {ar:'عر',fr:'FR',en:'EN'};
+    function t(ar,fr,en){ const l=document.documentElement.dataset.lang||'fr'; return l==='fr'?fr:l==='en'?en:ar; }
+
+    function _applyLang(l) {
+      localStorage.setItem('navLang', l);
+      document.documentElement.dataset.lang = l;
+      const lbl = document.getElementById('langLabel');
+      if (lbl) lbl.textContent = _LANG_LABELS[l] || l;
+    }
+    function _cycleLang() {
+      const cur = document.documentElement.dataset.lang || 'ar';
+      _applyLang(_LANGS[(_LANGS.indexOf(cur) + 1) % _LANGS.length]);
+    }
+    if (!localStorage.getItem('navLang')) localStorage.setItem('navLang', 'fr');
+    _applyLang(document.documentElement.dataset.lang || 'fr');
+
     ["usernameInput","passwordInput"].forEach(id => {
       document.getElementById(id).addEventListener("keydown", e => {
         if (e.key === "Enter") doLogin();
       });
     });
+
+    const _BTN_SPANS = `<span data-lv="ar">دخول</span><span data-lv="fr">Connexion</span><span data-lv="en">Sign In</span>`;
 
     async function doLogin() {
       const username = document.getElementById("usernameInput").value.trim();
@@ -130,7 +196,7 @@
       const btn = document.getElementById("loginBtn");
       const err = document.getElementById("errorMsg");
       btn.disabled = true;
-      btn.textContent = "جاري التحقق...";
+      btn.textContent = t("جاري التحقق...","Vérification...","Checking...");
       err.classList.remove("show");
       try {
         const res  = await fetch("/api/login", {
@@ -142,17 +208,17 @@
         if (data.ok) {
           window.location.href = data.role === "admin" ? "/dashboard" : "/user-reply";
         } else {
-          err.textContent = data.error || "اسم المستخدم أو كلمة المرور غير صحيحة";
+          err.textContent = data.error || t("اسم المستخدم أو كلمة المرور غير صحيحة","Nom d'utilisateur ou mot de passe incorrect","Incorrect username or password");
           err.classList.add("show");
           document.getElementById("passwordInput").value = "";
           document.getElementById("passwordInput").focus();
         }
       } catch {
-        err.textContent = "خطأ في الاتصال بالخادم";
+        err.textContent = t("خطأ في الاتصال بالخادم","Erreur de connexion au serveur","Server connection error");
         err.classList.add("show");
       }
       btn.disabled = false;
-      btn.textContent = "دخول";
+      btn.innerHTML = _BTN_SPANS;
     }
   </script>
 </body>

@@ -6,6 +6,7 @@ let lastDateRendered = "";
 // from_date: آخر 24 ساعة افتراضياً
 let chatFromDate = last24h();
 let hasOlderMessages = true;
+let isLoadingOlder   = false;
 
 function last24h() {
   return new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -15,26 +16,62 @@ const socketSeenId = new Set();
 const socketSeenSig = new Set();
 
 // ─────────────────────────────────────────────────────
-// تحميل رسائل أقدم (يوم سابق)
+// Infinite scroll — تحميل رسائل أقدم تلقائياً عند التمرير للأعلى
 // ─────────────────────────────────────────────────────
-async function loadOlderMessages() {
-  if (!selectedPhone) return;
-  const wrap = document.getElementById("messagesWrap");
-  const btn  = document.getElementById("loadOlderBtn");
-  if (btn) { btn.disabled = true; btn.textContent = "⏳ جاري التحميل..."; }
+function _olderIndicatorHtml() {
+  return `<div id="olderIndicator" style="text-align:center;padding:6px 0 2px;color:#8696a0;font-size:0.78rem;direction:ltr">
+    <span id="olderSpinner" style="display:none">⏳ Chargement des messages plus anciens…</span>
+    <span id="olderTrigger" style="opacity:.55;font-size:0.75rem">↑ Défiler vers le haut pour charger plus</span>
+  </div>`;
+}
 
-  // نرجع 7 أيام في الوقت لكل ضغطة
+function _setOlderLoading(loading) {
+  const sp = document.getElementById("olderSpinner");
+  const tr = document.getElementById("olderTrigger");
+  if (sp) sp.style.display = loading ? "inline" : "none";
+  if (tr) tr.style.display = loading ? "none" : "inline";
+}
+
+function _removeOlderIndicator() {
+  document.getElementById("olderIndicator")?.remove();
+  const wrap = document.getElementById("messagesWrap");
+  if (wrap) wrap.removeEventListener("scroll", _onWrapScroll);
+}
+
+function _onWrapScroll() {
+  const wrap = document.getElementById("messagesWrap");
+  if (!wrap || isLoadingOlder || !hasOlderMessages) return;
+  if (wrap.scrollTop < 80) loadOlderMessages();
+}
+
+function setupInfiniteScroll() {
+  const wrap = document.getElementById("messagesWrap");
+  if (!wrap) return;
+  wrap.removeEventListener("scroll", _onWrapScroll);
+  if (hasOlderMessages) {
+    wrap.addEventListener("scroll", _onWrapScroll, { passive: true });
+  }
+}
+
+async function loadOlderMessages() {
+  if (!selectedPhone || isLoadingOlder || !hasOlderMessages) return;
+  isLoadingOlder = true;
+  _setOlderLoading(true);
+
+  const wrap = document.getElementById("messagesWrap");
+
+  // نرجع 7 أيام في الوقت لكل تحميل
   const d = new Date(chatFromDate);
   d.setDate(d.getDate() - 7);
   chatFromDate = d.toISOString();
 
-  const phone = encodeURIComponent(selectedPhone);
-  const url = `/api/messages?phone=${phone}&limit=200&from_date=${encodeURIComponent(chatFromDate)}`;
+  const url = (typeof selectedCid !== "undefined" && selectedCid)
+    ? `/api/messages?cid=${encodeURIComponent(selectedCid)}&limit=200&from_date=${encodeURIComponent(chatFromDate)}`
+    : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200&from_date=${encodeURIComponent(chatFromDate)}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     const raw = await res.json();
     const list = Array.isArray(raw) ? raw : [];
-    // فلتر الرسائل الجديدة فقط (غير موجودة في الـ DOM)
     const existing = new Set([...wrap.querySelectorAll("[data-msgid]")].map(el => el.dataset.msgid));
     const newMsgs = list
       .filter(m => isValidMessageObject(m) && !existing.has(String(m.id)))
@@ -42,18 +79,27 @@ async function loadOlderMessages() {
 
     if (newMsgs.length > 0) {
       const prevH = wrap.scrollHeight;
-      wrap.insertAdjacentHTML("afterbegin", renderMessages(newMsgs));
+      const indicator = document.getElementById("olderIndicator");
+      if (indicator) {
+        indicator.insertAdjacentHTML("afterend", renderMessages(newMsgs));
+      } else {
+        wrap.insertAdjacentHTML("afterbegin", renderMessages(newMsgs));
+      }
       wrap.scrollTop = wrap.scrollHeight - prevH; // حافظ على موضع التمرير
     }
-    // إذا رجعنا 60+ يوم بدون رسائل — أخفِ الزر
+
     const daysDiff = (new Date() - new Date(chatFromDate)) / 86400000;
     if (newMsgs.length === 0 && daysDiff > 60) {
       hasOlderMessages = false;
-      if (btn) btn.remove();
+      _removeOlderIndicator();
     } else {
-      if (btn) { btn.disabled = false; btn.textContent = "📅 تحميل رسائل أقدم (7 أيام)"; }
+      _setOlderLoading(false);
     }
-  } catch { if (btn) { btn.disabled = false; btn.textContent = "📅 تحميل رسائل أقدم (7 أيام)"; } }
+  } catch {
+    _setOlderLoading(false);
+  } finally {
+    isLoadingOlder = false;
+  }
 }
 
 // ─────────────────────────────────────────────────────
@@ -63,7 +109,7 @@ async function loadMessages(scrollToBottom = false) {
   if (!selectedPhone) return;
 
   // reset عند تغيير المحادثة
-  if (scrollToBottom) { chatFromDate = last24h(); hasOlderMessages = true; }
+  if (scrollToBottom) { chatFromDate = last24h(); hasOlderMessages = true; isLoadingOlder = false; }
 
   const wrap = document.getElementById("messagesWrap");
   if (!wrap) return;
@@ -111,14 +157,16 @@ async function loadMessages(scrollToBottom = false) {
       if (isFullLoad) {
         wrap.innerHTML = `
           <div style="text-align:center;color:#8696a0;padding:40px;font-size:0.85rem">
-            ⏳ جاري تحميل المحادثة...
+            ⏳ Chargement de la conversation...
           </div>
         `;
       }
 
       const url = isMsng
         ? `/api/messenger/messages?fb_id=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`
-        : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`;
+        : (typeof selectedCid !== "undefined" && selectedCid)
+          ? `/api/messages?cid=${encodeURIComponent(selectedCid)}&limit=200${fromParam}`
+          : `/api/messages?phone=${encodeURIComponent(selectedPhone)}&limit=200${fromParam}`;
 
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -173,12 +221,13 @@ async function loadMessages(scrollToBottom = false) {
               markUnansweredMessages();
               requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
               lastMessageId = getLastDbId(list2) || 0;
+              setupInfiniteScroll();
               return;
             }
           } catch {}
         }
         if (lastMessageId === 0 || isFullLoad) {
-          wrap.innerHTML = `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
+          wrap.innerHTML = `<div style="text-align:center;color:#8696a0;padding:30px">Aucun message pour l'instant</div>`;
         }
         return;
       }
@@ -188,18 +237,12 @@ async function loadMessages(scrollToBottom = false) {
 
     if (lastMessageId === 0 || scrollToBottom) {
       lastDateRendered = "";
-      const olderBtn = hasOlderMessages ? `
-        <div style="text-align:center;padding:10px 0 4px">
-          <button id="loadOlderBtn" onclick="loadOlderMessages()"
-            style="background:none;border:1px solid #ccc;border-radius:20px;padding:6px 18px;
-                   font-size:0.8rem;color:#667;cursor:pointer;direction:rtl">
-            📅 تحميل رسائل أقدم (7 أيام)
-          </button>
-        </div>` : "";
-      wrap.innerHTML = olderBtn + renderMessages(msgs);
+      const olderHtml = hasOlderMessages ? _olderIndicatorHtml() : "";
+      wrap.innerHTML = olderHtml + renderMessages(msgs);
       markUnansweredMessages();
       requestAnimationFrame(() => { wrap.scrollTop = wrap.scrollHeight; });
       if (newLastDbId > 0) lastMessageId = newLastDbId;
+      setupInfiniteScroll();
       return;
     }
 
@@ -232,7 +275,7 @@ async function loadMessages(scrollToBottom = false) {
     if (wrap && !wrap.innerHTML.trim()) {
       wrap.innerHTML = `
         <div style="text-align:center;color:#ff6b6b;padding:30px">
-          ❌ تعذر تحميل الرسائل
+          ❌ Impossible de charger les messages
         </div>
       `;
     }
@@ -251,7 +294,7 @@ function setMsgFilter(f) {
 
 function renderMessages(msgs) {
   if (!Array.isArray(msgs) || !msgs.length) {
-    return `<div style="text-align:center;color:#8696a0;padding:30px">لا توجد رسائل بعد</div>`;
+    return `<div style="text-align:center;color:#8696a0;padding:30px">Aucun message pour l'instant</div>`;
   }
 
   let filtered = msgs;
@@ -259,7 +302,7 @@ function renderMessages(msgs) {
   if (msgFilter === "out") filtered = msgs.filter(m => m.direction === "out");
 
   if (!filtered.length) {
-    const label = msgFilter === "in" ? "لا توجد رسائل واردة" : "لا توجد ردود";
+    const label = msgFilter === "in" ? "Aucun message reçu" : "Aucune réponse";
     return `<div style="text-align:center;color:#8696a0;padding:30px">${label}</div>`;
   }
 
@@ -279,13 +322,13 @@ function renderSingleMessage(m) {
 
   let html = "";
 
-  const dateKey = createdAt.toLocaleDateString("ar-MA");
+  const dateKey = createdAt.toLocaleDateString("fr-FR");
   if (dateKey !== lastDateRendered) {
     html += `<div class="msg-date-sep">${friendlyDate(m.created_at)}</div>`;
     lastDateRendered = dateKey;
   }
 
-  const time = createdAt.toLocaleTimeString("ar-MA", {
+  const time = createdAt.toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -302,7 +345,7 @@ function renderSingleMessage(m) {
     if (direction === "in" && Object.keys(_botPhones).length > 0) {
       const botNum = Object.values(_botPhones)[0]; // أول بوت متصل
       if (botNum) {
-        botPhoneDisplay = `<span class="bot-phone-badge" title="رقم البوت المستقبل">🤖 +${botNum}</span>`;
+        botPhoneDisplay = `<span class="bot-phone-badge" title="Numéro du bot récepteur">🤖 +${botNum}</span>`;
       }
     }
   }
@@ -332,7 +375,7 @@ function renderSingleMessage(m) {
             style="max-width:280px;max-height:220px;border-radius:8px;display:block;background:#000;outline:none"
             onloadedmetadata="extractVideoThumbnail(this)">
           </video>
-          <a href="${safe}" target="_blank" rel="noopener noreferrer" class="vid-download-btn" title="تحميل">
+          <a href="${safe}" target="_blank" rel="noopener noreferrer" class="vid-download-btn" title="Télécharger">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
           </a>
         </div>
@@ -379,23 +422,23 @@ function renderSingleMessage(m) {
     const isAudio = m.waType === "ptt" || m.waType === "audio";
     const isVideo = m.waType === "video";
     const icon    = isAudio ? "🎤" : isVideo ? "🎬" : "📷";
-    const label   = isAudio ? "رسالة صوتية" : isVideo ? "فيديو" : "صورة";
+    const label   = isAudio ? "Message vocal" : isVideo ? "Vidéo" : "Photo";
     content = `
       <div class="wa-media-dl"
         data-wa-id="${escAttr(m.wa_msg_id)}"
         data-phone="${escAttr(String(m.phone || ""))}">
         <span class="wa-media-icon">${icon}</span>
         <span class="wa-media-label">${label}</span>
-        <button class="wa-media-btn" onclick="downloadWaMedia(this)">▶ تشغيل</button>
+        <button class="wa-media-btn" onclick="downloadWaMedia(this)">▶ Lire</button>
       </div>`;
   } else {
-    content = `<span>${escHtml(body)}</span>`;
+    content = formatMessageBody(body);
   }
 
   const msgId = escAttr(String(m.id ?? ""));
   html += `
     <div class="msg-bubble ${direction}${extraClass ? " " + extraClass : ""}" data-id="${msgId}" data-msgid="${msgId}" data-source="${escAttr(m.source||'')}">
-      <button class="msg-menu-btn" onclick="toggleMsgMenu(this)" title="خيارات">
+      <button class="msg-menu-btn" onclick="toggleMsgMenu(this)" title="Options">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
           <path d="M7 10l5 5 5-5z"/>
         </svg>
@@ -403,7 +446,7 @@ function renderSingleMessage(m) {
       <div class="msg-menu">
         <div class="msg-menu-item delete" onclick="deleteMessage('${msgId}', this)">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          حذف
+          Supprimer
         </div>
       </div>
       ${content}
@@ -477,7 +520,7 @@ async function deleteMessage(msgId, el) {
     bubble.style.maxHeight  = "";
     bubble.style.marginBottom = "";
     console.error("حذف فشل:", err);
-    if (typeof showToast === "function") showToast("❌ فشل الحذف");
+    if (typeof showToast === "function") showToast("❌ Échec de suppression");
   }
 }
 
@@ -495,7 +538,7 @@ async function downloadWaMedia(btn) {
     const res  = await fetch(`/api/wa-media?msgId=${encodeURIComponent(waId)}&phone=${encodeURIComponent(phone)}`);
     const data = await res.json();
     if (!data.ok || !data.url) {
-      btn.textContent = "❌ فشل";
+      btn.textContent = "❌ Échec";
       btn.disabled = false;
       return;
     }
@@ -530,7 +573,7 @@ async function downloadWaMedia(btn) {
     }
     if (playerHtml) container.outerHTML = playerHtml;
   } catch {
-    btn.textContent = "❌ خطأ";
+    btn.textContent = "❌ Erreur";
     btn.disabled = false;
   }
 }
@@ -717,6 +760,91 @@ function getPauseIcon() {
   `;
 }
 
+// ─────────────────────────────────────────────────────
+// Maps & URL rendering
+// ─────────────────────────────────────────────────────
+const _URL_RE = /https?:\/\/[^\s<>"'{}|\\^`\[\]،؛]+/gi;
+
+function _isMapsUrl(url) {
+  return /maps\.google\.|google\.[a-z]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i.test(url);
+}
+
+function _parseMapsCoords(url) {
+  let m;
+  // /@lat,lng,zoom
+  m = url.match(/@([-\d.]+),([-\d.]+)/);
+  if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  // ?q=lat,lng  or  &q=lat,lng
+  m = url.match(/[?&]q=([-\d.]+),([-\d.]+)/);
+  if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  // !3d...!4d...  (embed format)
+  m = url.match(/!3d([-\d.]+)!4d([-\d.]+)/);
+  if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  return null;
+}
+
+function _renderMapsCard(url) {
+  const coords = _parseMapsCoords(url);
+  const coordsText = coords
+    ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+    : "";
+  // thumbnail via OpenStreetMap staticmap (free, no API key)
+  const thumbUrl = coords
+    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${coords.lat},${coords.lng}&zoom=15&size=280x120&markers=${coords.lat},${coords.lng},lightblue1-pushpin`
+    : "";
+
+  return `
+    <div class="maps-card" onclick="window.open('${escAttr(url)}','_blank')">
+      <div class="maps-card-map">
+        ${thumbUrl
+          ? `<img src="${escAttr(thumbUrl)}" alt="Carte" loading="lazy"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ""}
+        <div class="maps-pin-ph" ${thumbUrl ? 'style="display:none"' : ""}>
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="#25d366"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+      </div>
+      <div class="maps-card-info">
+        <div class="maps-card-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="#25d366" style="flex-shrink:0"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          Localisation
+        </div>
+        ${coordsText ? `<div class="maps-card-coords">${escHtml(coordsText)}</div>` : ""}
+        <div class="maps-card-open">Ouvrir dans Google Maps ›</div>
+      </div>
+    </div>`;
+}
+
+function formatMessageBody(body) {
+  const trimmed = body.trim();
+  _URL_RE.lastIndex = 0;
+
+  // If the whole message is just a Maps URL → show card only (no text)
+  if (_URL_RE.test(trimmed) && _isMapsUrl(trimmed) && !trimmed.includes(" ")) {
+    return _renderMapsCard(trimmed);
+  }
+
+  // Otherwise scan for URLs inline
+  _URL_RE.lastIndex = 0;
+  let html = "";
+  let last = 0;
+  let m;
+
+  while ((m = _URL_RE.exec(body)) !== null) {
+    html += escHtml(body.slice(last, m.index));
+    const url = m[0];
+    if (_isMapsUrl(url)) {
+      html += _renderMapsCard(url);
+    } else {
+      html += `<a href="${escAttr(url)}" target="_blank" rel="noopener noreferrer" class="msg-url">${escHtml(url)}</a>`;
+    }
+    last = m.index + url.length;
+  }
+  html += escHtml(body.slice(last));
+
+  return `<span class="msg-text">${html}</span>`;
+}
+
 function escHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -738,10 +866,10 @@ function friendlyDate(dateStr) {
   const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const diffDays = Math.floor((today - target) / 86400000);
 
-  if (diffDays === 0) return "اليوم";
-  if (diffDays === 1) return "أمس";
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return "Hier";
 
-  return d.toLocaleDateString("ar-MA", {
+  return d.toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -749,9 +877,9 @@ function friendlyDate(dateStr) {
 }
 
 function srcLabel(s) {
-  if (s === "ai") return "ذكاء";
-  if (s === "custom") return "مبرمج";
-  if (s === "default") return "افتراضي";
+  if (s === "ai") return "IA";
+  if (s === "custom") return "programmé";
+  if (s === "default") return "auto";
   return String(s || "");
 }
 

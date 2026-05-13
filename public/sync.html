@@ -1,394 +1,603 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مزامنة الوسائط — واتساب بوت</title>
+  <title>Synchronisation WhatsApp</title>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --green:#075e54;--teal:#128c7e;--g:#25d366;
+      --bg:#f0f2f5;--bd:#e0e0e0;--card:#fff;
+    }
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+      background:var(--bg);color:#111b21;direction:ltr}
 
-    header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    /* ─── Header ─── */
+    header{
+      background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;
+      padding:0 24px;height:56px;display:flex;align-items:center;gap:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:50;
     }
-    header h1 { font-size: 1.3rem; }
-    .nav-links a {
-      color: white; text-decoration: none; margin-right: 12px;
-      font-size: 0.85rem; padding: 6px 12px;
-      border-radius: 8px; transition: background 0.2s;
+    .h-title{font-size:1.05rem;font-weight:700;flex:1}
+    .nav-links a{
+      color:rgba(255,255,255,.85);text-decoration:none;font-size:.8rem;
+      padding:5px 11px;border-radius:8px;white-space:nowrap;margin-left:4px;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .nav-links a:hover{background:rgba(255,255,255,.2);color:#fff}
 
-    .container { max-width: 680px; margin: 40px auto; padding: 0 20px; }
+    /* ─── Page layout ─── */
+    .page{max-width:740px;margin:32px auto;padding:0 20px 60px}
 
-    .card {
-      background: white; border-radius: 16px; padding: 36px 32px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px;
+    /* ─── Status banner ─── */
+    .wa-status{
+      display:flex;align-items:center;gap:10px;
+      background:#fff;border-radius:12px;padding:13px 18px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:22px;
     }
-    .card h2 { font-size: 1.2rem; color: #075e54; margin-bottom: 8px; }
-    .card p  { font-size: 0.9rem; color: #666; line-height: 1.6; margin-bottom: 20px; }
+    .wa-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+    .wa-dot.ok{background:#25d366;box-shadow:0 0 0 3px rgba(37,211,102,.2)}
+    .wa-dot.err{background:#e53935;box-shadow:0 0 0 3px rgba(229,57,53,.2)}
+    .wa-dot.spin-dot{background:#ff9800;animation:pulse .8s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .wa-status-txt{font-size:.85rem;font-weight:600;flex:1}
+    .wa-status-sub{font-size:.75rem;color:#888;margin-top:1px}
 
-    .stats-row {
-      display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+    /* ─── Card ─── */
+    .card{
+      background:#fff;border-radius:16px;padding:28px 26px;
+      box-shadow:0 1px 6px rgba(0,0,0,.08);margin-bottom:20px;
     }
-    .stat {
-      flex: 1; min-width: 110px; background: #f8f9fa; border-radius: 12px;
-      padding: 14px 16px; text-align: center;
+    .card-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .card-head h2{font-size:1.1rem;color:var(--green);font-weight:700}
+    .card-head .badge-new{
+      background:#e8f5e9;color:#2e7d32;font-size:.68rem;font-weight:700;
+      padding:2px 8px;border-radius:10px;
     }
-    .stat .num  { font-size: 1.8rem; font-weight: 700; color: #075e54; }
-    .stat .lbl  { font-size: 0.78rem; color: #888; margin-top: 4px; }
+    .card p{font-size:.86rem;color:#666;line-height:1.65;margin-bottom:20px}
 
-    .progress-wrap {
-      background: #e8e8e8; border-radius: 8px; height: 14px;
-      overflow: hidden; margin-bottom: 12px; display: none;
+    /* ─── Stats grid ─── */
+    .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .stat{
+      flex:1;min-width:90px;background:#f8f9fa;border-radius:12px;
+      padding:12px 14px;text-align:center;
     }
-    .progress-bar {
-      height: 100%; background: linear-gradient(90deg, #25d366, #128c7e);
-      transition: width 0.4s; width: 0;
-    }
-    .progress-text {
-      font-size: 0.85rem; color: #555; margin-bottom: 6px;
-      min-height: 20px;
-    }
-    .current-chat {
-      font-size: 0.8rem; color: #888; margin-bottom: 20px;
-      min-height: 18px; font-style: italic;
-    }
+    .stat .num{font-size:1.6rem;font-weight:700}
+    .stat .lbl{font-size:.72rem;color:#888;margin-top:3px;line-height:1.3}
 
-    .btn {
-      padding: 12px 28px; border: none; border-radius: 10px;
-      cursor: pointer; font-size: 0.95rem; font-weight: 700;
-      transition: opacity 0.2s;
+    /* ─── Progress ─── */
+    .prog-lbl{font-size:.83rem;color:#555;margin-bottom:6px;min-height:18px}
+    .prog-sub{font-size:.75rem;color:#888;margin-bottom:10px;min-height:16px;font-style:italic}
+    .prog-track{
+      background:#e8e8e8;border-radius:8px;height:12px;
+      overflow:hidden;margin-bottom:16px;display:none;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-green  { background: #25d366; color: white; }
-    .btn-gray   { background: #aaa; color: white; }
-    .btn-red    { background: #e53935; color: white; }
-
-    .notice {
-      background: #fff8e1; border-right: 4px solid #ffc107;
-      border-radius: 8px; padding: 12px 16px; font-size: 0.85rem;
-      color: #666; margin-top: 20px; line-height: 1.6;
-    }
-    .done-msg {
-      background: #e8f5e9; border-right: 4px solid #25d366;
-      border-radius: 8px; padding: 12px 16px; font-size: 0.9rem;
-      color: #2e7d32; margin-top: 16px; display: none; font-weight: 600;
-    }
-    .error-msg {
-      background: #fce4ec; border-right: 4px solid #e53935;
-      border-radius: 8px; padding: 12px 16px; font-size: 0.85rem;
-      color: #b71c1c; margin-top: 16px; display: none;
+    .prog-bar{
+      height:100%;background:linear-gradient(90deg,#25d366,#128c7e);
+      transition:width .4s;width:0;border-radius:8px;
     }
 
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200;
+    /* ─── Buttons ─── */
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      padding:11px 24px;border:none;border-radius:10px;
+      cursor:pointer;font-size:.9rem;font-weight:700;
+      transition:opacity .2s;font-family:inherit;white-space:nowrap;
     }
-    #toast.show { opacity: 1; }
+    .btn:hover{opacity:.85}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn-green{background:var(--g);color:#fff}
+    .btn-blue{background:var(--teal);color:#fff}
+    .btn-gray{background:#aaa;color:#fff}
+    .btn-red{background:#e53935;color:#fff}
+
+    /* ─── Limit select ─── */
+    .limit-row{
+      display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;
+    }
+    .limit-row label{font-size:.82rem;color:#555;font-weight:600}
+    .limit-sel{
+      padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;
+      font-size:.85rem;outline:none;font-family:inherit;
+      background:#fff;cursor:pointer;color:#333;
+    }
+    .limit-sel:focus{border-color:var(--teal)}
+
+    /* ─── Alert boxes ─── */
+    .alert{
+      border-radius:10px;padding:12px 16px;font-size:.84rem;
+      line-height:1.6;margin-top:14px;display:none;
+      border-left:4px solid;
+    }
+    .alert.info{background:#e3f2fd;border-color:#1976d2;color:#1565c0}
+    .alert.success{background:#e8f5e9;border-color:#25d366;color:#2e7d32;font-weight:600}
+    .alert.error{background:#fce4ec;border-color:#e53935;color:#b71c1c}
+    .alert.warn{background:#fff8e1;border-color:#ffc107;color:#7a5c00;display:block}
+
+    /* ─── Divider ─── */
+    .divider{height:1px;background:var(--bd);margin:22px 0}
+
+    /* ─── Type chips ─── */
+    .type-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+    .type-chip{
+      display:flex;align-items:center;gap:6px;
+      padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:600;
+      border:2px solid transparent;cursor:pointer;transition:all .15s;
+      background:#f0f0f0;color:#555;user-select:none;
+    }
+    .type-chip.on{border-color:var(--teal);background:#e0f4f1;color:var(--teal)}
+
+    /* ─── Toast ─── */
+    #toast{
+      position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+      background:#1a1a2e;color:#fff;padding:9px 22px;border-radius:10px;
+      font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:400;
+    }
+    #toast.show{opacity:1}
+
+    @media(max-width:600px){
+      header{padding:0 14px}
+      .page{padding:0 12px 40px;margin-top:20px}
+      .card{padding:20px 16px}
+      .stats{gap:8px}
+      .stat{min-width:calc(50% - 4px)}
+    }
   </style>
 </head>
 <body>
 
-<header id="app-header"></header>
+<header>
+  <span style="font-size:1.3rem">🔄</span>
+  <span class="h-title">Synchronisation WhatsApp</span>
+  <nav class="nav-links">
+    <a href="/images">📸 Photos</a>
+    <a href="/dashboard">🏠 Accueil</a>
+  </nav>
+</header>
 
-<div class="container">
-  <div class="card">
-    <h2>📥 استيراد جميع الرسائل والكونتكت من واتساب</h2>
-    <p>هذه الأداة تمر على جميع محادثاتك في <b>جميع البوتات المتصلة</b> وتحفظ <b>جهات الاتصال + الرسائل النصية + الصور + الفيديوهات</b> القديمة في قاعدة البيانات حتى تظهر في لوحة التحكم والشات.</p>
+<div class="page">
 
-    <div class="stats-row">
-      <div class="stat"><div class="num" id="sDone"    style="color:#075e54">—</div><div class="lbl">محادثة منتهية</div></div>
-      <div class="stat"><div class="num" id="sTotal"   style="color:#075e54">—</div><div class="lbl">إجمالي المحادثات</div></div>
-      <div class="stat"><div class="num" id="sSaved"   style="color:#25d366">—</div><div class="lbl">رسائل محفوظة</div></div>
-      <div class="stat"><div class="num" id="sSkipped" style="color:#ff9800">—</div><div class="lbl">تخطي (غير متاح)</div></div>
-      <div class="stat"><div class="num" id="sErrors"  style="color:#e53935">—</div><div class="lbl">أخطاء</div></div>
-    </div>
-
-    <div style="background:#e8f5e9;border-right:3px solid #25d366;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.85rem;color:#2e7d32">
-      ⚡ <b>طريقة المزامنة الجديدة:</b> تحفظ جميع جهات الاتصال + آخر رسائلها مباشرة من الذاكرة — سريعة وموثوقة.
-    </div>
-
-    <div class="progress-text" id="progressText">اضغط "ابدأ المزامنة" للبدء</div>
-    <div class="current-chat" id="currentChat"></div>
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-green" id="startBtn" onclick="startSync()">▶ ابدأ المزامنة</button>
-      <button class="btn btn-gray"  id="stopBtn"  onclick="stopSync()" style="display:none">⏹️ إيقاف</button>
-    </div>
-
-    <div class="done-msg"  id="doneMsg">✅ اكتملت المزامنة! يمكنك الآن مشاهدة جميع الوسائط في الصور والفيديوهات.</div>
-    <div class="error-msg" id="errorMsg"></div>
-
-    <div class="notice">
-      ⚠️ <b>ملاحظات:</b><br>
-      • المزامنة قد تأخذ وقتاً حسب عدد المحادثات وحجم الوسائط.<br>
-      • واتساب يحذف الوسائط القديمة من سيرفراته — بعض الملفات قد لا تكون متاحة.<br>
-      • لن يتم حفظ نفس الرسالة مرتين (يتحقق من التكرار تلقائياً).<br>
-      • بعض المحادثات تُتخطى تلقائياً (<b>غير متاح</b>) — هذا طبيعي ولا يعني خطأ.<br>
-      • يجب أن يكون البوت متصلاً بواتساب لتعمل المزامنة.
+  <!-- ── Statut WhatsApp ── -->
+  <div class="wa-status" id="waStatusBox">
+    <div class="wa-dot spin-dot" id="waDot"></div>
+    <div>
+      <div class="wa-status-txt" id="waStatusTxt">Vérification de la connexion WhatsApp…</div>
+      <div class="wa-status-sub" id="waStatusSub"></div>
     </div>
   </div>
-</div>
 
-<!-- ═══ بطاقة المزامنة الكاملة ═══ -->
-<div class="container" style="margin-top:0">
+  <!-- ══════════════════════════════════════
+       CARTE 1 — SYNC RAPIDE
+  ═══════════════════════════════════════════ -->
   <div class="card">
-    <h2>🗂️ مزامنة كاملة — نصوص + صور + صوت + فيديو</h2>
-    <p>تمر على كل محادثة وتنزّل <b>جميع الرسائل</b> (نصوص، صور، أصوات، فيديوهات) وتحفظها في قاعدة البيانات ومجلدات الملفات. أبطأ من المزامنة السريعة لكن أكثر شمولاً.</p>
+    <div class="card-head">
+      <h2>⚡ Sync rapide — Contacts &amp; derniers messages</h2>
+      <span class="badge-new">Recommandé</span>
+    </div>
+    <p>
+      Parcourt toutes vos conversations WhatsApp et sauvegarde <b>les contacts</b> +
+      <b>les derniers messages</b> directement depuis la mémoire du bot.
+      Rapide et fiable — idéal pour une mise à jour régulière.
+    </p>
 
-    <div class="stats-row">
-      <div class="stat"><div class="num" id="fDone"   style="color:#075e54">—</div><div class="lbl">محادثة</div></div>
-      <div class="stat"><div class="num" id="fTotal"  style="color:#075e54">—</div><div class="lbl">الإجمالي</div></div>
-      <div class="stat"><div class="num" id="fText"   style="color:#128c7e">—</div><div class="lbl">💬 نصوص</div></div>
-      <div class="stat"><div class="num" id="fImages" style="color:#1976d2">—</div><div class="lbl">📷 صور</div></div>
-      <div class="stat"><div class="num" id="fVoices" style="color:#e91e63">—</div><div class="lbl">🎤 أصوات</div></div>
-      <div class="stat"><div class="num" id="fVideos" style="color:#ff5722">—</div><div class="lbl">🎬 فيديو</div></div>
-      <div class="stat"><div class="num" id="fSkip"   style="color:#ff9800">—</div><div class="lbl">⚠️ منتهية</div></div>
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="num" id="sDone" style="color:var(--green)">—</div>
+        <div class="lbl">Conversations<br>traitées</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="sTotal" style="color:var(--green)">—</div>
+        <div class="lbl">Total<br>conversations</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="sSaved" style="color:#25d366">—</div>
+        <div class="lbl">Messages<br>sauvegardés</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="sSkipped" style="color:#ff9800">—</div>
+        <div class="lbl">Ignorés<br>(indisponibles)</div>
+      </div>
+      <div class="stat" id="sErrStat" style="display:none">
+        <div class="num" id="sErrors" style="color:#e53935">—</div>
+        <div class="lbl">Erreurs</div>
+      </div>
     </div>
 
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <label style="font-size:.85rem;color:#555">رسائل لكل محادثة:</label>
-      <select id="msgLimit" style="padding:6px 10px;border-radius:8px;border:1.5px solid #ddd;font-size:.88rem">
-        <option value="50">50 رسالة</option>
-        <option value="100" selected>100 رسالة</option>
-        <option value="200">200 رسالة</option>
-        <option value="500">500 رسالة (بطيء)</option>
+    <!-- Progress -->
+    <div class="prog-lbl" id="progressText">Cliquez "Démarrer" pour commencer la sync rapide.</div>
+    <div class="prog-sub" id="currentChat"></div>
+    <div class="prog-track" id="progressWrap">
+      <div class="prog-bar" id="progressBar"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" id="startBtn" onclick="startSync()">
+        ▶ Démarrer la sync
+      </button>
+      <button class="btn btn-gray" id="stopBtn" onclick="stopSync()" style="display:none">
+        ⏹ Arrêter
+      </button>
+    </div>
+
+    <div class="alert success" id="doneMsg"></div>
+    <div class="alert error"   id="errorMsg"></div>
+
+    <div class="divider"></div>
+    <div class="alert warn" style="display:block">
+      💡 <b>Notes :</b><br>
+      • La sync peut prendre quelques minutes selon le nombre de conversations.<br>
+      • Les doublons sont automatiquement ignorés — aucun risque de doublon.<br>
+      • Le bot doit être connecté à WhatsApp pour que la sync fonctionne.<br>
+      • Vous pouvez arrêter à tout moment — les données déjà sauvegardées sont conservées.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       CARTE 2 — SYNC COMPLÈTE
+  ═══════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>🗂 Sync complète — Tout l'historique WhatsApp</h2>
+    </div>
+    <p>
+      Parcourt <b>chaque conversation</b> et télécharge <b>tous les messages</b> —
+      textes, photos, audios, vidéos — dans la base de données et les dossiers fichiers.
+      Plus lent que la sync rapide mais <b>100% complet</b>.
+    </p>
+
+    <!-- Stats full -->
+    <div class="stats">
+      <div class="stat">
+        <div class="num" id="fDone" style="color:var(--green)">—</div>
+        <div class="lbl">Conversations<br>traitées</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fTotal" style="color:var(--green)">—</div>
+        <div class="lbl">Total<br>conversations</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fText" style="color:#128c7e">—</div>
+        <div class="lbl">💬 Messages<br>texte</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fImages" style="color:#1976d2">—</div>
+        <div class="lbl">📷 Photos<br>sauvegardées</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fVoices" style="color:#e91e63">—</div>
+        <div class="lbl">🎤 Audios<br>sauvegardés</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fVideos" style="color:#ff5722">—</div>
+        <div class="lbl">🎬 Vidéos<br>sauvegardées</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="fSkip" style="color:#ff9800">—</div>
+        <div class="lbl">⚠️ Conversations<br>ignorées</div>
+      </div>
+    </div>
+
+    <!-- Limit selector -->
+    <div class="limit-row">
+      <label>📩 Messages par conversation :</label>
+      <select class="limit-sel" id="msgLimit">
+        <option value="100">100 messages</option>
+        <option value="300">300 messages</option>
+        <option value="500">500 messages</option>
+        <option value="1000">1 000 messages</option>
+        <option value="all" selected>📂 Tout l'historique (plus lent)</option>
       </select>
     </div>
 
-    <div class="progress-text" id="fProgressText">اضغط "ابدأ المزامنة الكاملة" للبدء</div>
-    <div class="current-chat" id="fCurrentChat"></div>
-    <div class="progress-wrap" id="fProgressWrap">
-      <div class="progress-bar" id="fProgressBar"></div>
+    <!-- Progress full -->
+    <div class="prog-lbl" id="fProgressText">Cliquez "Démarrer sync complète" pour commencer.</div>
+    <div class="prog-sub" id="fCurrentChat"></div>
+    <div class="prog-track" id="fProgressWrap">
+      <div class="prog-bar" id="fProgressBar"></div>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="btn btn-green" id="fStartBtn" onclick="startFullSync()">🗂️ ابدأ المزامنة الكاملة</button>
-      <button class="btn btn-red"   id="fStopBtn"  onclick="stopFullSync()" style="display:none">⏹️ إيقاف</button>
+    <div class="btn-row">
+      <button class="btn btn-blue" id="fStartBtn" onclick="startFullSync()">
+        🗂 Démarrer sync complète
+      </button>
+      <button class="btn btn-red" id="fStopBtn" onclick="stopFullSync()" style="display:none">
+        ⏹ Arrêter
+      </button>
     </div>
 
-    <div class="done-msg"  id="fDoneMsg"></div>
-    <div class="error-msg" id="fErrorMsg"></div>
+    <div class="alert success" id="fDoneMsg"></div>
+    <div class="alert error"   id="fErrorMsg"></div>
 
-    <div class="notice" style="margin-top:16px">
-      ⚠️ <b>ملاحظات:</b><br>
-      • تنزيل الوسائط قد يستغرق وقتاً طويلاً (واتساب يحدّ السرعة).<br>
-      • الوسائط القديمة (+30 يوم) قد تكون محذوفة من سيرفرات واتساب — ستُسجَّل كـ "📷 صورة" بدون ملف.<br>
-      • يمكنك إيقاف المزامنة في أي وقت والاستئناف لاحقاً — الرسائل المحفوظة تبقى.
+    <div class="divider"></div>
+    <div class="alert warn" style="display:block">
+      💡 <b>Notes :</b><br>
+      • Le téléchargement des médias peut prendre du temps — WhatsApp limite la vitesse.<br>
+      • Les médias de plus de 30 jours peuvent être supprimés des serveurs WhatsApp — ils seront enregistrés comme "📷 Photo" sans fichier joint.<br>
+      • Vous pouvez arrêter la sync à tout moment et reprendre plus tard — les données sauvegardées sont conservées.
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════
+       CARTE 3 — INFORMATIONS
+  ═══════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-head">
+      <h2>ℹ️ Que fait la synchronisation ?</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:4px">
+      <div style="background:#e8f5e9;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">👥</div>
+        <div style="font-size:.85rem;font-weight:700;color:#2e7d32;margin-bottom:3px">Contacts</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">Numéro, nom, photo de profil de chaque contact WhatsApp.</div>
+      </div>
+      <div style="background:#e3f2fd;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">💬</div>
+        <div style="font-size:.85rem;font-weight:700;color:#1565c0;margin-bottom:3px">Messages texte</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">Tous les messages envoyés et reçus, horodatés et classés.</div>
+      </div>
+      <div style="background:#f3e5f5;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">📷</div>
+        <div style="font-size:.85rem;font-weight:700;color:#7b1fa2;margin-bottom:3px">Photos</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">Toutes les images reçues, avec MIME type et taille.</div>
+      </div>
+      <div style="background:#fff3e0;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">🎤</div>
+        <div style="font-size:.85rem;font-weight:700;color:#e65100;margin-bottom:3px">Messages vocaux</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">Audios et messages vocaux sauvegardés en .ogg/mp3.</div>
+      </div>
+      <div style="background:#fce4ec;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">🎬</div>
+        <div style="font-size:.85rem;font-weight:700;color:#c62828;margin-bottom:3px">Vidéos</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">Toutes les vidéos reçues, stockées dans /uploads/videos.</div>
+      </div>
+      <div style="background:#f0f2f5;border-radius:12px;padding:14px 16px">
+        <div style="font-size:1.5rem;margin-bottom:6px">🔗</div>
+        <div style="font-size:.85rem;font-weight:700;color:#455a64;margin-bottom:3px">Liens &amp; docs</div>
+        <div style="font-size:.78rem;color:#555;line-height:1.5">URLs et documents partagés, sauvegardés comme messages texte.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div id="toast"></div>
 
 <script>
-  let pollInterval = null;
-  let fullPollInterval = null;
+// ── Utils ─────────────────────────────────────────────────────────────────────
+let _toastT;
+function showToast(msg){
+  const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");
+  clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove("show"),3500);
+}
+function fmt(n){ return Number(n||0).toLocaleString("fr-FR"); }
 
-  async function startSync() {
-    const btn  = document.getElementById("startBtn");
-    const stop = document.getElementById("stopBtn");
-    btn.disabled = true;
-    btn.textContent = "⏳ جاري البدء...";
-    stop.style.display = "inline-block";
-    document.getElementById("doneMsg").style.display  = "none";
-    document.getElementById("errorMsg").style.display = "none";
-
-    try {
-      const res   = await fetch("/api/wa-sync-media", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        showError(data.error || "فشل بدء المزامنة");
-        btn.disabled = false;
-        btn.textContent = "▶ ابدأ المزامنة";
-        stop.style.display = "none";
-        return;
-      }
-      showToast("✅ " + data.message);
-      document.getElementById("progressWrap").style.display = "block";
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(pollStatus, 1500);
-    } catch (e) {
-      showError("❌ تعذر الاتصال بالسيرفر: " + e.message);
-      btn.disabled = false;
-      btn.textContent = "▶ ابدأ المزامنة";
-      stop.style.display = "none";
+// ── WhatsApp connection status ─────────────────────────────────────────────────
+async function checkWaStatus(){
+  try{
+    const d = await fetch("/api/status").then(r=>r.json());
+    const dot = document.getElementById("waDot");
+    const txt = document.getElementById("waStatusTxt");
+    const sub = document.getElementById("waStatusSub");
+    if(d.connected || d.status==="connected" || d.status==="ready"){
+      dot.className="wa-dot ok";
+      txt.textContent = "✅ WhatsApp connecté — Sync disponible";
+      sub.textContent = d.phone ? `Numéro : +${d.phone}` : "";
+    } else if(d.status==="qr" || d.status==="authenticating"){
+      dot.className="wa-dot spin-dot";
+      txt.textContent = "⏳ En attente de connexion WhatsApp…";
+      sub.textContent = "Scannez le QR code sur la page QR.";
+    } else {
+      dot.className="wa-dot err";
+      txt.textContent = "❌ WhatsApp non connecté — Sync impossible";
+      sub.textContent = "Reconnectez le bot avant de lancer la sync.";
     }
+  } catch {
+    document.getElementById("waDot").className="wa-dot err";
+    document.getElementById("waStatusTxt").textContent = "❌ Impossible de vérifier le statut";
   }
+}
 
-  async function stopSync() {
-    try {
-      await fetch("/api/wa-sync-stop", { method: "POST" });
-      showToast("⏹️ تم إيقاف المزامنة");
-    } catch {}
+// ══ SYNC RAPIDE ════════════════════════════════════════════════════════════════
+let pollInterval = null;
+
+async function startSync(){
+  const btn  = document.getElementById("startBtn");
+  const stop = document.getElementById("stopBtn");
+  btn.disabled=true; btn.textContent="⏳ Démarrage…";
+  stop.style.display="inline-block";
+  document.getElementById("doneMsg").style.display="none";
+  document.getElementById("errorMsg").style.display="none";
+
+  try{
+    const res  = await fetch("/api/wa-sync-media",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    const data = await res.json();
+    if(!res.ok||data.error){
+      showAlert("errorMsg", data.error||"Échec de démarrage de la synchronisation.");
+      btn.disabled=false; btn.textContent="▶ Démarrer la sync";
+      stop.style.display="none"; return;
+    }
+    showToast("✅ "+data.message);
+    document.getElementById("progressWrap").style.display="block";
+    if(pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollStatus, 1500);
+  } catch(e){
+    showAlert("errorMsg","❌ Impossible de contacter le serveur : "+e.message);
+    btn.disabled=false; btn.textContent="▶ Démarrer la sync";
+    stop.style.display="none";
   }
+}
 
-  async function pollStatus() {
-    try {
-      const res    = await fetch("/api/wa-sync-status");
-      const status = await res.json();
+async function stopSync(){
+  try{ await fetch("/api/wa-sync-stop",{method:"POST"}); showToast("⏹ Synchronisation arrêtée"); } catch{}
+}
 
-      document.getElementById("sDone").textContent    = status.done    ?? "—";
-      document.getElementById("sTotal").textContent   = status.total   ?? "—";
-      document.getElementById("sSaved").textContent   = status.saved   ?? "—";
-      document.getElementById("sSkipped").textContent = status.skipped ?? "—";
-      document.getElementById("sErrors").textContent  = status.errors  ?? "—";
+async function pollStatus(){
+  try{
+    const s = await fetch("/api/wa-sync-status").then(r=>r.json());
 
-      // إخفاء sErrors إذا صفر
-      document.getElementById("sErrors").closest(".stat").style.display =
-        (status.errors > 0) ? "" : "none";
+    document.getElementById("sDone").textContent    = fmt(s.done);
+    document.getElementById("sTotal").textContent   = fmt(s.total);
+    document.getElementById("sSaved").textContent   = fmt(s.saved);
+    document.getElementById("sSkipped").textContent = fmt(s.skipped);
+    document.getElementById("sErrors").textContent  = fmt(s.errors);
+    document.getElementById("sErrStat").style.display = s.errors>0?"":"none";
 
-      const pct = status.total > 0 ? Math.round((status.done / status.total) * 100) : 0;
-      document.getElementById("progressBar").style.width = pct + "%";
-      document.getElementById("progressText").textContent =
-        status.running
-          ? `جاري المعالجة: ${status.done} / ${status.total} محادثة (${pct}%)`
-          : `منتهية: ${status.done} / ${status.total} محادثة`;
-      document.getElementById("currentChat").textContent =
-        status.running && status.currentChat ? `📱 ${status.currentChat}` : "";
+    const pct = s.total>0 ? Math.round((s.done/s.total)*100) : 0;
+    document.getElementById("progressBar").style.width = pct+"%";
+    document.getElementById("progressText").textContent = s.running
+      ? `⏳ Traitement : ${fmt(s.done)} / ${fmt(s.total)} conversation(s) — ${pct}%`
+      : `✔ Terminé : ${fmt(s.done)} / ${fmt(s.total)}`;
+    document.getElementById("currentChat").textContent =
+      s.running && s.currentChat ? `📱 En cours : ${s.currentChat}` : "";
 
-      // عرض آخر خطأ
-      if (status.lastError) {
-        const errEl = document.getElementById("errorMsg");
-        errEl.textContent = status.lastError;
-        errEl.style.display = "block";
+    if(s.lastError) showAlert("errorMsg", s.lastError);
+
+    if(!s.running){
+      clearInterval(pollInterval);
+      document.getElementById("startBtn").disabled=false;
+      document.getElementById("startBtn").textContent="▶ Relancer la sync";
+      document.getElementById("stopBtn").style.display="none";
+      if(!s.lastError||s.saved>0){
+        let msg = `✅ Sync terminée ! ${fmt(s.saved)} message(s) sauvegardé(s).`;
+        if(s.skipped>0) msg += ` · ${fmt(s.skipped)} conversation(s) ignorée(s).`;
+        if(s.errors>0)  msg += ` · ${fmt(s.errors)} erreur(s).`;
+        showAlert("doneMsg", msg);
       }
+    }
+  } catch{}
+}
 
-      if (!status.running) {
-        clearInterval(pollInterval);
-        document.getElementById("startBtn").disabled = false;
-        document.getElementById("startBtn").textContent = "▶ إعادة المزامنة";
-        document.getElementById("stopBtn").style.display = "none";
+async function loadInitialStatus(){
+  try{
+    const s = await fetch("/api/wa-sync-status").then(r=>r.json());
+    if(s.total>0){
+      document.getElementById("sDone").textContent    = fmt(s.done);
+      document.getElementById("sTotal").textContent   = fmt(s.total);
+      document.getElementById("sSaved").textContent   = fmt(s.saved);
+      document.getElementById("sSkipped").textContent = fmt(s.skipped);
+      document.getElementById("sErrors").textContent  = fmt(s.errors);
+    }
+    if(s.running){
+      document.getElementById("startBtn").disabled=true;
+      document.getElementById("startBtn").textContent="⏳ Sync en cours…";
+      document.getElementById("stopBtn").style.display="inline-block";
+      document.getElementById("progressWrap").style.display="block";
+      pollInterval = setInterval(pollStatus, 1500);
+    }
+  } catch{}
+}
 
-        // نجاح أو إيقاف
-        if (!status.lastError || status.saved > 0) {
-          document.getElementById("doneMsg").style.display = "block";
-          const parts = [`✅ اكتملت المزامنة! ${status.saved} رسالة محفوظة`];
-          if (status.skipped > 0) parts.push(`${status.skipped} محادثة متخطاة (غير متاحة)`);
-          if (status.errors  > 0) parts.push(`${status.errors} أخطاء`);
-          document.getElementById("doneMsg").textContent = parts.join(" · ") + ".";
-        }
+// ══ SYNC COMPLÈTE ══════════════════════════════════════════════════════════════
+let fullPollInterval = null;
+
+async function startFullSync(){
+  const btn  = document.getElementById("fStartBtn");
+  const stop = document.getElementById("fStopBtn");
+  btn.disabled=true; btn.textContent="⏳ Démarrage…";
+  stop.style.display="inline-block";
+  document.getElementById("fDoneMsg").style.display="none";
+  document.getElementById("fErrorMsg").style.display="none";
+  const limit = document.getElementById("msgLimit").value;
+
+  try{
+    const r = await fetch("/api/wa-sync-full",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({msgLimit: limit==="all"?"all":parseInt(limit)})
+    });
+    const d = await r.json();
+    if(!r.ok||d.error){
+      showAlert("fErrorMsg", d.error||"Échec de démarrage.");
+      btn.disabled=false; btn.textContent="🗂 Démarrer sync complète";
+      stop.style.display="none"; return;
+    }
+    showToast("✅ "+d.message);
+    document.getElementById("fProgressWrap").style.display="block";
+    if(fullPollInterval) clearInterval(fullPollInterval);
+    fullPollInterval = setInterval(pollFullStatus, 2000);
+  } catch(e){
+    showAlert("fErrorMsg","❌ "+e.message);
+    btn.disabled=false; btn.textContent="🗂 Démarrer sync complète";
+    stop.style.display="none";
+  }
+}
+
+async function stopFullSync(){
+  try{ await fetch("/api/wa-sync-full-stop",{method:"POST"}); showToast("⏹ Synchronisation arrêtée"); } catch{}
+}
+
+async function pollFullStatus(){
+  try{
+    const s = await fetch("/api/wa-sync-full-status").then(r=>r.json());
+
+    document.getElementById("fDone").textContent   = fmt(s.done);
+    document.getElementById("fTotal").textContent  = fmt(s.total);
+    document.getElementById("fText").textContent   = fmt(s.savedText);
+    document.getElementById("fImages").textContent = fmt(s.savedImages);
+    document.getElementById("fVoices").textContent = fmt(s.savedVoices);
+    document.getElementById("fVideos").textContent = fmt(s.savedVideos);
+    document.getElementById("fSkip").textContent   = fmt(s.skipped);
+
+    const pct = s.total>0 ? Math.round((s.done/s.total)*100) : 0;
+    document.getElementById("fProgressBar").style.width = pct+"%";
+    document.getElementById("fProgressText").textContent = s.running
+      ? `⏳ Traitement : ${fmt(s.done)} / ${fmt(s.total)} conversation(s) — ${pct}%`
+      : `✔ Terminé : ${fmt(s.done)} / ${fmt(s.total)}`;
+    document.getElementById("fCurrentChat").textContent =
+      s.running && s.currentChat ? `📱 En cours : ${s.currentChat}` : "";
+
+    if(s.lastError) showAlert("fErrorMsg", s.lastError);
+
+    if(!s.running){
+      clearInterval(fullPollInterval);
+      document.getElementById("fStartBtn").disabled=false;
+      document.getElementById("fStartBtn").textContent="🗂 Relancer sync complète";
+      document.getElementById("fStopBtn").style.display="none";
+      const total = (s.savedText||0)+(s.savedImages||0)+(s.savedVoices||0)+(s.savedVideos||0);
+      if(total>0||s.done>0){
+        showAlert("fDoneMsg",
+          `✅ Sync complète terminée !<br>💬 Textes : ${fmt(s.savedText)} · 📷 Photos : ${fmt(s.savedImages)} · 🎤 Audios : ${fmt(s.savedVoices)} · 🎬 Vidéos : ${fmt(s.savedVideos)}`
+        );
       }
-    } catch { /* silent */ }
-  }
+    }
+  } catch{}
+}
 
-  // تحميل الحالة الحالية عند فتح الصفحة
-  async function loadInitialStatus() {
-    try {
-      const res    = await fetch("/api/wa-sync-status");
-      const status = await res.json();
-      if (status.total > 0) {
-        document.getElementById("sDone").textContent   = status.done;
-        document.getElementById("sTotal").textContent  = status.total;
-        document.getElementById("sSaved").textContent  = status.saved;
-        document.getElementById("sErrors").textContent = status.errors;
-      }
-      if (status.running) {
-        document.getElementById("startBtn").disabled = true;
-        document.getElementById("startBtn").textContent = "⏳ المزامنة جارية...";
-        document.getElementById("progressWrap").style.display = "block";
-        pollInterval = setInterval(pollStatus, 1500);
-      }
-    } catch { /* silent */ }
-  }
-
-  function showError(msg) {
-    const el = document.getElementById("errorMsg");
-    el.textContent = msg;
-    el.style.display = "block";
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg; t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3000);
-  }
-
-  function logout() {
-    fetch("/api/logout", { method: "POST" }).then(() => location.href = '/login');
-  }
-
-  // ══ Full Sync ══
-  async function startFullSync() {
-    const btn  = document.getElementById("fStartBtn");
-    const stop = document.getElementById("fStopBtn");
-    btn.disabled = true; btn.textContent = "⏳ جاري البدء...";
-    stop.style.display = "inline-block";
-    document.getElementById("fDoneMsg").style.display  = "none";
-    document.getElementById("fErrorMsg").style.display = "none";
-    const limit = document.getElementById("msgLimit").value;
-    try {
-      const r = await fetch("/api/wa-sync-full", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ msgLimit: parseInt(limit) })
-      });
-      const d = await r.json();
-      if (!r.ok || d.error) { showFError(d.error || "فشل"); btn.disabled=false; btn.textContent="🗂️ ابدأ المزامنة الكاملة"; stop.style.display="none"; return; }
-      showToast("✅ " + d.message);
-      document.getElementById("fProgressWrap").style.display = "block";
-      if (fullPollInterval) clearInterval(fullPollInterval);
+async function loadInitialFullStatus(){
+  try{
+    const s = await fetch("/api/wa-sync-full-status").then(r=>r.json());
+    if(s.total>0){
+      document.getElementById("fDone").textContent   = fmt(s.done);
+      document.getElementById("fTotal").textContent  = fmt(s.total);
+      document.getElementById("fText").textContent   = fmt(s.savedText);
+      document.getElementById("fImages").textContent = fmt(s.savedImages);
+      document.getElementById("fVoices").textContent = fmt(s.savedVoices);
+      document.getElementById("fVideos").textContent = fmt(s.savedVideos);
+      document.getElementById("fSkip").textContent   = fmt(s.skipped);
+    }
+    if(s.running){
+      document.getElementById("fStartBtn").disabled=true;
+      document.getElementById("fStartBtn").textContent="⏳ Sync en cours…";
+      document.getElementById("fStopBtn").style.display="inline-block";
+      document.getElementById("fProgressWrap").style.display="block";
       fullPollInterval = setInterval(pollFullStatus, 2000);
-    } catch(e) { showFError("❌ " + e.message); btn.disabled=false; btn.textContent="🗂️ ابدأ المزامنة الكاملة"; stop.style.display="none"; }
-  }
+    }
+  } catch{}
+}
 
-  async function stopFullSync() {
-    try { await fetch("/api/wa-sync-full-stop", { method:"POST" }); showToast("⏹️ تم إيقاف المزامنة"); } catch {}
-  }
+function showAlert(id, msg){
+  const el=document.getElementById(id);
+  el.innerHTML=msg; el.style.display="block";
+}
 
-  async function pollFullStatus() {
-    try {
-      const s = await (await fetch("/api/wa-sync-full-status")).json();
-      document.getElementById("fDone").textContent   = s.done   ?? "—";
-      document.getElementById("fTotal").textContent  = s.total  ?? "—";
-      document.getElementById("fText").textContent   = s.savedText   ?? "—";
-      document.getElementById("fImages").textContent = s.savedImages ?? "—";
-      document.getElementById("fVoices").textContent = s.savedVoices ?? "—";
-      document.getElementById("fVideos").textContent = s.savedVideos ?? "—";
-      document.getElementById("fSkip").textContent   = s.skipped ?? "—";
-
-      const pct = s.total > 0 ? Math.round((s.done / s.total) * 100) : 0;
-      document.getElementById("fProgressBar").style.width = pct + "%";
-      document.getElementById("fProgressText").textContent = s.running
-        ? `جاري المعالجة: ${s.done} / ${s.total} محادثة (${pct}%)`
-        : `منتهية: ${s.done} / ${s.total} محادثة`;
-      document.getElementById("fCurrentChat").textContent = s.running && s.currentChat ? `📱 ${s.currentChat}` : "";
-
-      if (s.lastError) { const e=document.getElementById("fErrorMsg"); e.textContent=s.lastError; e.style.display="block"; }
-
-      if (!s.running) {
-        clearInterval(fullPollInterval);
-        document.getElementById("fStartBtn").disabled = false;
-        document.getElementById("fStartBtn").textContent = "🗂️ إعادة المزامنة الكاملة";
-        document.getElementById("fStopBtn").style.display = "none";
-        const total = (s.savedText||0)+(s.savedImages||0)+(s.savedVoices||0)+(s.savedVideos||0);
-        if (total > 0 || s.done > 0) {
-          const dm = document.getElementById("fDoneMsg");
-          dm.style.display = "block";
-          dm.textContent = `✅ اكتملت! نصوص: ${s.savedText} · صور: ${s.savedImages} · أصوات: ${s.savedVoices} · فيديو: ${s.savedVideos}`;
-        }
-      }
-    } catch {}
-  }
-
-  function showFError(msg) { const e=document.getElementById("fErrorMsg"); e.textContent=msg; e.style.display="block"; }
-
-  loadInitialStatus();
+// ── Boot ──────────────────────────────────────────────────────────────────────
+checkWaStatus();
+loadInitialStatus();
+loadInitialFullStatus();
 </script>
+<footer id="app-footer"></footer>
 <script src="/js/nav.js"></script>
 </body>
 </html>

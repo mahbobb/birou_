@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
 <meta charset="UTF-8">
+<script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#075e54">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<title>الردود — واتساب</title>
+<title>Réponses — WhatsApp</title>
 <style>
 /* ─── Reset & Variables ─── */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --g:#25d366;--tl:#128c7e;--dk:#075e54;
-  --bg:#efeae2;--pn:#f0f2f5;--wh:#fff;
-  --in:#fff;--out:#d9fdd3;
-  --bd:#e9edef;--tx:#111b21;--mt:#667781;
-  --hv:#f5f6f6;--sw:360px;
+  --g:#00a884;--tl:#00a884;--dk:#008069;
+  --bg:#0b141a;--pn:#202c33;--wh:#111b21;
+  --in:#202c33;--out:#005c4b;
+  --bd:#2a3942;--tx:#e9edef;--mt:#8696a0;
+  --hv:#2a3942;--sw:360px;
 }
 html,body{
   height:100%;overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
-  background:var(--dk);color:var(--tx);
+  background:#111b21;color:#e9edef;
   -webkit-tap-highlight-color:transparent;
   -webkit-touch-callout:none;
   overscroll-behavior:none;
@@ -34,12 +35,12 @@ html,body{
 /* ─── Left Panel ─── */
 #lp{
   width:var(--sw);min-width:var(--sw);flex-shrink:0;
-  display:flex;flex-direction:column;background:var(--wh);
-  border-left:1px solid var(--bd);
+  display:flex;flex-direction:column;background:#111b21;
+  border-right:1px solid #2a3942;
 }
 .lp-head{
-  height:59px;background:var(--pn);
-  display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;
+  height:59px;background:#202c33;
+  display:flex;align-items:center;gap:8px;padding:0 14px;flex-shrink:0;
 }
 .av{
   width:40px;height:40px;border-radius:50%;
@@ -48,47 +49,60 @@ html,body{
   overflow:hidden;
 }
 .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.lp-title{flex:1;font-size:1.05rem;font-weight:700}
+.lp-title{flex:1;font-size:1rem;font-weight:500;color:#e9edef}
 .ico-btn{
   background:none;border:none;cursor:pointer;
-  padding:8px;border-radius:50%;color:var(--mt);font-size:1.1rem;
+  padding:8px;border-radius:50%;color:#aebac1;
   transition:background .15s;
+  display:flex;align-items:center;justify-content:center;
 }
-.ico-btn:hover{background:rgba(0,0,0,.07)}
+.ico-btn:hover{background:rgba(255,255,255,.1);color:#e9edef}
 
 /* search */
-.lp-search{padding:8px 12px;border-bottom:1px solid var(--bd)}
+.lp-search{padding:8px 12px;background:#111b21;border-bottom:none}
 .s-inner{
-  background:var(--pn);border-radius:8px;
+  background:#202c33;border-radius:10px;
   display:flex;align-items:center;padding:0 12px;gap:8px;
 }
 .s-inner input{
   flex:1;border:none;background:none;outline:none;
-  padding:9px 0;font-size:.9rem;direction:rtl;color:var(--tx);
+  padding:9px 0;font-size:.9rem;direction:ltr;color:#d1d7db;
 }
-.s-inner input::placeholder{color:var(--mt)}
+.s-inner input::placeholder{color:#8696a0}
+.s-inner span{color:#8696a0}
 
 /* tabs */
-.lp-tabs{display:flex;gap:8px;padding:8px 16px;background:var(--wh)}
+.lp-tabs{display:flex;gap:6px;padding:6px 12px 8px;background:#111b21;overflow-x:auto;flex-shrink:0}
+.lp-tabs::-webkit-scrollbar{display:none}
 .tab{
   padding:5px 14px;border-radius:16px;border:none;
-  font-size:.8rem;cursor:pointer;transition:all .15s;
-  background:#f0f0f0;color:var(--mt);
+  font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap;
+  background:#202c33;color:#8696a0;flex-shrink:0;
 }
-.tab.on{background:var(--dk);color:#fff;font-weight:600}
+.tab.on{background:#00a884;color:#fff;font-weight:600}
+.tab.fav-tab.on{background:#f59e0b}
+
+/* favorite star */
+.fav-btn{
+  background:none;border:none;cursor:pointer;
+  font-size:1.05rem;padding:4px;line-height:1;
+  opacity:.35;transition:opacity .15s,transform .15s;flex-shrink:0;
+}
+.fav-btn:hover{opacity:.8;transform:scale(1.2)}
+.fav-btn.on{opacity:1;filter:drop-shadow(0 0 3px #f59e0b)}
 
 /* contact list */
-#clist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+#clist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;background:#111b21}
 #clist::-webkit-scrollbar{width:5px}
-#clist::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+#clist::-webkit-scrollbar-thumb{background:#2a3942;border-radius:4px}
 
 .ci{
   display:flex;align-items:center;gap:12px;
-  padding:12px 16px;border-bottom:1px solid var(--bd);
+  padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.05);
   cursor:pointer;transition:background .12s;
 }
-.ci:hover{background:var(--hv)}
-.ci.on{background:var(--pn)}
+.ci:hover{background:#202c33}
+.ci.on{background:#2a3942}
 .ci-av{
   width:49px;height:49px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -98,18 +112,24 @@ html,body{
 .ci-body{flex:1;min-width:0}
 .ci-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
 .ci-name{
-  font-size:.95rem;font-weight:500;
+  font-size:.95rem;font-weight:500;color:#e9edef;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.ci-time{font-size:.72rem;color:var(--mt);flex-shrink:0}
-.ci-time.unread{color:var(--tl)}
+.ci-name.is-phone{
+  font-family:'Courier New',monospace;font-size:.85rem;
+  color:#00a884;letter-spacing:.02em;
+}
+.ci-time{font-size:.72rem;color:#8696a0;flex-shrink:0}
+.ci-time.unread{color:#00a884}
+.ci-ph{font-size:.76rem;color:#00a884;direction:ltr;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Courier New',monospace;letter-spacing:.02em}
+.ci-realname{font-size:.73rem;color:#8696a0;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ci-prev{
-  font-size:.82rem;color:var(--mt);
+  font-size:.82rem;color:#8696a0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .ci-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .badge{
-  background:var(--tl);color:#fff;border-radius:50%;
+  background:#00a884;color:#fff;border-radius:10px;
   min-width:18px;height:18px;font-size:.68rem;
   display:flex;align-items:center;justify-content:center;
   font-weight:700;padding:0 4px;
@@ -117,31 +137,31 @@ html,body{
 
 /* ─── Unanswered indicator ─── */
 .ci.unans{
-  border-right:3px solid #e53935;
-  background:linear-gradient(to left,#fff5f5 0%,var(--wh) 60%);
+  border-left:3px solid #e53935;
+  background:linear-gradient(to right,rgba(229,57,53,.12) 0%,transparent 60%);
 }
-.ci.unans:hover{background:linear-gradient(to left,#ffeaea 0%,var(--hv) 60%)}
-.ci.unans.on{background:linear-gradient(to left,#ffeaea 0%,var(--pn) 60%)}
+.ci.unans:hover{background:linear-gradient(to right,rgba(229,57,53,.18) 0%,#202c33 60%)}
+.ci.unans.on{background:linear-gradient(to right,rgba(229,57,53,.18) 0%,#2a3942 60%)}
 .unans-dot{
   width:8px;height:8px;border-radius:50%;
   background:#e53935;flex-shrink:0;
 }
 
 /* ─── Right Panel ─── */
-#rp{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);position:relative}
+#rp{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0b141a;position:relative}
 #rp::before{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cdefs%3E%3Cpattern id='p' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23000' stroke-width='.3' fill='none' opacity='.04'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='400' height='400' fill='url(%23p)'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cdefs%3E%3Cpattern id='p' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23fff' stroke-width='.3' fill='none' opacity='.03'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='400' height='400' fill='url(%23p)'/%3E%3C/svg%3E");
 }
 
 /* empty state */
 #empty{
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  color:var(--mt);z-index:1;gap:12px;
+  color:#8696a0;z-index:1;gap:12px;
 }
-#empty svg{opacity:.25}
-#empty h3{font-size:1.3rem;font-weight:300;color:#41525d}
+#empty svg{opacity:.2;filter:invert(.3) sepia(1) hue-rotate(100deg)}
+#empty h3{font-size:1.3rem;font-weight:300;color:#aebac1}
 #empty p{font-size:.85rem}
 
 /* chat */
@@ -149,59 +169,99 @@ html,body{
 
 /* chat header */
 .ch-head{
-  height:59px;background:var(--pn);
+  height:59px;background:#202c33;
   display:flex;align-items:center;gap:12px;padding:0 16px;
-  flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.08);
+  flex-shrink:0;
 }
-#btnBack{display:none;background:none;border:none;cursor:pointer;color:var(--mt);font-size:1.2rem;padding:4px}
+#btnBack{display:none;background:none;border:none;cursor:pointer;color:#aebac1;padding:4px;
+  display:none;align-items:center;justify-content:center}
 .ch-info{flex:1}
-.ch-name{font-size:.98rem;font-weight:600}
-.ch-sub{font-size:.77rem;color:var(--mt)}
+.ch-name{font-size:.93rem;font-weight:600;color:#00a884;font-family:'Courier New',monospace;letter-spacing:.02em;direction:ltr}
+.ch-sub{font-size:.77rem;color:#8696a0;letter-spacing:.01em}
 .ch-acts{display:flex;gap:2px}
 .ch-btn{
   background:none;border:none;cursor:pointer;
-  padding:8px;border-radius:50%;color:var(--mt);font-size:1rem;
+  padding:8px;border-radius:50%;color:#aebac1;
   transition:background .15s;
+  display:flex;align-items:center;justify-content:center;
 }
-.ch-btn:hover{background:rgba(0,0,0,.07)}
+.ch-btn:hover{background:rgba(255,255,255,.1);color:#e9edef}
 
 /* messages */
 #msgs{flex:1;overflow-y:auto;padding:8px 6%;display:flex;flex-direction:column;gap:2px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 #msgs::-webkit-scrollbar{width:5px}
-#msgs::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+#msgs::-webkit-scrollbar-thumb{background:#2a3942;border-radius:4px}
 
 .dsep{text-align:center;margin:8px 0;pointer-events:none}
 .dsep span{
-  background:rgba(255,255,255,.85);padding:4px 12px;
-  border-radius:8px;font-size:.75rem;color:#54656f;
-  box-shadow:0 1px 2px rgba(0,0,0,.1);
+  background:rgba(17,27,33,.85);padding:4px 12px;
+  border-radius:8px;font-size:.75rem;color:#8696a0;
+  box-shadow:0 1px 3px rgba(0,0,0,.3);
 }
 
 /* bubbles */
-.row{display:flex;margin-bottom:2px}
+.row{display:flex;align-items:flex-end;gap:6px;margin-bottom:3px}
 .row.out{justify-content:flex-end}
 .row.in {justify-content:flex-start}
+
+/* contact avatar next to incoming */
+.row-av{
+  width:28px;height:28px;border-radius:50%;
+  background:#ddd;flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;color:#fff;
+  align-self:flex-end;
+}
+.row-av img{width:100%;height:100%;object-fit:cover;}
+.row.out .row-av{display:none;}
+.row-av.wa-hidden{visibility:hidden;}
+
+/* no tail for consecutive messages */
+.row.in  .bbl.no-tail{border-top-left-radius:8px}
+.row.in  .bbl.no-tail::before{display:none}
+.row.out .bbl.no-tail{border-top-right-radius:8px}
+.row.out .bbl.no-tail::before{display:none}
+/* tighter spacing within a block */
+.row.wa-mid{margin-bottom:1px}
+
+/* download button */
+.dl-ov{
+  position:absolute;bottom:6px;left:6px;
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(0,0,0,.5);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;text-decoration:none;
+  opacity:0;transition:opacity .15s;
+}
+.imgbbl:hover .dl-ov{opacity:1;}
+.dl-row{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:5px;font-size:.72rem;color:var(--mt);
+  text-decoration:none;
+}
+.dl-row:hover{color:var(--tl);}
+.row.out .dl-row{color:#2d6a2d;}
 .bbl{
   max-width:65%;min-width:80px;
   padding:6px 10px 8px;border-radius:8px;
   font-size:.9rem;line-height:1.45;word-break:break-word;
   position:relative;box-shadow:0 1px 1px rgba(0,0,0,.1);
 }
-.row.in  .bbl{background:var(--in);border-top-right-radius:0}
-.row.out .bbl{background:var(--out);border-top-left-radius:0}
-.row.in  .bbl::before{content:"";position:absolute;top:0;right:-8px;border:8px solid transparent;border-top-color:var(--in);border-right:0}
-.row.out .bbl::before{content:"";position:absolute;top:0;left:-8px;border:8px solid transparent;border-top-color:var(--out);border-left:0}
+.row.in  .bbl{background:#202c33;border-top-left-radius:0;color:#e9edef}
+.row.out .bbl{background:#005c4b;border-top-right-radius:0;color:#e9edef}
+.row.in  .bbl::before{content:"";position:absolute;top:0;left:-8px;border:8px solid transparent;border-top-color:#202c33;border-left:0}
+.row.out .bbl::before{content:"";position:absolute;top:0;right:-8px;border:8px solid transparent;border-top-color:#005c4b;border-right:0}
 .bmeta{
   display:flex;align-items:center;justify-content:flex-end;
   gap:4px;margin-top:3px;float:left;height:15px;
 }
 .row.in .bmeta{float:right}
-.btime{font-size:.68rem;color:var(--mt)}
-.btick{font-size:.78rem;color:var(--tl)}
+.btime{font-size:.68rem;color:#8696a0}
+.btick{font-size:.78rem;color:#53bdeb}
 .bsrc{font-size:.62rem;padding:1px 5px;border-radius:6px}
-.src-ai{background:#e8f5e9;color:#2e7d32}
-.src-kw{background:#e3f2fd;color:#1565c0}
-.src-us{background:#f3e5f5;color:#6a1b9a}
+.src-ai{background:rgba(46,125,50,.3);color:#81c784}
+.src-kw{background:rgba(21,101,192,.3);color:#64b5f6}
+.src-us{background:rgba(106,27,154,.3);color:#ce93d8}
 
 /* image bubble */
 .imgbbl{padding:4px 4px 8px!important;min-width:160px}
@@ -241,38 +301,39 @@ html,body{
 
 /* quick bar */
 .qbar{
-  background:var(--pn);padding:6px 16px;
+  background:#202c33;padding:6px 16px;
   display:flex;gap:6px;overflow-x:auto;flex-shrink:0;
-  border-top:1px solid var(--bd);
+  border-top:1px solid rgba(255,255,255,.05);
 }
 .qbar::-webkit-scrollbar{height:3px}
-.qbar::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}
+.qbar::-webkit-scrollbar-thumb{background:#2a3942;border-radius:2px}
 .qbtn{
-  padding:5px 12px;border:1px solid var(--tl);border-radius:16px;
-  background:#fff;color:var(--tl);font-size:.8rem;cursor:pointer;
+  padding:5px 12px;border:1px solid #00a884;border-radius:16px;
+  background:transparent;color:#00a884;font-size:.8rem;cursor:pointer;
   white-space:nowrap;transition:all .15s;flex-shrink:0;
 }
-.qbtn:hover{background:var(--tl);color:#fff}
+.qbtn:hover{background:#00a884;color:#fff}
 
 /* input bar */
 .ibar{
-  background:var(--pn);padding:8px 12px;
+  background:#202c33;padding:8px 12px;
   display:flex;align-items:flex-end;gap:8px;flex-shrink:0;
 }
 .itxt{
-  flex:1;background:#fff;border:none;border-radius:22px;
+  flex:1;background:#2a3942;border:none;border-radius:10px;
   padding:10px 16px;font-size:.93rem;resize:none;outline:none;
-  max-height:130px;font-family:inherit;direction:rtl;color:var(--tx);
-  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  max-height:130px;font-family:inherit;direction:ltr;color:#e9edef;
+  caret-color:#00a884;
 }
+.itxt::placeholder{color:#8696a0}
 .isend{
   width:46px;height:46px;border-radius:50%;border:none;
-  background:var(--tl);color:#fff;cursor:pointer;
+  background:#00a884;color:#fff;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;transition:background .15s;
   box-shadow:0 2px 5px rgba(0,0,0,.2);
 }
-.isend:hover{background:var(--dk)}
+.isend:hover{background:#008069}
 .isend:disabled{background:#ccc;cursor:not-allowed;box-shadow:none}
 
 /* ─── Lightbox ─── */
@@ -309,17 +370,17 @@ html,body{
 .att-wrap{position:relative;flex-shrink:0}
 .att-menu{
   display:none;position:absolute;bottom:58px;right:0;
-  background:#fff;border-radius:14px;
-  box-shadow:0 6px 24px rgba(0,0,0,.18);
+  background:#233138;border-radius:14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.4);
   padding:8px 0;min-width:180px;z-index:200;
 }
 .att-menu.open{display:block}
 .att-item{
-  padding:11px 18px;cursor:pointer;font-size:.9rem;
+  padding:11px 18px;cursor:pointer;font-size:.9rem;color:#e9edef;
   display:flex;align-items:center;gap:10px;
   transition:background .12s;white-space:nowrap;
 }
-.att-item:hover{background:var(--hv)}
+.att-item:hover{background:#2a3942}
 
 /* ─── Modals ─── */
 .modal-bg{
@@ -328,26 +389,28 @@ html,body{
 }
 .modal-bg.open{display:flex}
 .modal-box{
-  background:#fff;border-radius:18px;padding:24px 22px;
+  background:#233138;border-radius:18px;padding:24px 22px;
   min-width:300px;max-width:92vw;
-  box-shadow:0 10px 40px rgba(0,0,0,.22);
+  box-shadow:0 10px 40px rgba(0,0,0,.5);
 }
-.modal-box h3{margin-bottom:14px;font-size:1rem;color:var(--dk);font-weight:700}
+.modal-box h3{margin-bottom:14px;font-size:1rem;color:#e9edef;font-weight:700}
 .modal-inp{
-  width:100%;border:1.5px solid var(--bd);border-radius:10px;
+  width:100%;border:1.5px solid #2a3942;border-radius:10px;
   padding:10px 14px;font-size:.93rem;outline:none;
-  direction:rtl;font-family:inherit;transition:border-color .2s;
+  direction:ltr;font-family:inherit;transition:border-color .2s;
+  background:#111b21;color:#e9edef;
 }
-.modal-inp:focus{border-color:var(--tl)}
+.modal-inp::placeholder{color:#8696a0}
+.modal-inp:focus{border-color:#00a884}
 .modal-btns{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
 .modal-btn{
   padding:9px 22px;border-radius:10px;border:none;cursor:pointer;
   font-size:.9rem;font-weight:600;transition:all .15s;
 }
-.modal-btn.primary{background:var(--tl);color:#fff}
-.modal-btn.primary:hover{background:var(--dk)}
-.modal-btn.cancel{background:#f0f0f0;color:var(--mt)}
-.modal-btn.cancel:hover{background:#e0e0e0}
+.modal-btn.primary{background:#00a884;color:#fff}
+.modal-btn.primary:hover{background:#008069}
+.modal-btn.cancel{background:#2a3942;color:#8696a0}
+.modal-btn.cancel:hover{background:#374248}
 
 /* ─── Responses panel ─── */
 #respModal .modal-box{
@@ -359,12 +422,12 @@ html,body{
 .resp-list::-webkit-scrollbar{width:4px}
 .resp-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
 .resp-item{
-  padding:10px 14px;border-radius:10px;border:1.5px solid var(--bd);
+  padding:10px 14px;border-radius:10px;border:1.5px solid #2a3942;
   cursor:pointer;font-size:.88rem;line-height:1.5;
-  transition:all .15s;text-align:right;
+  transition:all .15s;text-align:left;color:#e9edef;
 }
-.resp-item:hover{border-color:var(--tl);background:#e0f7f4}
-.resp-kw{font-size:.7rem;color:var(--mt);margin-bottom:3px}
+.resp-item:hover{border-color:#00a884;background:rgba(0,168,132,.08)}
+.resp-kw{font-size:.7rem;color:#8696a0;margin-bottom:3px}
 
 /* ─── Voice recording bar ─── */
 .rec-bar{
@@ -419,13 +482,13 @@ html,body{
     transition:transform .25s cubic-bezier(.4,0,.2,1);
     padding-bottom:env(safe-area-inset-bottom);
   }
-  #lp.hide{transform:translateX(105%)}
+  #lp.hide{transform:translateX(-105%)}
   #rp{width:100%;position:absolute;inset:0}
 
   /* Back button */
   #btnBack{
     display:flex!important;align-items:center;justify-content:center;
-    width:40px;height:40px;font-size:1.3rem;margin-left:-4px;
+    width:40px;height:40px;margin-left:-4px;
   }
 
   /* Chat header */
@@ -488,6 +551,12 @@ html,body{
   .audbbl{min-width:170px}
   .lp-title{font-size:.92rem}
 }
+
+/* ─── Language visibility ─── */
+[data-lv]{display:none!important}
+html[data-lang="ar"] [data-lv="ar"]{display:revert!important}
+html[data-lang="fr"] [data-lv="fr"],html:not([data-lang]) [data-lv="fr"]{display:revert!important}
+html[data-lang="en"] [data-lv="en"]{display:revert!important}
 </style>
 </head>
 <body>
@@ -497,27 +566,32 @@ html,body{
   <!-- ══ LEFT PANEL ══ -->
   <div id="lp">
     <div class="lp-head">
-      <div class="av" id="myAv" style="background:var(--tl)" title="خروج" onclick="doLogout()">أ</div>
-      <span class="lp-title">💬 الردود</span>
-      <button class="ico-btn" id="btnDash" onclick="location.href='/dashboard'" title="لوحة التحكم">🏠</button>
-      <button class="ico-btn" onclick="doLogout()" title="خروج">🚪</button>
+      <div class="av" id="myAv" style="background:#00a884" title="الحساب">أ</div>
+      <span class="lp-title"><span data-lv="ar">الردود</span><span data-lv="fr">Réponses</span><span data-lv="en">Replies</span></span>
+      <button class="ico-btn" id="btnDash" onclick="location.href='/dashboard'" title="Tableau de bord">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      </button>
+      <button class="ico-btn" onclick="doLogout()" title="Déconnexion">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.09 15.59 11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+      </button>
     </div>
 
     <div class="lp-search">
       <div class="s-inner">
         <span style="color:var(--mt);font-size:.9rem">🔍</span>
-        <input id="srch" type="text" placeholder="بحث في المحادثات..." oninput="filterC()">
+        <input id="srch" type="text" placeholder="Rechercher..." oninput="filterC()">
       </div>
     </div>
 
     <div class="lp-tabs">
-      <button class="tab on" id="tabAll"    onclick="setTab('all')">الكل <span id="cntAll"></span></button>
-      <button class="tab"    id="tabUnread" onclick="setTab('unread')">غير مقروء <span id="cntUnread" style="color:var(--g)"></span></button>
-      <button class="tab"    id="tabGroups" onclick="setTab('groups')">👥 المجموعات <span id="cntGroups"></span></button>
+      <button class="tab on" id="tabAll" onclick="setTab('all')"><span data-lv="ar">الكل</span><span data-lv="fr">Tous</span><span data-lv="en">All</span> <span id="cntAll"></span></button>
+      <button class="tab" id="tabUnread" onclick="setTab('unread')"><span data-lv="ar">غير مقروء</span><span data-lv="fr">Non lus</span><span data-lv="en">Unread</span> <span id="cntUnread" style="color:var(--g)"></span></button>
+      <button class="tab" id="tabGroups" onclick="setTab('groups')">👥 <span data-lv="ar">مجموعات</span><span data-lv="fr">Groupes</span><span data-lv="en">Groups</span> <span id="cntGroups"></span></button>
+      <button class="tab fav-tab" id="tabFav" onclick="setTab('fav')">⭐ <span data-lv="ar">المفضلة</span><span data-lv="fr">Favoris</span><span data-lv="en">Favorites</span> <span id="cntFav" style="color:#f59e0b"></span></button>
     </div>
 
     <div id="clist">
-      <div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">⏳ جاري التحميل...</div>
+      <div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">⏳ <span data-lv="ar">جاري التحميل...</span><span data-lv="fr">Chargement...</span><span data-lv="en">Loading...</span></div>
     </div>
   </div>
 
@@ -527,23 +601,38 @@ html,body{
     <!-- Empty -->
     <div id="empty">
       <svg viewBox="0 0 303 172" width="260"><rect width="303" height="172" fill="none"/><path fill="#dfe5e7" d="M229.6 100.6l-2.2-3.9c3.3-5.2 5.3-11.3 5.3-17.8 0-18.4-14.9-33.3-33.3-33.3s-33.3 14.9-33.3 33.3 14.9 33.3 33.3 33.3c5.9 0 11.4-1.5 16.1-4.3l3.7 2.1c1.1.6 2.3.9 3.5.9 1.2 0 2.4-.3 3.4-.9 2.1-1.3 3.3-3.4 3.3-5.8-.1-1.5-.7-2.9-1.8-3.6zm-30.2-6.9c-14.7 0-26.6-11.9-26.6-26.6S184.7 40.5 199.4 40.5s26.6 11.9 26.6 26.6-11.9 26.6-26.6 26.6z"/></svg>
-      <h3>واتساب ويب</h3>
-      <p>اختر محادثة للبدء</p>
+      <h3><span data-lv="ar">واتساب ويب</span><span data-lv="fr">WhatsApp Web</span><span data-lv="en">WhatsApp Web</span></h3>
+      <p><span data-lv="ar">اختر محادثة للبدء</span><span data-lv="fr">Choisir une conversation</span><span data-lv="en">Select a conversation</span></p>
     </div>
 
     <!-- Chat -->
     <div id="chat">
 
       <div class="ch-head">
-        <button id="btnBack" onclick="backToList()">←</button>
-        <div class="av" id="chAv" style="background:var(--tl)"></div>
+        <button id="btnBack" onclick="backToList()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
+        <div class="av" id="chAv" style="background:#00a884"></div>
         <div class="ch-info">
           <div class="ch-name" id="chName"></div>
           <div class="ch-sub"  id="chSub"></div>
         </div>
         <div class="ch-acts">
-          <button class="ch-btn" onclick="refreshChat()" title="تحديث">🔄</button>
-          <button class="ch-btn" id="btnFull" onclick="openFull()" title="شات كامل">↗</button>
+          <button class="ch-btn" onclick="downloadLastMsg()" title="Télécharger dernier message">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h4.34v4h4.66V9h4.34L12 2z"/></svg>
+          </button>
+          <button class="ch-btn" onclick="downloadChat()" title="Télécharger conversation">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          </button>
+          <button class="ch-btn" onclick="captureChat()" title="Imprimer / PDF">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8 3.2 3.2 0 0 1 15.2 12 3.2 3.2 0 0 1 12 15.2M12 7a5 5 0 0 0-5 5 5 5 0 0 0 5 5 5 5 0 0 0 5-5 5 5 0 0 0-5-5M2 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2.17L18 2H10L8.17 4H2z"/></svg>
+          </button>
+          <button class="ch-btn" onclick="refreshChat()" title="Actualiser">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+          <button class="ch-btn" id="btnFull" onclick="openFull()" title="Chat complet">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </button>
         </div>
       </div>
 
@@ -554,27 +643,31 @@ html,body{
       <div class="ibar">
         <!-- attach menu -->
         <div class="att-wrap" id="attWrap">
-          <button class="isend" id="attBtn" onclick="togAtt()" title="إرفاق"
-            style="background:#00796b;width:42px;height:42px;font-size:1.1rem;flex-shrink:0">📎</button>
+          <button class="isend" id="attBtn" onclick="togAtt()" title="Joindre"
+            style="background:#2a3942;width:42px;height:42px;flex-shrink:0;color:#8696a0">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+          </button>
           <div class="att-menu" id="attMenu">
-            <div class="att-item" onclick="pickFile('image/*')">📷 صورة</div>
-            <div class="att-item" onclick="pickFile('video/*')">🎬 فيديو</div>
-            <div class="att-item" onclick="pickFile('audio/*')">🎤 ملف صوتي</div>
-            <div class="att-item" onclick="openLocModal()">📍 خريطة جوجل</div>
+            <div class="att-item" onclick="pickFile('image/*')">📷 <span data-lv="ar">صورة</span><span data-lv="fr">Photo</span><span data-lv="en">Image</span></div>
+            <div class="att-item" onclick="pickFile('video/*')">🎬 <span data-lv="ar">فيديو</span><span data-lv="fr">Vidéo</span><span data-lv="en">Video</span></div>
+            <div class="att-item" onclick="pickFile('audio/*')">🎤 <span data-lv="ar">ملف صوتي</span><span data-lv="fr">Audio</span><span data-lv="en">Audio</span></div>
+            <div class="att-item" onclick="openLocModal()">📍 <span data-lv="ar">خريطة جوجل</span><span data-lv="fr">Google Maps</span><span data-lv="en">Google Maps</span></div>
           </div>
         </div>
         <!-- quick responses -->
-        <button class="isend" onclick="openRespModal()" title="الردود الجاهزة"
-          style="background:var(--dk);width:42px;height:42px;font-size:1rem;flex-shrink:0">💬</button>
+        <button class="isend" onclick="openRespModal()" title="Réponses rapides"
+          style="background:#2a3942;width:42px;height:42px;flex-shrink:0;color:#8696a0">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/></svg>
+        </button>
         <input type="file" id="fileInput" style="display:none" onchange="handleFile(this)">
 
         <!-- recording bar — مخفي افتراضياً -->
         <div class="rec-bar" id="recBar">
           <span class="rec-dot" id="recDot"></span>
-          <span class="rec-lbl">جاري التسجيل...</span>
+          <span class="rec-lbl"><span data-lv="ar">جاري التسجيل...</span><span data-lv="fr">Enregistrement...</span><span data-lv="en">Recording...</span></span>
           <span class="rec-timer" id="recTimer">0:00</span>
-          <button class="rec-cancel" id="recCancelBtn" onclick="cancelRecord()" title="إلغاء">✕</button>
-          <button class="rec-send"   id="recSendBtn"   onclick="stopAndSend()"  title="إرسال">
+          <button class="rec-cancel" id="recCancelBtn" onclick="cancelRecord()" title="Annuler">✕</button>
+          <button class="rec-send"   id="recSendBtn"   onclick="stopAndSend()"  title="Envoyer">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="white">
               <path d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/>
             </svg>
@@ -582,12 +675,14 @@ html,body{
         </div>
 
         <textarea class="itxt" id="itxt" rows="1"
-          placeholder="اكتب رسالة..."
+          placeholder="Écrire un message..."
           onkeydown="onKey(event)" oninput="autoH(this)"></textarea>
 
         <!-- mic button -->
-        <button class="isend" id="micBtn" onclick="toggleRecord()" title="تسجيل صوتي"
-          style="background:#e91e63;width:42px;height:42px;font-size:1.1rem;flex-shrink:0">🎤</button>
+        <button class="isend" id="micBtn" onclick="toggleRecord()" title="Message vocal"
+          style="background:#2a3942;width:42px;height:42px;flex-shrink:0;color:#8696a0">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+        </button>
 
         <button class="isend" id="sendBtn" onclick="sendMsg()">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
@@ -600,21 +695,22 @@ html,body{
 </div>
 
 <!-- Upload progress -->
-<div id="uploadBar"><div class="ubar-spin"></div><span id="uploadMsg">جاري الإرسال...</span></div>
+<div id="uploadBar"><div class="ubar-spin"></div><span id="uploadMsg"><span data-lv="ar">جاري الإرسال...</span><span data-lv="fr">Envoi en cours...</span><span data-lv="en">Sending...</span></span></div>
 
 <!-- Location modal -->
 <div class="modal-bg" id="locModal" onclick="bgClose(event,'locModal')">
   <div class="modal-box">
-    <h3>📍 إرسال موقع — خريطة جوجل</h3>
+    <h3>📍 <span data-lv="ar">إرسال موقع — خريطة جوجل</span><span data-lv="fr">Envoyer un emplacement</span><span data-lv="en">Send Location</span></h3>
     <input class="modal-inp" id="locQuery" type="text"
-      placeholder="اكتب اسم المكان أو العنوان..."
       onkeydown="if(event.key==='Enter')sendLocation()">
     <div style="font-size:.78rem;color:var(--mt);margin-top:8px">
-      مثال: مراكش المدينة القديمة — أو إحداثيات: 31.6295, -7.9811
+      <span data-lv="ar">مثال: مراكش المدينة القديمة — أو إحداثيات: 31.6295, -7.9811</span>
+      <span data-lv="fr">Ex: Marrakech médina — ou coord: 31.6295, -7.9811</span>
+      <span data-lv="en">Ex: Marrakech old city — or coords: 31.6295, -7.9811</span>
     </div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="closeModal('locModal')">إلغاء</button>
-      <button class="modal-btn primary" onclick="sendLocation()">📤 إرسال</button>
+      <button class="modal-btn cancel" onclick="closeModal('locModal')"><span data-lv="ar">إلغاء</span><span data-lv="fr">Annuler</span><span data-lv="en">Cancel</span></button>
+      <button class="modal-btn primary" onclick="sendLocation()">📤 <span data-lv="ar">إرسال</span><span data-lv="fr">Envoyer</span><span data-lv="en">Send</span></button>
     </div>
   </div>
 </div>
@@ -622,30 +718,28 @@ html,body{
 <!-- Responses modal -->
 <div class="modal-bg" id="respModal" onclick="bgClose(event,'respModal')">
   <div class="modal-box">
-    <h3>💬 الردود الجاهزة</h3>
+    <h3>💬 <span data-lv="ar">الردود الجاهزة</span><span data-lv="fr">Réponses rapides</span><span data-lv="en">Quick Replies</span></h3>
     <div class="resp-srch-wrap">
-      <input class="modal-inp" id="respSrch" type="text"
-        placeholder="بحث في الردود..." oninput="filterResp()">
+      <input class="modal-inp" id="respSrch" type="text" oninput="filterResp()">
     </div>
     <div class="resp-list" id="respList">
-      <div style="text-align:center;padding:20px;color:var(--mt);font-size:.85rem">⏳ جاري التحميل...</div>
+      <div style="text-align:center;padding:20px;color:var(--mt);font-size:.85rem">⏳ <span data-lv="ar">جاري التحميل...</span><span data-lv="fr">Chargement...</span><span data-lv="en">Loading...</span></div>
     </div>
 
     <!-- form add new response (hidden by default) -->
     <div id="addRespForm" style="display:none;border-top:1px solid var(--bd);margin-top:10px;padding-top:12px">
-      <div style="font-size:.82rem;color:var(--mt);margin-bottom:8px;font-weight:600">➕ إضافة رد جديد</div>
-      <input class="modal-inp" id="newRespKw" type="text" placeholder="الكلمة المفتاحية (مثل: سعر)" style="margin-bottom:8px">
-      <textarea class="modal-inp" id="newRespTxt" rows="3"
-        placeholder="نص الرد..." style="resize:vertical;min-height:70px"></textarea>
+      <div style="font-size:.82rem;color:var(--mt);margin-bottom:8px;font-weight:600">➕ <span data-lv="ar">إضافة رد جديد</span><span data-lv="fr">Ajouter une réponse</span><span data-lv="en">Add new reply</span></div>
+      <input class="modal-inp" id="newRespKw" type="text" style="margin-bottom:8px">
+      <textarea class="modal-inp" id="newRespTxt" rows="3" style="resize:vertical;min-height:70px"></textarea>
       <div class="modal-btns" style="margin-top:8px">
-        <button class="modal-btn cancel" onclick="hideAddForm()">إلغاء</button>
-        <button class="modal-btn primary" onclick="saveNewResp()">💾 حفظ</button>
+        <button class="modal-btn cancel" onclick="hideAddForm()"><span data-lv="ar">إلغاء</span><span data-lv="fr">Annuler</span><span data-lv="en">Cancel</span></button>
+        <button class="modal-btn primary" onclick="saveNewResp()">💾 <span data-lv="ar">حفظ</span><span data-lv="fr">Enregistrer</span><span data-lv="en">Save</span></button>
       </div>
     </div>
 
     <div class="modal-btns" style="margin-top:8px">
-      <button class="modal-btn cancel" onclick="closeModal('respModal')">إغلاق</button>
-      <button class="modal-btn primary" style="background:#00796b" onclick="showAddForm()">➕ إضافة رد</button>
+      <button class="modal-btn cancel" onclick="closeModal('respModal')"><span data-lv="ar">إغلاق</span><span data-lv="fr">Fermer</span><span data-lv="en">Close</span></button>
+      <button class="modal-btn primary" style="background:#00796b" onclick="showAddForm()">➕ <span data-lv="ar">إضافة رد</span><span data-lv="fr">Ajouter</span><span data-lv="en">Add reply</span></button>
     </div>
   </div>
 </div>
@@ -675,8 +769,12 @@ html,body{
 // ══════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════
-let contacts = [], curTab = "all", selCid = null, myRole = "agent";
+let contacts = [], curTab = "all", selCid = null, myRole = "agent", selPhone = "", selRealName = "";
+let favorites = new Set(JSON.parse(localStorage.getItem("wr_favs")||"[]"));
 let socket;
+// 🔒 Anti-duplicate send guards
+let isSending   = false;
+const sentMsgs  = new Set();   // body → blocked for 2 s after send
 const COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
 
 // ── Message Cache ──────────────────────────────────────────
@@ -719,12 +817,26 @@ async function runPrefetch(){
   prefetchRunning = false;
 }
 
-// ── Phone masking ──────────────────────────────────────────
+/* ─── i18n helper ─── */
+function t(ar,fr,en){ const l=document.documentElement.dataset.lang||'fr'; return l==='fr'?fr:l==='en'?en:ar; }
+function _applyPlaceholders(){
+  const set = (id, ar, fr, en) => { const el=document.getElementById(id); if(el) el.placeholder=t(ar,fr,en); };
+  const ttl = (id, ar, fr, en) => { const el=document.getElementById(id); if(el) el.title=t(ar,fr,en); };
+  set('srch',      'بحث في المحادثات...','Rechercher...','Search...');
+  set('itxt',      'اكتب رسالة...','Écrire un message...','Write a message...');
+  set('locQuery',  'اكتب اسم المكان أو العنوان...','Nom du lieu ou adresse...','Place name or address...');
+  set('respSrch',  'بحث في الردود...','Rechercher...','Search...');
+  set('newRespKw', 'الكلمة المفتاحية (مثل: سعر)','Mot-clé (ex: prix)','Keyword (e.g.: price)');
+  set('newRespTxt','نص الرد...','Texte de la réponse...','Reply text...');
+  ttl('btnDash',   'لوحة التحكم','Tableau de bord','Dashboard');
+  ttl('attBtn',    'إرفاق','Joindre','Attach');
+  ttl('micBtn',    'تسجيل صوتي','Message vocal','Voice note');
+  ttl('myAv',      'الحساب','Mon compte','Account');
+}
+
 function isPhone(s){ return /^\+?[\d\s\-().]{7,}$/.test(String(s||"").trim()); }
 function dname(c){
-  if(myRole==="admin") return c.name||c.phone||"زبون";
-  if(!c.name||isPhone(c.name)) return "زبون";
-  return c.name;
+  return fmtPhone(c.phone) || c.name || "Client";
 }
 
 // ── Quick replies ──────────────────────────────────────────
@@ -732,7 +844,7 @@ let QUICK = [];
 fetch("/api/responses").then(r=>r.json()).then(d=>{
   QUICK=(d.responses||[]).slice(0,10).map(r=>Array.isArray(r.reply)?r.reply[0]:r.reply).filter(Boolean);
   renderQBar();
-}).catch(()=>{ QUICK=["مرحبا بيك 😊","كوبل: 400-500 درهم/ليلة","عائلة: 300-600 درهم/ليلة","ارسل التاريخ نأكدو ✅"]; renderQBar(); });
+}).catch(()=>{ QUICK=["Bonjour 😊","Couple : 400-500 DH/nuit","Famille : 300-600 DH/nuit","Envoyez la date pour confirmer ✅"]; renderQBar(); });
 
 // ══════════════════════════════════════════════════════════
 //  INIT
@@ -746,6 +858,7 @@ fetch("/api/me").then(r=>r.json()).then(me=>{
     document.getElementById("btnFull").style.display="none";
   }
 }).catch(()=>{}).finally(()=>{
+  _applyPlaceholders();
   initSocket();
   loadContacts();
   setInterval(()=>loadContacts(false), 60000);
@@ -772,7 +885,12 @@ function initSocket(){
 
 function setStatus(on){
   const el = document.getElementById("chSub");
-  if(selCid && el) el.textContent = on?"متصل":"غير متصل";
+  if(selCid && el){
+    const dot = on ? " 🟢" : " 🔴";
+    // chSub shows real name (selRealName); append online dot
+    const base = selRealName;
+    el.textContent = base ? base + dot : dot.trim();
+  }
 }
 
 function onNewMsg(d){
@@ -781,13 +899,24 @@ function onNewMsg(d){
   const ts  = d.created_at||new Date().toISOString();
   const key = d.cid;   // server sends cid (لا هاتف حقيقي) لصفحة user-reply
 
+  const normPhone = p => String(p||"").replace(/\D/g,"").slice(-9);
   let idx = key != null ? contacts.findIndex(c=>c.cid===key) : -1;
+
+  // fallback: même numéro de téléphone sous un cid différent → on fusionne
+  if(idx === -1 && d.phone){
+    const np = normPhone(d.phone);
+    if(np) idx = contacts.findIndex(c=> normPhone(c.phone)===np);
+    if(idx !== -1){
+      // synchroniser le cid pour les prochains messages
+      contacts[idx].cid = key ?? contacts[idx].cid;
+    }
+  }
 
   if(idx === -1){
     // زبون جديد — نُحدّث القائمة من السيرفر
     if(key != null){
       contacts.unshift({
-        cid: key, phone: "", name: d.name||"زبون",
+        cid: key, phone: d.phone||"", name: d.name||"Client",
         lastMessage: d.body, lastMessageAt: ts, lastSeen: ts,
         _unread: d.direction==="in" ? 1 : 0,
         _lastDir: d.direction
@@ -833,21 +962,30 @@ function onNewMsg(d){
 // ══════════════════════════════════════════════════════════
 async function loadContacts(show=true){
   if(show) document.getElementById("clist").innerHTML=
-    '<div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">⏳ جاري التحميل...</div>';
+    `<div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">⏳ ${t('جاري التحميل...','Chargement...','Loading...')}</div>`;
   try{
     const r    = await fetch("/api/contacts?limit=200&sort=recent");
     const data = await r.json();
     const prev = new Map(contacts.map(c=>[c.cid, c._unread||0]));
     const raw  = Array.isArray(data)?data:(data.contacts||[]);
-    // إزالة التكرار — نستخدم cid كمفتاح
-    const seen = new Map();
+
+    // ── إزالة التكرار بمرحلتين ─────────────────────────────
+    // 1) dedup بـ cid
+    const byCid = new Map();
     raw.forEach(c=>{
-      const key = c.cid != null ? c.cid : String(c.phone||"").replace(/\D/g,"").slice(-9);
-      const existing = seen.get(key);
-      if(!existing || (c.lastMessageAt||"") > (existing.lastMessageAt||""))
-        seen.set(key, c);
+      const k = c.cid;
+      if(!byCid.has(k) || (c.lastMessageAt||"") > (byCid.get(k).lastMessageAt||""))
+        byCid.set(k, c);
     });
-    contacts = [...seen.values()];
+    // 2) dedup بـ phone مُنظَّم (آخر 9 أرقام) — يزيل نفس الهاتف بـ cid مختلف
+    const normPhone = p => String(p||"").replace(/\D/g,"").slice(-9);
+    const byPhone = new Map();
+    [...byCid.values()].forEach(c=>{
+      const k = normPhone(c.phone) || `cid:${c.cid}`;
+      if(!byPhone.has(k) || (c.lastMessageAt||"") > (byPhone.get(k).lastMessageAt||""))
+        byPhone.set(k, c);
+    });
+    contacts = [...byPhone.values()];
     contacts.forEach(c=>{
       c._unread   = prev.get(c.cid)||0;
       c._lastDir  = c.lastDirection||null; // من قاعدة البيانات
@@ -856,39 +994,59 @@ async function loadContacts(show=true){
     setTimeout(runPrefetch, 800);
     // جلب صور الزبائن في الخلفية بعد 3 ثواني
     setTimeout(()=>fetch("/api/contacts/sync-photos",{method:"POST"}).catch(()=>{}), 3000);
-  } catch{ toast("❌ خطأ في تحميل الزبائن"); }
+  } catch{ toast("❌ "+t("خطأ في تحميل الزبائن","Erreur de chargement","Load error")); }
 }
 
 function filterC(){
   const q = document.getElementById("srch").value.trim().toLowerCase();
   const list = contacts.filter(c=>{
     if(curTab==="unread" && !c._unread && !isUnanswered(c)) return false;
+    if(curTab==="fav"    && !favorites.has(c.cid))           return false;
     if(!q) return true;
     const n = dname(c).toLowerCase();
-    // admin يبحث بالهاتف أو الاسم، agent بالاسم فقط
-    return n.includes(q) || (myRole==="admin" && (c.phone||"").includes(q));
+    const qd = q.replace(/\D/g,"");
+    const qk = qd.length > 9 ? qd.slice(-9) : qd;
+    const cd = (c.phone||"").replace(/\D/g,"");
+    return n.includes(q) || cd.includes(qk) || (qk.length >= 7 && qk.includes(cd));
   });
   renderList(list);
 }
 
 function setTab(t){
   curTab=t;
-  document.getElementById("tabAll").classList.toggle("on",t==="all");
-  document.getElementById("tabUnread").classList.toggle("on",t==="unread");
+  document.getElementById("tabAll").classList.toggle("on",    t==="all");
+  document.getElementById("tabUnread").classList.toggle("on", t==="unread");
+  document.getElementById("tabFav").classList.toggle("on",    t==="fav");
+  const grpEl = document.getElementById("tabGroups");
+  if(grpEl) grpEl.classList.toggle("on", t==="groups");
   filterC();
 }
 
 function renderContacts(){
   const unread = contacts.filter(c=>c._unread>0).length;
+  const favCnt = contacts.filter(c=>favorites.has(c.cid)).length;
   document.getElementById("cntAll").textContent    = contacts.length||"";
   document.getElementById("cntUnread").textContent = unread||"";
+  document.getElementById("cntFav").textContent    = favCnt||"";
   filterC();
+}
+
+function toggleFav(cid, e){
+  e.stopPropagation();
+  if(favorites.has(cid)) favorites.delete(cid);
+  else                   favorites.add(cid);
+  localStorage.setItem("wr_favs", JSON.stringify([...favorites]));
+  renderContacts();
+  // أنيميشن النجمة
+  const btn = e.currentTarget;
+  btn.style.transform="scale(1.4)";
+  setTimeout(()=>{ btn.style.transform=""; },250);
 }
 
 function renderList(list){
   const el=document.getElementById("clist");
   if(!list.length){
-    el.innerHTML='<div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">لا توجد محادثات</div>';
+    el.innerHTML=`<div style="padding:24px;text-align:center;color:var(--mt);font-size:.85rem">${t("لا توجد محادثات","Aucune conversation","No conversations")}</div>`;
     return;
   }
   el.innerHTML=list.map(ciHTML).join("");
@@ -901,13 +1059,21 @@ function isUnanswered(c){
   return c.lastDirection==="in" || c._lastDir==="in";
 }
 
+function fmtPhone(p){
+  if(!p) return "";
+  const d = String(p).replace(/\D/g,"");
+  if(!d) return "";
+  return "+"+d;
+}
+
 function ciHTML(c){
-  const nm   = dname(c);
+  const nm   = dname(c);  // always phone
   const col  = colorOf(c.phone);
-  const ini  = nm.slice(0,2);
+  const realName = (c.name && !isPhone(c.name)) ? c.name : "";
+  const ini  = String(c.phone||"").replace(/\D/g,"").slice(-2) || "?";
   const lm   = c.lastMessage||c.last_message||"";
   const prv  = lm.startsWith("/uploads/")
-    ? (lm.includes("/images/")?"📷 صورة":lm.includes("/voices/")?"🎤 رسالة صوتية":lm.includes("/videos/")?"🎬 فيديو":"📎 ملف")
+    ? (lm.includes("/images/")?`📷 ${t("صورة","Photo","Photo")}`:lm.includes("/voices/")?`🎤 ${t("رسالة صوتية","Vocal","Voice")}`:lm.includes("/videos/")?`🎬 ${t("فيديو","Vidéo","Video")}`:`📎 ${t("ملف","Fichier","File")}`)
     : (lm.length>40?lm.slice(0,40)+"…":lm);
   const tm   = fmtT(c.lastMessageAt||c.lastSeen);
   const act  = c.cid===selCid;
@@ -916,16 +1082,19 @@ function ciHTML(c){
   const avContent = c.photo
     ? `<img src="/uploads/photos/${esc(c.photo)}" alt="" onerror="this.parentElement.innerHTML='${esc(ini)}';">`
     : esc(ini);
+  const isFav = favorites.has(c.cid);
   return `<div class="ci${act?" on":""}${unan?" unans":""}" data-cid="${c.cid}" onclick="openChat(${c.cid},'${esc(nm)}')">
     <div class="ci-av" style="background:${col}">${avContent}</div>
     <div class="ci-body">
       <div class="ci-top">
-        <div class="ci-name">${esc(nm)}</div>
+        <div class="ci-name is-phone">${esc(nm)}</div>
         <div class="ci-time${unrd?" unread":""}">${tm}</div>
       </div>
+      ${realName?`<div class="ci-realname">${esc(realName)}</div>`:""}
       <div class="ci-prev${unan?" style='color:#c62828;font-weight:500'":""}">${unan?"⚠ ":""} ${esc(prv)}</div>
     </div>
-    <div class="ci-right">
+    <div class="ci-right" style="display:flex;align-items:center;gap:4px">
+      <button class="fav-btn${isFav?" on":""}" onclick="toggleFav(${c.cid},event)" title="${isFav?t("إزالة من المفضلة","Retirer des favoris","Remove favorite"):t("إضافة للمفضلة","Ajouter aux favoris","Add favorite")}">${isFav?"⭐":"☆"}</button>
       ${unrd?`<div class="badge">${c._unread>9?"9+":c._unread}</div>`:""}
       ${unan&&!unrd?`<div class="unans-dot"></div>`:""}
     </div>
@@ -942,17 +1111,19 @@ function openChat(cid, name){
   renderContacts();
 
   const col  = colorOf(String(cid));
-  const lbl  = name && !isPhone(name) ? name : (myRole==="admin" ? (c?.phone||String(cid)) : "زبون");
+  const lbl  = c ? dname(c) : (name || String(cid));
   const chAv = document.getElementById("chAv");
   chAv.style.background = col;
+  const avIni = String(c?.phone||cid).replace(/\D/g,"").slice(-2) || lbl.slice(0,2);
   if(c?.photo){
-    chAv.innerHTML = `<img src="/uploads/photos/${esc(c.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${esc(lbl.slice(0,2))}'">`;
+    chAv.innerHTML = `<img src="/uploads/photos/${esc(c.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${esc(avIni)}'">`;
   } else {
-    chAv.textContent = lbl.slice(0,2);
+    chAv.textContent = avIni;
   }
-  document.getElementById("chName").textContent = lbl;
-  // admin: نعرض الهاتف (الحقيقي من contacts)، agent: لا شيء
-  document.getElementById("chSub").textContent  = myRole==="admin" ? (c?.phone||"") : "";
+  selPhone    = c?.phone ? fmtPhone(c.phone) : "";
+  selRealName = (c?.name && !isPhone(c.name)) ? c.name : "";
+  document.getElementById("chName").textContent = lbl;        // phone
+  document.getElementById("chSub").textContent  = selRealName; // real name (if any)
 
   document.getElementById("empty").style.display = "none";
   document.getElementById("chat").style.display  = "flex";
@@ -970,7 +1141,7 @@ function openChat(cid, name){
 }
 
 function backToList(){
-  selCid=null;
+  selCid=null; selPhone=""; selRealName="";
   document.getElementById("lp").classList.remove("hide");
   document.getElementById("chat").style.display  = "none";
   document.getElementById("empty").style.display = "flex";
@@ -1007,20 +1178,20 @@ async function loadMsgs(cid){
   }
 
   // أول مرة
-  area.innerHTML='<div style="padding:32px;text-align:center;color:var(--mt);font-size:.85rem">⏳ جاري التحميل...</div>';
+  area.innerHTML=`<div style="padding:32px;text-align:center;color:var(--mt);font-size:.85rem">⏳ ${t('جاري التحميل...','Chargement...','Loading...')}</div>`;
   try{
     const msgs = await fetchMsgs(cid);
     if(selCid===cid){ renderMsgs(msgs); scrollBot(true); }
   } catch{
     if(selCid===cid)
-      area.innerHTML='<div style="padding:32px;text-align:center;color:red;font-size:.85rem">❌ خطأ في التحميل</div>';
+      area.innerHTML=`<div style="padding:32px;text-align:center;color:red;font-size:.85rem">❌ ${t('خطأ في التحميل','Erreur de chargement','Load error')}</div>`;
   }
 }
 
 function renderMsgs(msgs){
   const area=document.getElementById("msgs");
   if(!Array.isArray(msgs)||!msgs.length){
-    area.innerHTML='<div style="padding:32px;text-align:center;color:var(--mt);font-size:.85rem">لا توجد رسائل</div>';
+    area.innerHTML='<div style="padding:32px;text-align:center;color:var(--mt);font-size:.85rem">Aucun message</div>';
     return;
   }
   let html="", lastDate="";
@@ -1028,10 +1199,18 @@ function renderMsgs(msgs){
   const _seen=new Set();
   const unique=[...msgs].filter(m=>{ const k=msgId(m); if(_seen.has(k)) return false; _seen.add(k); return true; });
   const sorted=unique.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  sorted.forEach(m=>{
-    const ds = m.created_at?new Date(m.created_at).toLocaleDateString("ar-MA"):"";
+  sorted.forEach((m,i)=>{
+    const _loc2 = (document.documentElement.dataset.lang||'ar')==='fr'?'fr-FR':(document.documentElement.dataset.lang||'ar')==='en'?'en-GB':'ar-MA';
+    const ds = m.created_at?new Date(m.created_at).toLocaleDateString(_loc2,{day:"2-digit",month:"2-digit",year:"numeric"}):"";
     if(ds!==lastDate){ html+=`<div class="dsep"><span>${ds}</span></div>`; lastDate=ds; }
-    html+=bubbleHTML(m);
+    const prev = sorted[i-1];
+    const next = sorted[i+1];
+    // WhatsApp-style grouping: compare direction with neighbours
+    const prevSame = prev && prev.direction===m.direction;
+    const nextSame = next && next.direction===m.direction;
+    const showTail = !prevSame;           // tail only on first of block
+    const showAv   = !nextSame && m.direction!=="out"; // avatar only on last incoming of block
+    html+=bubbleHTML(m, showTail, showAv);
   });
   area.innerHTML=html;
 }
@@ -1042,36 +1221,63 @@ function msgId(m){
   return (m.direction||"")+"_"+(m.body||"").slice(0,30)+"_"+(m.created_at||"").slice(0,16);
 }
 
-function bubbleHTML(m){
+// showTail=true  → first message of a consecutive block (tail visible)
+// showAv=true    → last incoming message of a consecutive block (avatar visible)
+function bubbleHTML(m, showTail=true, showAv=true){
   const out = m.direction==="out";
   const dir = out?"out":"in";
   const body= m.body||"";
-  const tm  = m.created_at?new Date(m.created_at).toLocaleTimeString("ar-MA",{hour:"2-digit",minute:"2-digit"}):"";
+  const tm  = m.created_at?new Date(m.created_at).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
   let content="", extra="";
 
-  if(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(body)){
+  const fname = body.split('/').pop() || 'file';
+
+  if(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(body) || m.media_type==="image"){
+    const url = m.media_url || body;
     extra=" imgbbl";
-    content=`<img class="msg-img" src="${esc(body)}" loading="lazy" onclick="openImg('${esc(body)}')" alt="صورة">`;
-  } else if(/\.(mp3|ogg|opus|m4a)(\?.*)?$/i.test(body)){
+    content=`<img class="msg-img" src="${esc(url)}" loading="lazy" onclick="openImg('${esc(url)}')" alt="Photo">
+             <a class="dl-ov" href="${esc(url)}" download="${esc(fname)}" onclick="event.stopPropagation()" title="Télécharger">⬇</a>`;
+  } else if(/\.(mp3|ogg|opus|m4a)(\?.*)?$/i.test(body) || m.media_type==="audio"){
+    const url = m.media_url || body;
     extra=" audbbl";
     const id="a"+Math.random().toString(36).slice(2);
-    content=buildAudio(id,body,out);
-  } else if(/\.(mp4|mov|webm|avi)(\?.*)?$/i.test(body)){
-    content=buildVideo(body);
+    content=buildAudio(id,url,out,fname);
+  } else if(/\.(mp4|mov|webm|avi)(\?.*)?$/i.test(body) || m.media_type==="video"){
+    const url = m.media_url || body;
+    content=buildVideo(url,fname);
   } else {
     content=`<div>${esc(body).replace(/\n/g,"<br>")}</div>`;
   }
 
   let src="";
   if(out&&m.source){
-    if(m.source==="ai")     src=`<span class="bsrc src-ai">🤖</span>`;
+    if(m.source==="ai")          src=`<span class="bsrc src-ai">🤖</span>`;
     else if(m.source==="custom") src=`<span class="bsrc src-kw">📝</span>`;
     else if(m.source==="user")   src=`<span class="bsrc src-us">👤</span>`;
   }
   const tick = out?`<span class="btick">✓✓</span>`:"";
 
-  return `<div class="row ${dir}" data-mid="${esc(msgId(m))}">
-    <div class="bbl${extra}">
+  // Avatar — incoming only
+  let avHtml = "";
+  if(!out){
+    const c   = contacts.find(x=>x.cid===selCid);
+    const col = colorOf(String(selCid||""));
+    const lbl = String(c?.phone||"").replace(/\D/g,"").slice(-1) || "?";
+    if(showAv){
+      avHtml = c?.photo
+        ? `<div class="row-av"><img src="/uploads/photos/${esc(c.photo)}" onerror="this.parentElement.className='row-av';this.parentElement.style.background='${col}';this.parentElement.textContent='${lbl}'"></div>`
+        : `<div class="row-av" style="background:${col}">${lbl}</div>`;
+    } else {
+      // spacer — keeps bubble indented even when avatar is hidden
+      avHtml = `<div class="row-av wa-hidden"></div>`;
+    }
+  }
+
+  const tailCls = showTail ? "" : " no-tail";
+
+  return `<div class="row ${dir}${!showTail?" wa-mid":""}" data-mid="${esc(msgId(m))}">
+    ${avHtml}
+    <div class="bbl${extra}${tailCls}">
       ${content}
       <div class="bmeta">${src}${tick}<span class="btime">${tm}</span></div>
     </div>
@@ -1079,18 +1285,22 @@ function bubbleHTML(m){
 }
 
 // ── Audio player ──────────────────────────────────────────
-function buildAudio(id,src,out){
+function buildAudio(id,src,out,fname){
   const bars=Array.from({length:28},(_,i)=>{
     const h=8+Math.sin(i*.8)*5+Math.random()*8;
     return `<div class="wfb" style="height:${h}px"></div>`;
   }).join("");
+  const dlName = fname || src.split('/').pop() || 'audio';
   return `<button class="apl-btn" onclick="togAud('${id}')">
       <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
     </button>
     <div class="aud-body">
       <div class="waveform" id="wf${id}">${bars}</div>
       <input class="aud-prog" type="range" id="pr${id}" value="0" min="0" max="100" step=".1" oninput="seekAud('${id}',this.value)">
-      <div class="aud-dur" id="du${id}">0:00</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="aud-dur" id="du${id}">0:00</div>
+        <a class="dl-row" href="${esc(src)}" download="${esc(dlName)}">⬇ Télécharger</a>
+      </div>
     </div>
     <audio id="${id}" src="${esc(src)}"
       onended="audEnd('${id}')"
@@ -1152,21 +1362,42 @@ function fmtSec(s){
 }
 
 // ── Video player ──────────────────────────────────────────
-function buildVideo(src){
+function buildVideo(src,fname){
   const id="v"+Math.random().toString(36).slice(2);
-  return `<div class="vwrap" onclick="openVid('${esc(src)}')">
-    <video id="${id}" src="${esc(src)}" preload="metadata" playsinline muted></video>
-    <div class="vover"><div class="vico"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M8 5v14l11-7z"/></svg></div></div>
+  const dlName = fname || src.split('/').pop() || 'video';
+  return `<div>
+    <div class="vwrap" onclick="openVid('${esc(src)}')">
+      <video id="${id}" src="${esc(src)}" preload="metadata" playsinline muted></video>
+      <div class="vover"><div class="vico"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M8 5v14l11-7z"/></svg></div></div>
+    </div>
+    <a class="dl-row" href="${esc(src)}" download="${esc(dlName)}">⬇ Télécharger</a>
   </div>`;
 }
 
-// ── Append single bubble ──────────────────────────────────
+// ── Append single bubble (WhatsApp-style grouping) ────────
 function addBubble(d){
   const area=document.getElementById("msgs");
   const mid=msgId(d);
-  if(mid && area.querySelector(`[data-mid="${CSS.escape(mid)}"]`)) return; // تجنّب التكرار
+  if(mid && area.querySelector(`[data-mid="${CSS.escape(mid)}"]`)) return;
   const atBot=area.scrollHeight-area.scrollTop-area.clientHeight<120;
-  area.insertAdjacentHTML("beforeend",bubbleHTML(d));
+
+  // WhatsApp grouping: compare with last rendered row
+  const rows    = area.querySelectorAll(".row");
+  const lastRow = rows[rows.length-1];
+  const lastDir = lastRow?.classList.contains("out")?"out":lastRow?.classList.contains("in")?"in":null;
+  const sameDir = lastDir===d.direction;
+
+  if(sameDir && lastRow){
+    lastRow.classList.add("wa-mid");
+    if(d.direction==="in"){
+      // previous incoming is no longer the last — hide its avatar
+      const prevAv = lastRow.querySelector(".row-av");
+      if(prevAv) prevAv.style.visibility="hidden";
+    }
+  }
+
+  // New message: no tail if it continues a block; avatar shown since it's the last in block
+  area.insertAdjacentHTML("beforeend", bubbleHTML(d, !sameDir, d.direction!=="out"));
   if(atBot) scrollBot(false);
 }
 
@@ -1179,7 +1410,7 @@ function scrollBot(instant){
 function updateAvatar(cid, photo){
   const url = `/uploads/photos/${esc(photo)}?t=${Date.now()}`;
   const c   = contacts.find(x=>x.cid===cid);
-  const nm  = c ? dname(c) : "زبون";
+  const nm  = c ? dname(c) : "Client";
   const ini = nm.slice(0,2);
   const err = `this.parentElement.innerHTML='${esc(ini)}'`;
 
@@ -1237,8 +1468,18 @@ async function sendMsg(){
   const inp=document.getElementById("itxt");
   const txt=inp.value.trim();
   if(!txt||!selCid) return;
+
+  // 🔒 Guard 1: active HTTP request in progress
+  if(isSending){ console.warn("⛔ send locked"); return; }
+
+  // 🔒 Guard 2: identical text sent within the last 2 s
+  if(sentMsgs.has(txt)){ console.warn("❌ duplicate blocked:", txt); return; }
+
   const btn=document.getElementById("sendBtn");
-  btn.disabled=true; inp.value=""; autoH(inp);
+  isSending=true;
+  sentMsgs.add(txt);
+  btn.disabled=true;
+  inp.value=""; autoH(inp);
 
   // سجّل قبل الـ fetch حتى لو وصل socket event قبل HTTP response
   _localOut.set(txt, (_localOut.get(txt)||0)+1);
@@ -1253,20 +1494,27 @@ async function sendMsg(){
     });
     const d=await r.json();
     if(!d.ok&&!d.sent){
-      toast("❌ "+(d.error||"فشل الإرسال")); inp.value=txt;
-      clearTimeout(_rmTimer); _rmLocal(); // تراجع فوري عن التسجيل
-    }
-    else{
-      // wa_msg_id من السيرفر يضمن نفس الـ ID مع DB → يمنع التكرار مع renderMsgs
+      toast("❌ "+(d.error||t("فشل الإرسال","Échec envoi","Send failed")));
+      inp.value=txt;
+      clearTimeout(_rmTimer); _rmLocal();
+    } else {
       const msg={direction:"out",body:txt,source:"user",created_at:new Date().toISOString(),wa_msg_id:d.wa_msg_id||null};
       addBubble(msg); scrollBot(false);
       if(msgCache.has(selCid)) msgCache.get(selCid).push(msg);
-      // تحديث قائمة الزبائن + تعليم "تم الرد"
       const ci=contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=txt; ci.lastMessageAt=msg.created_at; ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
     }
-  } catch(e){ toast("❌ "+e.message); inp.value=txt; clearTimeout(_rmTimer); _rmLocal(); }
-  finally{ btn.disabled=false; inp.focus(); }
+  } catch(e){
+    toast("❌ "+e.message);
+    inp.value=txt;
+    clearTimeout(_rmTimer); _rmLocal();
+  } finally{
+    btn.disabled=false;
+    isSending=false;
+    // Allow same text again after 2 s
+    setTimeout(()=>sentMsgs.delete(txt), 2000);
+    inp.focus();
+  }
 }
 
 function onKey(e){ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMsg(); } }
@@ -1304,11 +1552,13 @@ function esc(s){
 function fmtT(iso){
   if(!iso) return "";
   const d=new Date(iso), now=new Date(), diff=now-d;
-  if(diff<60000)    return "الآن";
-  if(diff<3600000)  return Math.floor(diff/60000)+" د";
+  const lang = document.documentElement.dataset.lang||'ar';
+  const loc   = lang==='fr'?'fr-FR':lang==='en'?'en-GB':'ar-MA';
+  if(diff<60000)    return t("الآن","Maintenant","Now");
+  if(diff<3600000)  return lang==='ar'? Math.floor(diff/60000)+" د" : Math.floor(diff/60000)+"m";
   if(d.toDateString()===now.toDateString())
-    return d.toLocaleTimeString("ar-MA",{hour:"2-digit",minute:"2-digit"});
-  return d.toLocaleDateString("ar-MA",{day:"2-digit",month:"2-digit"});
+    return d.toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"});
+  return d.toLocaleDateString(loc,{day:"2-digit",month:"2-digit"});
 }
 
 function toast(msg){
@@ -1325,7 +1575,7 @@ function doLogout(){
 //  ATTACH MENU
 // ══════════════════════════════════════════════════════════
 function togAtt(){
-  if(!selCid){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast(t("اختر محادثة أولاً","Choisir une conversation","Select a conversation")); return; }
   document.getElementById("attMenu").classList.toggle("open");
 }
 
@@ -1349,9 +1599,9 @@ function pickFile(accept){
 async function handleFile(inp){
   const file = inp.files[0];
   if(!file || !selCid) return;
-  if(file.size > 64*1024*1024){ toast("❌ الملف أكبر من 64 MB"); return; }
+  if(file.size > 64*1024*1024){ toast("❌ "+t("الملف أكبر من 64 MB","Fichier > 64 MB","File > 64 MB")); return; }
 
-  showUpload("⏳ جاري رفع الملف...");
+  showUpload("⏳ Téléversement en cours...");
   const reader = new FileReader();
   reader.onload = async ev=>{
     const b64  = ev.target.result.split(",")[1];
@@ -1371,7 +1621,7 @@ async function handleFile(inp){
       const d = await r.json();
       hideUpload();
       if(d.ok){
-        toast("✅ تم الإرسال");
+        toast("✅ "+t("تم الإرسال","Envoyé","Sent"));
         const msgBody = d.url || file.name;
         _localOut.set(msgBody, (_localOut.get(msgBody)||0)+1);
         setTimeout(()=>{ const c=_localOut.get(msgBody); if(c<=1) _localOut.delete(msgBody); else _localOut.set(msgBody,c-1); }, 15000);
@@ -1380,7 +1630,7 @@ async function handleFile(inp){
         const ci = contacts.find(c=>c.cid===selCid);
         if(ci){ ci.lastMessage=msgBody; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
       } else {
-        toast("❌ "+(d.error||"فشل الإرسال"));
+        toast("❌ "+(d.error||t("فشل الإرسال","Échec envoi","Send failed")));
       }
     } catch(err){ hideUpload(); toast("❌ "+err.message); }
   };
@@ -1389,7 +1639,7 @@ async function handleFile(inp){
 
 function showUpload(msg){
   const bar = document.getElementById("uploadBar");
-  document.getElementById("uploadMsg").textContent = msg||"جاري الإرسال...";
+  document.getElementById("uploadMsg").textContent = msg||"Envoi en cours...";
   bar.classList.add("show");
 }
 function hideUpload(){
@@ -1400,7 +1650,7 @@ function hideUpload(){
 //  LOCATION — خريطة جوجل
 // ══════════════════════════════════════════════════════════
 function openLocModal(){
-  if(!selCid){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast(t("اختر محادثة أولاً","Choisir une conversation","Select a conversation")); return; }
   document.getElementById("attMenu").classList.remove("open");
   openModal("locModal");
   setTimeout(()=>document.getElementById("locQuery").focus(),100);
@@ -1429,7 +1679,7 @@ async function sendLocation(){
       scrollBot(false);
       const ci = contacts.find(c=>c.cid===selCid);
       if(ci){ ci.lastMessage=`📍 ${q}`; ci.lastMessageAt=new Date().toISOString(); ci._lastDir="out"; ci.lastDirection="out"; renderContacts(); }
-    } else { toast("❌ "+(d.error||"فشل الإرسال")); clearTimeout(_rmLocTimer); _rmLoc(); }
+    } else { toast("❌ "+(d.error||t("فشل الإرسال","Échec envoi","Send failed"))); clearTimeout(_rmLocTimer); _rmLoc(); }
   } catch(e){ toast("❌ "+e.message); clearTimeout(_rmLocTimer); _rmLoc(); }
   finally{ btn.disabled=false; }
 }
@@ -1440,7 +1690,7 @@ async function sendLocation(){
 let ALL_RESP = [];
 
 async function openRespModal(){
-  if(!selCid){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast(t("اختر محادثة أولاً","Choisir une conversation","Select a conversation")); return; }
   openModal("respModal");
   document.getElementById("respSrch").value="";
   if(!ALL_RESP.length){
@@ -1466,7 +1716,7 @@ function filterResp(){
 function renderRespList(list){
   const el = document.getElementById("respList");
   if(!list.length){
-    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mt);font-size:.85rem">لا توجد ردود</div>';
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mt);font-size:.85rem">Aucune réponse</div>';
     el._data=[]; return;
   }
   el._data = list;
@@ -1503,7 +1753,7 @@ let _recCid     = null;   // cid للمحادثة الحالية عند التس
 let _recSending = false;
 
 function toggleRecord(){
-  if(!selCid){ toast("اختر محادثة أولاً"); return; }
+  if(!selCid){ toast(t("اختر محادثة أولاً","Choisir une conversation","Select a conversation")); return; }
   if(_recMR?.state==="recording") stopAndSend();
   else startRecord();
 }
@@ -1511,7 +1761,7 @@ function toggleRecord(){
 async function startRecord(){
   if(_recSending) return;
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){
-    toast("❌ التسجيل يتطلب HTTPS أو localhost"); return;
+    toast("❌ "+t("التسجيل يتطلب HTTPS","Enregistrement nécessite HTTPS","Recording requires HTTPS")); return;
   }
   try{
     _recStream = await navigator.mediaDevices.getUserMedia({audio:true});
@@ -1521,20 +1771,20 @@ async function startRecord(){
     _recChunks = [];
 
     _recMR.ondataavailable = e=>{ if(e.data?.size>0) _recChunks.push(e.data); };
-    _recMR.onerror = ()=>{ _recStopStream(); recShowNormal(); toast("❌ خطأ في التسجيل"); };
+    _recMR.onerror = ()=>{ _recStopStream(); recShowNormal(); toast("❌ Erreur d'enregistrement"); };
     _recMR.onstop  = async ()=>{
       _recStopStream();
       const actual = _recMR.mimeType||mime||"audio/webm";
       const blob   = new Blob(_recChunks, {type:actual});
       _recMime     = actual.split(";")[0];
-      if(!blob.size){ recShowNormal(); toast("❌ التسجيل فارغ"); return; }
+      if(!blob.size){ recShowNormal(); toast("❌ Enregistrement vide"); return; }
       recShowSending();
       const reader = new FileReader();
       reader.onload = async ev=>{
         const b64 = ev.target.result.split(",")[1];
         await _doSendVoice(b64, _recMime, _recCid);
       };
-      reader.onerror = ()=>{ recShowNormal(); toast("❌ خطأ في قراءة الصوت"); };
+      reader.onerror = ()=>{ recShowNormal(); toast("❌ Erreur lecture audio"); };
       reader.readAsDataURL(blob);
     };
 
@@ -1549,7 +1799,7 @@ async function startRecord(){
     },1000);
   } catch(err){
     _recStopStream();
-    const msg={NotAllowedError:"❌ ارفض الإذن — اسمح للميكروفون في المتصفح",NotFoundError:"❌ لم يُعثر على ميكروفون"};
+    const msg={NotAllowedError:"❌ Permission refusée — autorisez le microphone dans le navigateur",NotFoundError:"❌ Aucun microphone détecté"};
     toast(msg[err.name]||"❌ "+err.message);
   }
 }
@@ -1589,15 +1839,15 @@ async function _doSendVoice(b64, mime, cid){
     const d=await r.json();
     recShowNormal();
     if(d.ok){
-      toast("✅ تم إرسال الصوت");
+      toast("✅ "+t("تم إرسال الصوت","Vocal envoyé","Voice sent"));
       const vBody=d.url||"🎤";
       _localOut.set(vBody, (_localOut.get(vBody)||0)+1);
       setTimeout(()=>{ const c=_localOut.get(vBody); if(c<=1) _localOut.delete(vBody); else _localOut.set(vBody,c-1); }, 15000);
       addBubble({direction:"out",body:vBody,source:"user",created_at:new Date().toISOString(),wa_msg_id:d.wa_msg_id||null});
       scrollBot(false);
       const ci=contacts.find(c=>c.cid===cid);
-      if(ci){ci.lastMessage="🎤 رسالة صوتية";ci.lastMessageAt=new Date().toISOString();ci._lastDir="out";ci.lastDirection="out";renderContacts();}
-    } else { toast("❌ "+(d.error||"فشل الإرسال")); }
+      if(ci){ci.lastMessage="🎤 Message vocal";ci.lastMessageAt=new Date().toISOString();ci._lastDir="out";ci.lastDirection="out";renderContacts();}
+    } else { toast("❌ "+(d.error||t("فشل الإرسال","Échec envoi","Send failed"))); }
   } catch(e){ recShowNormal(); toast("❌ "+e.message); }
   finally{ _recSending=false; _recCid=null; }
 }
@@ -1617,7 +1867,7 @@ function recShowSending(){
   document.getElementById("recCancelBtn").style.display="none";
   document.getElementById("recSendBtn").style.display="none";
   document.getElementById("recDot").style.animationPlayState="paused";
-  document.querySelector("#recBar .rec-lbl").textContent="⏳ جاري الإرسال...";
+  document.querySelector("#recBar .rec-lbl").textContent="⏳ Envoi en cours...";
 }
 
 function recShowNormal(){
@@ -1628,7 +1878,7 @@ function recShowNormal(){
   document.getElementById("recCancelBtn").style.display="none";
   document.getElementById("recSendBtn").style.display="none";
   document.getElementById("recDot").style.animationPlayState="";
-  document.querySelector("#recBar .rec-lbl").textContent="جاري التسجيل...";
+  document.querySelector("#recBar .rec-lbl").textContent="Enregistrement...";
   document.getElementById("itxt").style.display    = "";
   document.getElementById("micBtn").style.display  = "flex";
   document.getElementById("sendBtn").style.display = "flex";
@@ -1652,7 +1902,7 @@ function hideAddForm(){
 async function saveNewResp(){
   const kw  = document.getElementById("newRespKw").value.trim();
   const txt = document.getElementById("newRespTxt").value.trim();
-  if(!txt){ toast("❌ أدخل نص الرد"); return; }
+  if(!txt){ toast("❌ "+t("أدخل نص الرد","Entrez le texte","Enter reply text")); return; }
   try{
     const r=await fetch("/api/responses",{
       method:"POST",
@@ -1661,14 +1911,14 @@ async function saveNewResp(){
     });
     const d=await r.json();
     if(d.ok||d.id!==undefined||r.ok){
-      toast("✅ تم حفظ الرد");
+      toast("✅ "+t("تم حفظ الرد","Réponse sauvegardée","Reply saved"));
       ALL_RESP=[]; // إعادة تحميل القائمة
       hideAddForm();
       const data=await (await fetch("/api/responses")).json();
       ALL_RESP=data.responses||[];
       renderRespList(ALL_RESP);
       document.getElementById("respSrch").value="";
-    } else { toast("❌ "+(d.error||"فشل الحفظ")); }
+    } else { toast("❌ "+(d.error||t("فشل الحفظ","Échec sauvegarde","Save failed"))); }
   } catch(e){ toast("❌ "+e.message); }
 }
 
@@ -1679,6 +1929,305 @@ function openModal(id){ document.getElementById(id).classList.add("open"); }
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
 function bgClose(e, id){
   if(e.target===document.getElementById(id)) closeModal(id);
+}
+
+function downloadLastMsg() {
+  if (!selCid) return;
+  const msgs = msgCache.get(selCid);
+  if (!msgs || !msgs.length) { showToast("⚠️ Aucun message"); return; }
+
+  const sorted = [...msgs].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  // priorité au dernier message reçu (in), sinon le dernier tout type
+  const last = sorted.find(m => m.direction === "in") || sorted[0];
+  if (!last) { showToast("⚠️ Aucun message"); return; }
+
+  const body  = last.media_url || last.body || "";
+  const fname = body.split("/").pop().split("?")[0] || "message";
+  const isMedia = last.media_url ||
+    /\.(jpg|jpeg|png|gif|webp|mp3|ogg|opus|m4a|mp4|mov|webm)(\?.*)?$/i.test(body);
+
+  if (isMedia) {
+    const a = document.createElement("a");
+    a.href = body;
+    a.download = fname;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("⬇ Téléchargement démarré");
+    return;
+  }
+
+  // texte → .txt
+  const name = document.getElementById("chName")?.textContent?.trim() || selPhone || selCid;
+  const tm   = last.created_at ? new Date(last.created_at).toLocaleString("fr-FR") : "";
+  const dir  = last.direction === "out" ? "→ Envoyé" : "← Reçu";
+  const txt  = `[${tm}] ${dir}\n${last.body || ""}`;
+
+  const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = `msg-${name}-${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("⬇ Dernier message téléchargé");
+}
+
+async function downloadChat() {
+  if (!selCid) return;
+
+  // Fetch ALL messages via pagination (500 per batch)
+  showToast("⏳ Chargement de tous les messages...");
+  let all = [], offset = 0;
+  try {
+    while (true) {
+      const r = await fetch(`/api/messages?cid=${encodeURIComponent(selCid)}&limit=500&offset=${offset}`);
+      const batch = await r.json();
+      const rows = Array.isArray(batch) ? batch : [];
+      all = all.concat(rows);
+      if (rows.length < 500) break;
+      offset += 500;
+    }
+  } catch (e) {
+    showToast("❌ Erreur chargement messages");
+    return;
+  }
+  if (!all.length) { showToast("⚠️ Aucun message à télécharger"); return; }
+
+  const name    = document.getElementById("chName")?.textContent?.trim() || String(selCid);
+  const sub     = document.getElementById("chSub")?.textContent?.trim()  || "";
+  const phone   = selPhone || String(selCid);
+  const origin  = location.origin;
+  const dateStr = new Date().toLocaleDateString("fr-FR", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  const nowStr  = new Date().toISOString().slice(0,10);
+
+  // sort messages ascending
+  const _seen = new Set();
+  const sorted = [...all]
+    .filter(m => { const k = msgId(m); if (_seen.has(k)) return false; _seen.add(k); return true; })
+    .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+
+  // build bubbles HTML
+  let bubbles = "", lastDate = "";
+  sorted.forEach((m, i) => {
+    const ds = m.created_at
+      ? new Date(m.created_at).toLocaleDateString("fr-FR", { day:"2-digit", month:"2-digit", year:"numeric" })
+      : "";
+    if (ds !== lastDate) {
+      bubbles += `<div class="dsep">${ds}</div>`;
+      lastDate = ds;
+    }
+    const out  = m.direction === "out";
+    const body = m.body || "";
+    const tm   = m.created_at
+      ? new Date(m.created_at).toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" })
+      : "";
+    const fname = body.split("/").pop() || "fichier";
+
+    let content = "";
+    // image
+    if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(body) || m.media_type === "image") {
+      const url = (m.media_url || body).replace(/^\//, origin + "/");
+      content = `<img class="msg-img" src="${esc(url)}" alt="Photo">
+        <div class="dl-link"><a href="${esc(url)}" download="${esc(fname)}" target="_blank">⬇ Télécharger</a></div>`;
+    }
+    // audio
+    else if (/\.(mp3|ogg|opus|m4a)(\?.*)?$/i.test(body) || m.media_type === "audio") {
+      const url = (m.media_url || body).replace(/^\//, origin + "/");
+      content = `<div class="aud-row">
+        🎤 <span>Message vocal</span>
+        <a class="dl-link-a" href="${esc(url)}" download="${esc(fname)}" target="_blank">⬇ Télécharger</a>
+      </div>`;
+    }
+    // video
+    else if (/\.(mp4|mov|webm|avi)(\?.*)?$/i.test(body) || m.media_type === "video") {
+      const url = (m.media_url || body).replace(/^\//, origin + "/");
+      content = `<div class="aud-row">
+        🎬 <span>Vidéo</span>
+        <a class="dl-link-a" href="${esc(url)}" download="${esc(fname)}" target="_blank">⬇ Télécharger</a>
+      </div>`;
+    }
+    // text
+    else {
+      content = `<div class="txt">${esc(body).replace(/\n/g,"<br>")}</div>`;
+    }
+
+    let srcBadge = "";
+    if (out && m.source) {
+      if (m.source === "ai")          srcBadge = `<span class="src src-ai">🤖 IA</span>`;
+      else if (m.source === "custom") srcBadge = `<span class="src src-kw">📝 Auto</span>`;
+      else if (m.source === "user")   srcBadge = `<span class="src src-us">👤 Agent</span>`;
+    }
+
+    bubbles += `<div class="row ${out?"out":"in"}">
+      <div class="bbl${/\.(jpg|jpeg|png|gif|webp)/i.test(body)||m.media_type==="image"?" imgbbl":""}">
+        ${content}
+        <div class="bmeta">${srcBadge}<span class="btime">${tm}</span>${out?'<span class="tick">✓✓</span>':""}</div>
+      </div>
+    </div>`;
+  });
+
+  const totalIn  = sorted.filter(m => m.direction !== "out").length;
+  const totalOut = sorted.filter(m => m.direction === "out").length;
+
+  const html = `<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conversation — ${esc(name)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+  background:#efeae2;color:#111b21;direction:ltr}
+/* header */
+.ph{background:#075e54;color:#fff;padding:14px 18px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;
+  box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.ph-av{width:44px;height:44px;border-radius:50%;background:#128c7e;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ph-info{flex:1}
+.ph-name{font-size:1rem;font-weight:700;font-family:monospace;letter-spacing:.02em}
+.ph-sub{font-size:.75rem;opacity:.75;margin-top:2px}
+.ph-date{font-size:.72rem;opacity:.6;text-align:right;white-space:nowrap}
+/* stats bar */
+.sbar{background:#075e54;opacity:.85;color:#fff;
+  padding:6px 18px;display:flex;gap:18px;font-size:.75rem;
+  border-top:1px solid rgba(255,255,255,.15)}
+.sbar span b{font-weight:700}
+/* messages */
+.body{padding:12px 5% 32px;max-width:780px;margin:0 auto}
+.dsep{text-align:center;margin:14px 0 8px}
+.dsep span,div.dsep{background:rgba(0,0,0,.12);color:#636e7e;
+  padding:3px 14px;border-radius:12px;font-size:.73rem;display:inline-block}
+.row{display:flex;margin-bottom:4px}
+.row.out{justify-content:flex-end}
+.row.in{justify-content:flex-start}
+.bbl{max-width:72%;padding:7px 10px 20px;border-radius:8px;
+  font-size:.88rem;line-height:1.45;word-break:break-word;
+  position:relative;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.row.in  .bbl{background:#fff;border-top-left-radius:0}
+.row.out .bbl{background:#d9fdd3;border-top-right-radius:0}
+.txt{white-space:pre-wrap}
+/* image bubble */
+.imgbbl{padding:4px 4px 24px!important}
+.msg-img{max-width:260px;max-height:220px;border-radius:6px;display:block}
+/* audio/video row */
+.aud-row{display:flex;align-items:center;gap:8px;font-size:.85rem;
+  padding:4px 2px;color:#444;min-width:200px}
+.dl-link{margin-top:4px;font-size:.72rem}
+.dl-link a,.dl-link-a{color:#075e54;text-decoration:none;font-weight:600}
+.dl-link a:hover,.dl-link-a:hover{text-decoration:underline}
+/* meta */
+.bmeta{position:absolute;bottom:4px;right:8px;
+  display:flex;align-items:center;gap:4px;font-size:.67rem;color:#8696a0}
+.row.in .bmeta{left:8px;right:auto}
+.btime{color:#8696a0}
+.tick{color:#53bdeb}
+.src{font-size:.65rem;padding:1px 5px;border-radius:5px}
+.src-ai{background:rgba(46,125,50,.18);color:#2e7d32}
+.src-kw{background:rgba(21,101,192,.18);color:#1565c0}
+.src-us{background:rgba(106,27,154,.18);color:#6a1b9a}
+/* print */
+@media print{
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .no-print{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="ph">
+  <div class="ph-av">👤</div>
+  <div class="ph-info">
+    <div class="ph-name">${esc(name)}</div>
+    ${sub ? `<div class="ph-sub">${esc(sub)}</div>` : ""}
+    <div class="ph-sub">+${esc(phone)}</div>
+  </div>
+  <div class="ph-date">${dateStr}</div>
+</div>
+<div class="sbar">
+  <span>📨 Reçus : <b>${totalIn}</b></span>
+  <span>📤 Envoyés : <b>${totalOut}</b></span>
+  <span>💬 Total : <b>${sorted.length}</b></span>
+</div>
+<div class="no-print" style="background:#f0f2f5;padding:8px 18px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #ddd">
+  <button onclick="window.print()" style="background:#25d366;color:#fff;border:none;padding:7px 18px;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600">🖨️ Imprimer / PDF</button>
+  <span style="font-size:.78rem;color:#888">${sorted.length} message(s)</span>
+</div>
+<div class="body">${bubbles}</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `conversation_${phone.replace(/\D/g,"")}_${nowStr}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast(`✅ Conversation téléchargée (${sorted.length} messages)`);
+}
+
+function captureChat() {
+  const wrap = document.getElementById("msgs");
+  if (!wrap) return;
+  const name  = document.getElementById("chName")?.textContent?.trim() || "—";
+  const sub   = document.getElementById("chSub")?.textContent?.trim()  || "";
+  const date  = new Date().toLocaleDateString("fr-FR", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  const origin = location.origin;
+  const html = wrap.innerHTML
+    .replace(/(src|href)="(\/uploads\/[^"]+)"/g, `$1="${origin}$2"`)
+    .replace(/(src|href)="(\/api\/[^"]+)"/g,     `$1="${origin}$2"`);
+
+  const w = window.open("", "_blank", "width=720,height=900,scrollbars=yes,resizable=yes");
+  w.document.write(`<!DOCTYPE html>
+<html lang="fr" dir="ltr"><head>
+<meta charset="UTF-8">
+<title>Conversation — ${name}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;background:#efeae2;direction:ltr;color:#111b21}
+.ph{background:#075e54;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.ph .av{width:40px;height:40px;border-radius:50%;background:#128c7e;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ph .nm{font-size:1rem;font-weight:700}.ph .sb{font-size:.77rem;opacity:.75;margin-top:2px}
+.ph .dt{margin-left:auto;font-size:.72rem;opacity:.65;padding-left:8px}
+.pa{padding:10px 16px;background:#f0f2f5;border-bottom:1px solid #ddd}
+.pa button{background:#25d366;color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600}
+.body{padding:12px 16px 24px}
+/* user-reply bubble classes */
+.row{display:flex;align-items:flex-end;gap:6px;margin-bottom:3px;clear:both}
+.row.out{flex-direction:row-reverse}
+.bbl{position:relative;padding:7px 10px 18px;border-radius:8px;max-width:72%;font-size:.88rem;line-height:1.45;word-break:break-word}
+.row.in  .bbl{background:#fff;border-top-left-radius:0}
+.row.out .bbl{background:#d9fdd3;border-top-right-radius:0}
+.bmeta{position:absolute;bottom:4px;left:8px;font-size:.67rem;color:#8696a0;white-space:nowrap}
+.row.out .bmeta{left:auto;right:8px}
+.date-sep,.msg-date-sep{text-align:center;margin:14px 0 8px;font-size:.73rem;color:#636e7e;background:rgba(0,0,0,.08);padding:3px 12px;border-radius:10px;width:fit-content;margin-inline:auto}
+.av{width:30px;height:30px;border-radius:50%;background:#128c7e;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;flex-shrink:0}
+.av.vis-hidden{visibility:hidden}
+.msg-img{max-width:220px;max-height:200px;border-radius:6px;display:block}
+.imgbbl{padding:4px 4px 8px!important;min-width:160px}
+.imgbbl .bmeta{position:absolute;bottom:10px;left:8px;background:rgba(0,0,0,.35);padding:1px 5px;border-radius:8px;color:#fff}
+.audbbl{min-width:220px;display:flex;align-items:center;gap:8px;padding:8px 10px 18px!important}
+.apl-btn,.dl-ov,.ibar,.qbar,.ch-head,.row.out .av{display:none!important}
+@media print{.pa{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head><body>
+<div class="ph">
+  <div class="av">👤</div>
+  <div><div class="nm">${name}</div><div class="sb">${sub}</div></div>
+  <div class="dt">${date}</div>
+</div>
+<div class="pa">
+  <button onclick="window.print()">🖨️ Imprimer / Enregistrer PDF</button>
+</div>
+<div class="body">${html}</div>
+</body></html>`);
+  w.document.close();
 }
 
 document.addEventListener("keydown", e=>{

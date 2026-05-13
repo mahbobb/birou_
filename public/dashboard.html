@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#075e54">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>لوحة التحكم — واتساب بوت</title>
+  <title>Tableau de bord — WhatsApp Bot</title>
   <link rel="stylesheet" href="/css/nav.css">
   <style>
     :root {
@@ -28,84 +29,99 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text);
-      direction: rtl; display: flex; min-height: 100vh;
+      font-family: 'Segoe UI', Helvetica Neue, Arial, sans-serif;
+      background: var(--bg); color: var(--text);
+      direction: ltr; display: flex; min-height: 100vh;
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
     }
 
-    /* ════════ SIDEBAR ════════ */
+    /* ════════ SIDEBAR — WhatsApp Web style (left) ════════ */
     .sidebar {
       width: var(--sidebar-w); min-height: 100vh;
-      background: linear-gradient(180deg, var(--dark) 0%, #063d36 100%);
+      background: #111b21;
       display: flex; flex-direction: column;
-      position: fixed; right: 0; top: 0; bottom: 0; z-index: 40;
-      box-shadow: -3px 0 16px rgba(0,0,0,0.18);
+      position: fixed; left: 0; top: 0; bottom: 0; z-index: 40;
+      border-right: 1px solid #2a3942;
+      box-shadow: 3px 0 16px rgba(0,0,0,0.25);
     }
     .sb-brand {
-      padding: 22px 18px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid #2a3942;
+      background: #202c33;
     }
     .sb-brand .brand-row { display: flex; align-items: center; gap: 10px; }
     .sb-brand .brand-icon {
-      width: 40px; height: 40px; background: var(--green);
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; box-shadow: 0 3px 10px rgba(37,211,102,0.4);
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
-    .sb-brand h2 { color: white; font-size: 1rem; font-weight: 700; }
-    .sb-brand small { color: rgba(255,255,255,0.5); font-size: 0.72rem; display: block; margin-top: 1px; }
+    .sb-brand h2 { color: #e9edef; font-size: 0.95rem; font-weight: 700; }
+    .sb-brand small { color: #8696a0; font-size: 0.7rem; display: block; margin-top: 1px; }
     .sb-status {
-      margin-top: 12px; display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px; background: rgba(255,255,255,0.08); border-radius: 10px;
+      margin-top: 10px; display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; background: rgba(255,255,255,0.05); border-radius: 8px;
+      border: 1px solid #2a3942;
     }
-    .sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-    .sb-dot.on  { background: var(--green); box-shadow: 0 0 6px rgba(37,211,102,0.8); animation: dotPulse 2s infinite; }
-    .sb-dot.off { background: var(--red); }
+    .sb-dot { width: 8px; height: 8px; border-radius: 50%; background: #3d5a69; flex-shrink: 0; }
+    .sb-dot.on  { background: #00a884; box-shadow: 0 0 6px rgba(0,168,132,0.7); animation: dotPulse 2s infinite; }
+    .sb-dot.off { background: #e53935; }
     @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-    .sb-status span { color: rgba(255,255,255,0.8); font-size: 0.78rem; }
+    .sb-status span { color: #8696a0; font-size: 0.78rem; }
 
-    .sb-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
-    .sb-section { font-size: 0.68rem; color: rgba(255,255,255,0.35); font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase; padding: 10px 8px 4px; }
-    .sb-link {
-      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
-      border-radius: 10px; text-decoration: none; color: rgba(255,255,255,0.7);
-      font-size: 0.88rem; transition: all 0.18s; cursor: pointer; border: none;
-      background: none; width: 100%; text-align: right; margin-bottom: 2px;
+    .sb-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+    .sb-nav::-webkit-scrollbar { width: 3px; }
+    .sb-nav::-webkit-scrollbar-thumb { background: #2a3942; border-radius: 2px; }
+    .sb-section {
+      font-size: 0.66rem; color: #8696a0; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 14px 18px 5px;
     }
-    .sb-link:hover { background: rgba(255,255,255,0.1); color: white; }
-    .sb-link.active { background: rgba(37,211,102,0.2); color: var(--green); font-weight: 600; }
+    .sb-link {
+      display: flex; align-items: center; gap: 12px; padding: 10px 18px;
+      text-decoration: none; color: #8696a0;
+      font-size: 0.86rem; transition: all 0.15s; cursor: pointer; border: none;
+      background: none; width: 100%; text-align: left; margin-bottom: 1px;
+      border-left: 3px solid transparent;
+    }
+    .sb-link:hover { background: rgba(255,255,255,0.05); color: #e9edef; }
+    .sb-link.active {
+      background: rgba(0,168,132,0.12); color: #00a884; font-weight: 600;
+      border-left-color: #00a884;
+    }
     .sb-link .ico { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
     .sb-link .badge {
-      margin-right: auto; background: var(--red); color: white;
+      margin-left: auto; background: #00a884; color: white;
       border-radius: 20px; padding: 1px 7px; font-size: 0.68rem; font-weight: 700;
     }
 
     .sb-bottom {
-      padding: 12px 10px;
-      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 14px 14px;
+      border-top: 1px solid #2a3942;
+      background: #202c33;
     }
     .sb-user {
-      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-      border-radius: 10px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px; padding: 8px 4px;
+      margin-bottom: 8px; cursor: default;
     }
     .sb-avatar {
-      width: 34px; height: 34px; border-radius: 50%; background: var(--teal);
+      width: 36px; height: 36px; border-radius: 50%; background: #2a3942;
       display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
-      color: white; font-weight: 700; flex-shrink: 0;
+      color: #e9edef; font-weight: 700; flex-shrink: 0;
+      border: 2px solid #3d5a69;
     }
-    .sb-user-info .name { color: white; font-size: 0.82rem; font-weight: 600; }
-    .sb-user-info .role { color: rgba(255,255,255,0.45); font-size: 0.72rem; }
+    .sb-user-info .name { color: #e9edef; font-size: 0.84rem; font-weight: 600; }
+    .sb-user-info .role { color: #8696a0; font-size: 0.7rem; }
     .sb-logout {
-      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-      border-radius: 10px; background: rgba(229,57,53,0.15); color: #ef9a9a;
-      text-decoration: none; font-size: 0.83rem; transition: all 0.18s; cursor: pointer;
-      border: none; width: 100%; text-align: right;
+      display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+      border-radius: 8px; background: rgba(229,57,53,0.1); color: #ff6b6b;
+      text-decoration: none; font-size: 0.84rem; transition: all 0.18s; cursor: pointer;
+      border: 1px solid rgba(229,57,53,0.2); width: 100%; text-align: left;
     }
-    .sb-logout:hover { background: rgba(229,57,53,0.3); color: #ffcdd2; }
+    .sb-logout:hover { background: rgba(229,57,53,0.2); border-color: rgba(229,57,53,0.4); color: #ff8a80; }
 
     /* ════════ MAIN ════════ */
-    .main { margin-right: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
 
     .topbar {
       background: white; border-bottom: 1px solid var(--border);
@@ -197,7 +213,7 @@
     .table-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
     .t-search {
       flex: 1; min-width: 200px; padding: 9px 14px; border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 0.88rem; outline: none; direction: rtl;
+      border-radius: 10px; font-size: 0.88rem; outline: none; direction: ltr;
       background: var(--card); transition: border-color 0.2s;
     }
     .t-search:focus { border-color: var(--teal); }
@@ -211,8 +227,8 @@
     .table-wrap { background: var(--card); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 1px 8px rgba(0,0,0,0.05); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     thead { background: linear-gradient(135deg,var(--dark),var(--teal)); }
-    th { padding: 13px 14px; text-align: right; font-size: 0.82rem; font-weight: 600; color: white; white-space: nowrap; }
-    td { padding: 12px 14px; text-align: right; font-size: 0.85rem; border-bottom: 1px solid #f4f6f8; vertical-align: middle; }
+    th { padding: 13px 14px; text-align: left; font-size: 0.82rem; font-weight: 600; color: white; white-space: nowrap; }
+    td { padding: 12px 14px; text-align: left; font-size: 0.85rem; border-bottom: 1px solid #f4f6f8; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafffe; }
 
@@ -257,7 +273,7 @@
     .form-row label { display: block; font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
     .form-input {
       width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
-      border-radius: 9px; font-size: 0.88rem; outline: none; direction: rtl;
+      border-radius: 9px; font-size: 0.88rem; outline: none; direction: ltr;
       font-family: inherit; background: #fafafa; transition: border-color 0.2s;
     }
     .form-input:focus { border-color: var(--teal); background: white; }
@@ -337,7 +353,7 @@
       display: none; align-items: center; justify-content: center;
       width: 38px; height: 38px; border: none; border-radius: 10px;
       background: var(--bg); cursor: pointer; font-size: 1.2rem;
-      color: var(--text); flex-shrink: 0; margin-left: 8px;
+      color: var(--text); flex-shrink: 0; margin-right: 8px;
     }
 
     .sidebar-overlay {
@@ -362,7 +378,7 @@
       .sb-link .ico { width: auto; }
       .sb-logout span:last-child { display: none; }
       .sb-logout { justify-content: center; }
-      .main { margin-right: 60px; }
+      .main { margin-left: 60px; }
       .bots-row { grid-template-columns: repeat(2, 1fr); }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .quick-grid { grid-template-columns: repeat(3, 1fr); }
@@ -376,23 +392,23 @@
     @media (max-width: 480px) {
       :root { --sidebar-w: 260px; }
 
-      /* Sidebar — hidden by default, slides in */
+      /* Sidebar — hidden by default, slides in from left */
       .sidebar {
         width: var(--sidebar-w) !important;
-        transform: translateX(105%);
+        transform: translateX(-105%);
         transition: transform 0.28s cubic-bezier(.4,0,.2,1);
-        z-index: 50; box-shadow: -6px 0 24px rgba(0,0,0,.35);
+        z-index: 50; box-shadow: 6px 0 24px rgba(0,0,0,.35);
       }
       .sidebar.mobile-open { transform: translateX(0); }
       .sb-brand h2, .sb-brand small, .sb-link span,
       .sb-status span, .sb-user-info, .sb-section { display: block !important; }
       .sb-link { justify-content: flex-start; padding: 10px 14px; }
-      .sb-link .badge { margin-right: auto; }
+      .sb-link .badge { margin-left: auto; }
       .sb-logout { justify-content: flex-start; }
       .sb-logout span:last-child { display: inline; }
 
       /* Main layout */
-      .main { margin-right: 0; }
+      .main { margin-left: 0; }
       .menu-btn { display: flex; }
 
       /* Topbar */
@@ -475,6 +491,172 @@
       }
     }
 
+    /* ════════ CHAT POPUP ════════ */
+    .cpop-fab{
+      position:fixed;bottom:28px;right:28px;z-index:300;
+      width:58px;height:58px;border-radius:50%;border:none;
+      background:linear-gradient(135deg,#25d366,#128c7e);
+      color:#fff;font-size:1.5rem;cursor:pointer;
+      box-shadow:0 4px 18px rgba(18,140,126,.45);
+      display:flex;align-items:center;justify-content:center;
+      transition:transform .2s,box-shadow .2s;
+    }
+    .cpop-fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(18,140,126,.6)}
+    .cpop-fab-badge{
+      position:absolute;top:-3px;right:-3px;
+      background:#e53935;color:#fff;border-radius:50%;
+      width:20px;height:20px;font-size:.65rem;font-weight:700;
+      display:flex;align-items:center;justify-content:center;
+      border:2px solid #fff;pointer-events:none;
+    }
+    .cpop-backdrop{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.35);z-index:310;
+    }
+    .cpop-backdrop.open{display:block}
+    .cpop-panel{
+      position:fixed;top:0;right:-420px;bottom:0;
+      width:400px;max-width:100vw;
+      background:#f0f2f5;z-index:320;
+      display:flex;flex-direction:column;
+      box-shadow:-4px 0 24px rgba(0,0,0,.2);
+      transition:right .28s cubic-bezier(.4,0,.2,1);
+    }
+    .cpop-panel.open{right:0}
+    .cpop-head{
+      background:linear-gradient(135deg,#075e54,#128c7e);
+      color:#fff;padding:14px 16px;
+      display:flex;align-items:center;gap:10px;
+      flex-shrink:0;min-height:58px;
+    }
+    .cpop-title{font-size:.97rem;font-weight:700;flex:1}
+    .cpop-close{
+      background:rgba(255,255,255,.15);border:none;color:#fff;
+      width:30px;height:30px;border-radius:50%;cursor:pointer;
+      font-size:.9rem;display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    .cpop-close:hover{background:rgba(255,255,255,.3)}
+    .cpop-back{
+      background:none;border:none;color:#fff;
+      font-size:1.2rem;cursor:pointer;padding:4px;
+      display:flex;align-items:center;flex-shrink:0;
+    }
+    .cpop-filters{
+      display:flex;gap:6px;padding:10px 14px 0;flex-shrink:0;
+    }
+    .cpop-filter-btn{
+      padding:5px 14px;border:1.5px solid #ddd;border-radius:20px;
+      background:#fff;font-size:.76rem;font-weight:600;cursor:pointer;
+      color:#666;transition:all .15s;font-family:inherit;
+    }
+    .cpop-filter-btn.active{background:#128c7e;color:#fff;border-color:#128c7e}
+    .cpop-srch{
+      margin:10px 14px 8px;padding:9px 14px;
+      border:1.5px solid #ddd;border-radius:20px;
+      font-size:.84rem;outline:none;background:#fff;
+      transition:border-color .2s;
+    }
+    .cpop-srch:focus{border-color:#128c7e}
+    .cpop-contacts{flex:1;overflow-y:auto}
+    .cpop-ci{
+      display:flex;align-items:center;gap:12px;
+      padding:11px 16px;background:#fff;border-bottom:1px solid #f0f0f0;
+      cursor:pointer;transition:background .15s;
+    }
+    .cpop-ci:hover{background:#f7f7f7}
+    .cpop-ci.unans{border-left:3px solid #25d366}
+    .cpop-ci-av{
+      width:44px;height:44px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:.95rem;
+    }
+    .cpop-ci-body{flex:1;min-width:0}
+    .cpop-ci-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+    .cpop-ci-name{font-weight:600;font-size:.85rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cpop-ci-time{font-size:.72rem;color:#999;flex-shrink:0}
+    .cpop-ci-prev{font-size:.78rem;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cpop-ci-badge{
+      background:#25d366;color:#fff;border-radius:50%;
+      width:18px;height:18px;font-size:.65rem;font-weight:700;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    /* ── conversation view ── */
+    .cpop-av{
+      width:38px;height:38px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:.9rem;
+    }
+    .cpop-contact-name{font-weight:700;font-size:.9rem;line-height:1.2}
+    .cpop-contact-phone{font-size:.72rem;color:rgba(255,255,255,.7);font-family:monospace}
+    .cpop-msgs{
+      flex:1;overflow-y:auto;padding:14px 12px;
+      display:flex;flex-direction:column;gap:4px;
+    }
+    .cpop-bubble{
+      max-width:82%;padding:8px 12px;border-radius:12px;
+      font-size:.83rem;line-height:1.45;word-break:break-word;
+      position:relative;
+    }
+    .cpop-bubble.in{
+      background:#fff;align-self:flex-start;
+      border-radius:2px 12px 12px 12px;
+      box-shadow:0 1px 3px rgba(0,0,0,.08);
+    }
+    .cpop-bubble.out{
+      background:#dcf8c6;align-self:flex-end;
+      border-radius:12px 2px 12px 12px;
+    }
+    .cpop-bubble-time{font-size:.65rem;color:#999;margin-top:3px;text-align:right}
+    .cpop-date-sep{
+      text-align:center;margin:8px 0;
+      font-size:.72rem;color:#999;
+      background:#e2e8f0;display:inline-block;
+      padding:3px 12px;border-radius:20px;align-self:center;
+    }
+    .cpop-input-row{
+      display:flex;align-items:flex-end;gap:8px;
+      padding:10px 12px;background:#f0f2f5;flex-shrink:0;
+      border-top:1px solid #e0e0e0;
+    }
+    .cpop-input{
+      flex:1;padding:10px 14px;border:1.5px solid #ddd;border-radius:22px;
+      font-size:.86rem;outline:none;resize:none;max-height:110px;
+      font-family:inherit;background:#fff;line-height:1.4;
+      transition:border-color .2s;overflow-y:auto;
+    }
+    .cpop-input:focus{border-color:#128c7e}
+    .cpop-send-btn{
+      width:42px;height:42px;border-radius:50%;border:none;flex-shrink:0;
+      background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;
+      font-size:1rem;cursor:pointer;display:flex;align-items:center;
+      justify-content:center;box-shadow:0 2px 8px rgba(37,211,102,.35);
+      transition:transform .15s;
+    }
+    .cpop-send-btn:hover{transform:scale(1.08)}
+    .cpop-empty{padding:40px 20px;text-align:center;color:#aaa;font-size:.84rem}
+    .cpop-loading{text-align:center;padding:30px;color:#aaa;font-size:.84rem}
+    @media(max-width:480px){
+      .cpop-fab{bottom:18px;right:16px;width:52px;height:52px;font-size:1.3rem}
+      .cpop-panel{width:100vw}
+    }
+
+    /* ════════ Language visibility ════════ */
+    [data-lv]{display:none!important}
+    html[data-lang="ar"] [data-lv="ar"]                    {display:revert!important}
+    html[data-lang="fr"] [data-lv="fr"],
+    html:not([data-lang]) [data-lv="fr"]                   {display:revert!important}
+    html[data-lang="en"] [data-lv="en"]                    {display:revert!important}
+
+    /* ── Language switcher button ── */
+    .sb-lang-btn{
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      width:100%;padding:7px 12px;border:1px solid rgba(255,255,255,0.18);
+      border-radius:10px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.75);
+      font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:6px;
+    }
+    .sb-lang-btn:hover{background:rgba(255,255,255,0.15);color:#fff}
+
     /* ════════ Better touch targets ════════ */
     @media (max-width: 480px) {
       .sb-link { min-height: 44px; }
@@ -508,69 +690,78 @@
 <aside class="sidebar" id="mainSidebar">
   <div class="sb-brand">
     <div class="brand-row">
-      <div class="brand-icon">🤖</div>
+      <div class="brand-icon">
+        <svg viewBox="0 0 35 35" width="38" height="38" fill="#00a884">
+          <path d="M17.5 0C7.835 0 0 7.835 0 17.5c0 3.093.811 6.001 2.232 8.528L0 35l9.197-2.41A17.457 17.457 0 0 0 17.5 35C27.165 35 35 27.165 35 17.5S27.165 0 17.5 0z"/>
+          <path d="M26.07 21.677c-.355-.178-2.1-1.036-2.424-1.154-.323-.118-.559-.178-.794.178-.236.355-.914 1.154-1.12 1.389-.206.236-.413.266-.768.089-2.071-1.036-3.43-1.848-4.79-4.191-.362-.622.362-.578.931-1.733a.652.652 0 0 0-.03-.614c-.089-.178-.794-1.912-1.087-2.615-.286-.687-.577-.591-.794-.603-.206-.012-.443-.015-.679-.015-.236 0-.62.089-.944.443-.324.355-1.238 1.21-1.238 2.95s1.267 3.42 1.443 3.657c.178.236 2.49 3.797 6.033 5.328 2.243.968 3.12 1.05 4.242.883.682-.103 2.1-.859 2.396-1.69.295-.83.295-1.543.207-1.69-.087-.158-.323-.247-.678-.425z" fill="#fff"/>
+        </svg>
+      </div>
       <div>
-        <h2>واتساب بوت</h2>
-        <small id="sbBrandPhone">غير متصل</small>
+        <h2>WhatsApp Bot</h2>
+        <small id="sbBrandPhone"><span data-lv="ar">غير متصل</span><span data-lv="fr">Déconnecté</span><span data-lv="en">Offline</span></small>
       </div>
     </div>
     <div class="sb-status">
       <span class="sb-dot" id="sbDot"></span>
-      <span id="sbStatus">جاري التحقق...</span>
+      <span id="sbStatus"><span data-lv="ar">جاري التحقق...</span><span data-lv="fr">Vérification...</span><span data-lv="en">Checking...</span></span>
     </div>
   </div>
 
   <nav class="sb-nav">
-    <div class="sb-section">الرئيسية</div>
+    <div class="sb-section"><span data-lv="ar">الرئيسية</span><span data-lv="fr">Accueil</span><span data-lv="en">Home</span></div>
     <button class="sb-link active" onclick="showPage('overview')" id="nav-overview">
-      <span class="ico">📊</span><span>لوحة التحكم</span>
+      <span class="ico">📊</span><span><span data-lv="ar">لوحة التحكم</span><span data-lv="fr">Tableau de bord</span><span data-lv="en">Dashboard</span></span>
     </button>
     <button class="sb-link" onclick="showPage('contacts')" id="nav-contacts">
-      <span class="ico">👥</span><span>الزبائن</span>
+      <span class="ico">👥</span><span><span data-lv="ar">الزبائن</span><span data-lv="fr">Clients</span><span data-lv="en">Contacts</span></span>
       <span class="badge" id="contactsBadge" style="display:none">0</span>
     </button>
-
     <button class="sb-link" onclick="showPage('bookings')" id="nav-bookings">
-      <span class="ico">🏢</span><span>الحجوزات</span>
+      <span class="ico">🏢</span><span><span data-lv="ar">الحجوزات</span><span data-lv="fr">Réservations</span><span data-lv="en">Bookings</span></span>
       <span class="badge" id="bookingsBadge" style="display:none">0</span>
     </button>
 
-    <div class="sb-section">التواصل</div>
-    <a class="sb-link" href="/user-reply"><span class="ico">✉️</span><span>الردود المباشرة</span></a>
-    <a class="sb-link" href="/chat"><span class="ico">💬</span><span>الشات الكامل</span></a>
-    <a class="sb-link" href="/messages"><span class="ico">📨</span><span>الرسائل</span></a>
-    <a class="sb-link" href="/calls"><span class="ico">📞</span><span>المكالمات</span></a>
-    <a class="sb-link" href="/groups"><span class="ico">👥</span><span>المجموعات</span></a>
-    <a class="sb-link" href="/grp-chat"><span class="ico">💬</span><span>رسائل المجموعات</span></a>
-    <a class="sb-link" href="/responses"><span class="ico">📋</span><span>الردود</span></a>
-    <a class="sb-link" href="/facebook"><span class="ico">📘</span><span>فيسبوك</span></a>
-    <a class="sb-link" href="/widget"><span class="ico">🌐</span><span>ويدجت الموقع</span></a>
+    <div class="sb-section"><span data-lv="ar">التواصل</span><span data-lv="fr">Communication</span><span data-lv="en">Messaging</span></div>
+    <a class="sb-link" href="/user-reply"><span class="ico">✉️</span><span><span data-lv="ar">الردود المباشرة</span><span data-lv="fr">Réponses directes</span><span data-lv="en">Direct Replies</span></span></a>
+    <a class="sb-link" href="/chat"><span class="ico">💬</span><span><span data-lv="ar">الشات الكامل</span><span data-lv="fr">Chat complet</span><span data-lv="en">Full Chat</span></span></a>
+    <a class="sb-link" href="/messages"><span class="ico">📨</span><span><span data-lv="ar">الرسائل</span><span data-lv="fr">Messages</span><span data-lv="en">Messages</span></span></a>
+    <a class="sb-link" href="/calls"><span class="ico">📞</span><span><span data-lv="ar">المكالمات</span><span data-lv="fr">Appels</span><span data-lv="en">Calls</span></span></a>
+    <a class="sb-link" href="/groups"><span class="ico">👥</span><span><span data-lv="ar">المجموعات</span><span data-lv="fr">Groupes</span><span data-lv="en">Groups</span></span></a>
+    <a class="sb-link" href="/grp-chat"><span class="ico">💬</span><span><span data-lv="ar">رسائل المجموعات</span><span data-lv="fr">Msgs groupes</span><span data-lv="en">Group Msgs</span></span></a>
+    <a class="sb-link" href="/responses"><span class="ico">📋</span><span><span data-lv="ar">الردود</span><span data-lv="fr">Réponses</span><span data-lv="en">Responses</span></span></a>
+    <a class="sb-link" href="/facebook"><span class="ico">📘</span><span>Facebook</span></a>
+    <a class="sb-link" href="/widget"><span class="ico">🌐</span><span><span data-lv="ar">ويدجت الموقع</span><span data-lv="fr">Widget site</span><span data-lv="en">Site Widget</span></span></a>
 
-    <div class="sb-section">الوسائط</div>
-    <a class="sb-link" href="/images"><span class="ico">📸</span><span>الصور</span></a>
-    <a class="sb-link" href="/voices"><span class="ico">🎤</span><span>الصوتيات</span></a>
-    <a class="sb-link" href="/videos"><span class="ico">🎬</span><span>الفيديوهات</span></a>
+    <div class="sb-section"><span data-lv="ar">الوسائط</span><span data-lv="fr">Médias</span><span data-lv="en">Media</span></div>
+    <a class="sb-link" href="/images"><span class="ico">📸</span><span><span data-lv="ar">الصور</span><span data-lv="fr">Photos</span><span data-lv="en">Photos</span></span></a>
+    <a class="sb-link" href="/voices"><span class="ico">🎤</span><span><span data-lv="ar">الصوتيات</span><span data-lv="fr">Vocaux</span><span data-lv="en">Voice</span></span></a>
+    <a class="sb-link" href="/videos"><span class="ico">🎬</span><span><span data-lv="ar">الفيديوهات</span><span data-lv="fr">Vidéos</span><span data-lv="en">Videos</span></span></a>
+    <a class="sb-link" href="/archive"><span class="ico">🗄️</span><span><span data-lv="ar">الأرشيف</span><span data-lv="fr">Archives</span><span data-lv="en">Archive</span></span></a>
 
-    <div class="sb-section">الإعدادات</div>
-    <a class="sb-link" href="/users"><span class="ico">👤</span><span>المستخدمون</span></a>
-    <a class="sb-link" href="/notes"><span class="ico">📝</span><span>الملاحظات</span></a>
+    <div class="sb-section"><span data-lv="ar">الإعدادات</span><span data-lv="fr">Paramètres</span><span data-lv="en">Settings</span></div>
+    <a class="sb-link" href="/users"><span class="ico">👤</span><span><span data-lv="ar">المستخدمون</span><span data-lv="fr">Utilisateurs</span><span data-lv="en">Users</span></span></a>
+    <a class="sb-link" href="/notes"><span class="ico">📝</span><span><span data-lv="ar">الملاحظات</span><span data-lv="fr">Notes</span><span data-lv="en">Notes</span></span></a>
     <a class="sb-link" href="/qr"><span class="ico">📲</span><span>QR Code</span></a>
-    <a class="sb-link" href="/sync"><span class="ico">🔄</span><span>المزامنة</span></a>
+    <a class="sb-link" href="/sync"><span class="ico">🔄</span><span><span data-lv="ar">المزامنة</span><span data-lv="fr">Sync</span><span data-lv="en">Sync</span></span></a>
     <button class="sb-link" onclick="showPage('admin')" id="nav-admin">
-      <span class="ico">⚙️</span><span>الإدارة</span>
+      <span class="ico">⚙️</span><span><span data-lv="ar">الإدارة</span><span data-lv="fr">Administration</span><span data-lv="en">Admin</span></span>
     </button>
   </nav>
 
   <div class="sb-bottom">
     <div class="sb-user">
-      <div class="sb-avatar">أ</div>
+      <div class="sb-avatar" id="sbAvatarLetter">A</div>
       <div class="sb-user-info">
-        <div class="name">المدير</div>
-        <div class="role">Admin</div>
+        <div class="name" id="sbUserName">Admin</div>
+        <div class="role" id="sbUserRole">Administrateur</div>
       </div>
     </div>
+    <button class="sb-lang-btn" id="sbLangBtn" onclick="_dashCycleLang()">
+      🌐 <span id="sbLangLabel">FR</span>
+    </button>
     <button class="sb-logout" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location.href='/login')">
-      <span>🚪</span><span>خروج</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10.09 15.59 11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+      <span data-lv="ar">خروج</span><span data-lv="fr">Déconnexion</span><span data-lv="en">Logout</span>
     </button>
   </div>
 </aside>
@@ -581,12 +772,12 @@
   <!-- Topbar -->
   <div class="topbar">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-    <div class="topbar-title" id="topbarTitle">لوحة التحكم</div>
+    <div class="topbar-title" id="topbarTitle"><span data-lv="ar">لوحة التحكم</span><span data-lv="fr">Tableau de bord</span><span data-lv="en">Dashboard</span></div>
     <div class="topbar-actions">
-      <button class="tbar-btn pause"  onclick="pauseBot()">⏸ إيقاف</button>
-      <button class="tbar-btn resume" onclick="resumeBot()">▶ استئناف</button>
-      <button id="btnAutoReply" class="tbar-btn ar-on" onclick="toggleAutoReply()">📝 Keywords: شغالة</button>
-      <button id="btnAiReply"   class="tbar-btn ai-on" onclick="toggleAiReply()">🤖 AI: شغال</button>
+      <button class="tbar-btn pause"  onclick="pauseBot()">⏸ <span data-lv="ar">إيقاف</span><span data-lv="fr">Pause</span><span data-lv="en">Pause</span></button>
+      <button class="tbar-btn resume" onclick="resumeBot()">▶ <span data-lv="ar">استئناف</span><span data-lv="fr">Reprendre</span><span data-lv="en">Resume</span></button>
+      <button id="btnAutoReply" class="tbar-btn ar-on" onclick="toggleAutoReply()">📝 Keywords: <span data-lv="ar">شغالة</span><span data-lv="fr">Actif</span><span data-lv="en">On</span></button>
+      <button id="btnAiReply"   class="tbar-btn ai-on" onclick="toggleAiReply()">🤖 AI: <span data-lv="ar">شغال</span><span data-lv="fr">Actif</span><span data-lv="en">On</span></button>
       <button class="tbar-btn resume" onclick="loadData()">🔄</button>
     </div>
   </div>
@@ -597,44 +788,44 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon si-green">👥</div>
-        <div class="stat-body"><div class="num" id="statTotal">—</div><div class="lbl">إجمالي الزبائن</div></div>
+        <div class="stat-body"><div class="num" id="statTotal">—</div><div class="lbl"><span data-lv="ar">إجمالي الزبائن</span><span data-lv="fr">Total clients</span><span data-lv="en">Total contacts</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-blue">💬</div>
-        <div class="stat-body"><div class="num" id="statToday">—</div><div class="lbl">رسائل اليوم</div></div>
+        <div class="stat-body"><div class="num" id="statToday">—</div><div class="lbl"><span data-lv="ar">رسائل اليوم</span><span data-lv="fr">Messages aujourd'hui</span><span data-lv="en">Today's messages</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-teal">📸</div>
-        <div class="stat-body"><div class="num" id="statImages">—</div><div class="lbl">الصور</div></div>
+        <div class="stat-body"><div class="num" id="statImages">—</div><div class="lbl"><span data-lv="ar">الصور</span><span data-lv="fr">Photos</span><span data-lv="en">Photos</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-orange">🎤</div>
-        <div class="stat-body"><div class="num" id="statVoices">—</div><div class="lbl">الصوتيات</div></div>
+        <div class="stat-body"><div class="num" id="statVoices">—</div><div class="lbl"><span data-lv="ar">الصوتيات</span><span data-lv="fr">Vocaux</span><span data-lv="en">Voice notes</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-purple">🎬</div>
-        <div class="stat-body"><div class="num" id="statVideos">—</div><div class="lbl">الفيديوهات</div></div>
+        <div class="stat-body"><div class="num" id="statVideos">—</div><div class="lbl"><span data-lv="ar">الفيديوهات</span><span data-lv="fr">Vidéos</span><span data-lv="en">Videos</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-red">🤖</div>
-        <div class="stat-body"><div class="num" id="statAR" style="font-size:1.2rem">—</div><div class="lbl">الردود التلقائية</div></div>
+        <div class="stat-body"><div class="num" id="statAR" style="font-size:1.2rem">—</div><div class="lbl"><span data-lv="ar">الردود التلقائية</span><span data-lv="fr">Réponses auto</span><span data-lv="en">Auto replies</span></div></div>
       </div>
       <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
         <div class="stat-icon si-blue">🏢</div>
-        <div class="stat-body"><div class="num" id="statBookingsTotal">—</div><div class="lbl">إجمالي الحجوزات</div></div>
+        <div class="stat-body"><div class="num" id="statBookingsTotal">—</div><div class="lbl"><span data-lv="ar">إجمالي الحجوزات</span><span data-lv="fr">Total réservations</span><span data-lv="en">Total bookings</span></div></div>
       </div>
       <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
         <div class="stat-icon si-orange">⏳</div>
-        <div class="stat-body"><div class="num" id="statBookingsPending" style="color:#e65100">—</div><div class="lbl">بانتظار التأكيد</div></div>
+        <div class="stat-body"><div class="num" id="statBookingsPending" style="color:#e65100">—</div><div class="lbl"><span data-lv="ar">بانتظار التأكيد</span><span data-lv="fr">En attente</span><span data-lv="en">Pending</span></div></div>
       </div>
       <div class="stat-card" style="cursor:pointer" onclick="showPage('bookings')">
         <div class="stat-icon si-green">✅</div>
-        <div class="stat-body"><div class="num" id="statBookingsConfirmed">—</div><div class="lbl">حجوزات مؤكدة</div></div>
+        <div class="stat-body"><div class="num" id="statBookingsConfirmed">—</div><div class="lbl"><span data-lv="ar">حجوزات مؤكدة</span><span data-lv="fr">Confirmées</span><span data-lv="en">Confirmed</span></div></div>
       </div>
     </div>
 
     <!-- Bots Status -->
-    <div class="section-title">🤖 حالة الأرقام</div>
+    <div class="section-title">🤖 <span data-lv="ar">حالة الأرقام</span><span data-lv="fr">État des bots</span><span data-lv="en">Bot status</span></div>
     <div class="bots-row" id="botsRow">
       <div class="bot-card"><div class="bot-head"><span class="bot-num">Bot 1</span><span class="bot-status off"><span class="bot-dot"></span>غير متصل</span></div><div class="bot-phone">—</div><button class="bot-qr-btn" onclick="location.href='/qr'">📲 ربط QR</button></div>
       <div class="bot-card"><div class="bot-head"><span class="bot-num">Bot 2</span><span class="bot-status off"><span class="bot-dot"></span>غير متصل</span></div><div class="bot-phone">—</div><button class="bot-qr-btn" onclick="location.href='/qr'">📲 ربط QR</button></div>
@@ -642,30 +833,38 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="section-title">⚡ وصول سريع</div>
+    <div class="section-title">⚡ <span data-lv="ar">وصول سريع</span><span data-lv="fr">Accès rapide</span><span data-lv="en">Quick access</span></div>
     <div class="quick-grid">
-      <a class="quick-card" href="/messages">    <div class="qico">📨</div><div class="qtxt">الرسائل</div></a>
-      <a class="quick-card" href="/responses">   <div class="qico">📋</div><div class="qtxt">الردود</div></a>
-      <a class="quick-card" href="/images">      <div class="qico">📸</div><div class="qtxt">الصور</div></a>
-      <a class="quick-card" href="/voices">      <div class="qico">🎤</div><div class="qtxt">الصوتيات</div></a>
-      <a class="quick-card" href="/videos">      <div class="qico">🎬</div><div class="qtxt">الفيديوهات</div></a>
+      <a class="quick-card" href="/messages">    <div class="qico">📨</div><div class="qtxt"><span data-lv="ar">الرسائل</span><span data-lv="fr">Messages</span><span data-lv="en">Messages</span></div></a>
+      <a class="quick-card" href="/responses">   <div class="qico">📋</div><div class="qtxt"><span data-lv="ar">الردود</span><span data-lv="fr">Réponses</span><span data-lv="en">Responses</span></div></a>
+      <a class="quick-card" href="/images">      <div class="qico">📸</div><div class="qtxt"><span data-lv="ar">الصور</span><span data-lv="fr">Photos</span><span data-lv="en">Photos</span></div></a>
+      <a class="quick-card" href="/voices">      <div class="qico">🎤</div><div class="qtxt"><span data-lv="ar">الصوتيات</span><span data-lv="fr">Vocaux</span><span data-lv="en">Voice</span></div></a>
+      <a class="quick-card" href="/videos">      <div class="qico">🎬</div><div class="qtxt"><span data-lv="ar">الفيديوهات</span><span data-lv="fr">Vidéos</span><span data-lv="en">Videos</span></div></a>
       <a class="quick-card" href="/qr">          <div class="qico">📲</div><div class="qtxt">QR Code</div></a>
-      <a class="quick-card" href="/sync">        <div class="qico">🔄</div><div class="qtxt">المزامنة</div></a>
-      <a class="quick-card" href="/notes">       <div class="qico">📝</div><div class="qtxt">الملاحظات</div></a>
+      <a class="quick-card" href="/sync">        <div class="qico">🔄</div><div class="qtxt"><span data-lv="ar">المزامنة</span><span data-lv="fr">Sync</span><span data-lv="en">Sync</span></div></a>
+      <a class="quick-card" href="/archive">    <div class="qico">🗄️</div><div class="qtxt"><span data-lv="ar">الأرشيف</span><span data-lv="fr">Archives</span><span data-lv="en">Archive</span></div></a>
+      <a class="quick-card" href="/notes">       <div class="qico">📝</div><div class="qtxt"><span data-lv="ar">الملاحظات</span><span data-lv="fr">Notes</span><span data-lv="en">Notes</span></div></a>
       <div class="quick-card" onclick="openBroadcast()" style="cursor:pointer">
-        <div class="qico">📢</div><div class="qtxt">إرسال جماعي</div>
+        <div class="qico">📢</div><div class="qtxt"><span data-lv="ar">إرسال جماعي</span><span data-lv="fr">Diffusion</span><span data-lv="en">Broadcast</span></div>
       </div>
       <div class="quick-card" onclick="showPage('bookings')" style="cursor:pointer">
-        <div class="qico">🏢</div><div class="qtxt">الحجوزات</div>
+        <div class="qico">🏢</div><div class="qtxt"><span data-lv="ar">الحجوزات</span><span data-lv="fr">Réservations</span><span data-lv="en">Bookings</span></div>
       </div>
     </div>
 
     <!-- Recent contacts -->
-    <div class="section-title">🕐 آخر الزبائن</div>
+    <div class="section-title">🕐 <span data-lv="ar">آخر الزبائن</span><span data-lv="fr">Derniers clients</span><span data-lv="en">Recent contacts</span></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>الزبون</th><th>الهاتف</th><th>الرسائل</th><th>آخر رسالة</th><th>آخر ظهور</th><th>إجراء</th></tr></thead>
-        <tbody id="recentBody"><tr class="empty-row"><td colspan="6">جاري التحميل...</td></tr></tbody>
+        <thead><tr>
+          <th><span data-lv="ar">الزبون</span><span data-lv="fr">Client</span><span data-lv="en">Contact</span></th>
+          <th><span data-lv="ar">الهاتف</span><span data-lv="fr">Téléphone</span><span data-lv="en">Phone</span></th>
+          <th><span data-lv="ar">الرسائل</span><span data-lv="fr">Messages</span><span data-lv="en">Messages</span></th>
+          <th><span data-lv="ar">آخر رسالة</span><span data-lv="fr">Dernier msg</span><span data-lv="en">Last msg</span></th>
+          <th><span data-lv="ar">آخر ظهور</span><span data-lv="fr">Vu</span><span data-lv="en">Last seen</span></th>
+          <th><span data-lv="ar">إجراء</span><span data-lv="fr">Action</span><span data-lv="en">Action</span></th>
+        </tr></thead>
+        <tbody id="recentBody"><tr class="empty-row"><td colspan="6"><span data-lv="ar">جاري التحميل...</span><span data-lv="fr">Chargement...</span><span data-lv="en">Loading...</span></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -673,13 +872,21 @@
   <!-- ════ PAGE: CONTACTS ════ -->
   <div class="page" id="page-contacts">
     <div class="table-toolbar">
-      <input class="t-search" id="contactSearch" type="text" placeholder="🔍 ابحث باسم أو رقم هاتف..." oninput="filterContacts()">
-      <button class="t-btn t-btn-teal" onclick="loadData()">🔄 تحديث</button>
+      <input class="t-search" id="contactSearch" type="text" oninput="filterContacts()">
+      <button class="t-btn t-btn-teal" onclick="loadData()">🔄 <span data-lv="ar">تحديث</span><span data-lv="fr">Actualiser</span><span data-lv="en">Refresh</span></button>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>#</th><th>الزبون</th><th>الهاتف</th><th class="col-hide-mob">الرسائل</th><th class="col-hide-mob">آخر رسالة</th><th class="col-hide-mob">آخر ظهور</th><th>إجراءات</th></tr></thead>
-        <tbody id="contactsBody"><tr class="empty-row"><td colspan="7">جاري التحميل...</td></tr></tbody>
+        <thead><tr>
+          <th>#</th>
+          <th><span data-lv="ar">الزبون</span><span data-lv="fr">Client</span><span data-lv="en">Contact</span></th>
+          <th><span data-lv="ar">الهاتف</span><span data-lv="fr">Téléphone</span><span data-lv="en">Phone</span></th>
+          <th class="col-hide-mob"><span data-lv="ar">الرسائل</span><span data-lv="fr">Messages</span><span data-lv="en">Messages</span></th>
+          <th class="col-hide-mob"><span data-lv="ar">آخر رسالة</span><span data-lv="fr">Dernier msg</span><span data-lv="en">Last msg</span></th>
+          <th class="col-hide-mob"><span data-lv="ar">آخر ظهور</span><span data-lv="fr">Vu</span><span data-lv="en">Last seen</span></th>
+          <th><span data-lv="ar">إجراءات</span><span data-lv="fr">Actions</span><span data-lv="en">Actions</span></th>
+        </tr></thead>
+        <tbody id="contactsBody"><tr class="empty-row"><td colspan="7"><span data-lv="ar">جاري التحميل...</span><span data-lv="fr">Chargement...</span><span data-lv="en">Loading...</span></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -691,39 +898,47 @@
     <div class="stats-grid" style="margin-bottom:20px">
       <div class="stat-card">
         <div class="stat-icon si-blue">🏢</div>
-        <div class="stat-body"><div class="num" id="bsTotal">—</div><div class="lbl">إجمالي الطلبات</div></div>
+        <div class="stat-body"><div class="num" id="bsTotal">—</div><div class="lbl"><span data-lv="ar">إجمالي الطلبات</span><span data-lv="fr">Total demandes</span><span data-lv="en">Total bookings</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-orange">⏳</div>
-        <div class="stat-body"><div class="num" id="bsPending" style="color:#e65100">—</div><div class="lbl">بانتظار التأكيد</div></div>
+        <div class="stat-body"><div class="num" id="bsPending" style="color:#e65100">—</div><div class="lbl"><span data-lv="ar">بانتظار التأكيد</span><span data-lv="fr">En attente</span><span data-lv="en">Pending</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-green">✅</div>
-        <div class="stat-body"><div class="num" id="bsConfirmed">—</div><div class="lbl">مؤكدة</div></div>
+        <div class="stat-body"><div class="num" id="bsConfirmed">—</div><div class="lbl"><span data-lv="ar">مؤكدة</span><span data-lv="fr">Confirmées</span><span data-lv="en">Confirmed</span></div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon si-red">✖</div>
-        <div class="stat-body"><div class="num" id="bsCancelled" style="color:#c62828">—</div><div class="lbl">ملغاة</div></div>
+        <div class="stat-body"><div class="num" id="bsCancelled" style="color:#c62828">—</div><div class="lbl"><span data-lv="ar">ملغاة</span><span data-lv="fr">Annulées</span><span data-lv="en">Cancelled</span></div></div>
       </div>
     </div>
 
     <!-- Filter + refresh -->
     <div class="table-toolbar">
-      <button class="t-btn" id="bfAll"       onclick="bookFilter(null)"          style="background:#e0f2f1;color:#075e54;font-weight:700">الكل</button>
-      <button class="t-btn" id="bfPending"   onclick="bookFilter('pending')"     style="background:#fff3e0;color:#e65100">بانتظار التأكيد</button>
-      <button class="t-btn" id="bfConfirmed" onclick="bookFilter('confirmed')"   style="background:#e8f5e9;color:#2e7d32">مؤكدة</button>
-      <button class="t-btn" id="bfCancelled" onclick="bookFilter('cancelled')"   style="background:#ffebee;color:#c62828">ملغاة</button>
-      <button class="t-btn t-btn-teal" style="margin-right:auto" onclick="loadBookingsPage()">🔄 تحديث</button>
-      <a class="t-btn t-btn-teal" href="/booking" target="_blank">🔗 نموذج الحجز</a>
+      <button class="t-btn" id="bfAll"       onclick="bookFilter(null)"          style="background:#e0f2f1;color:#075e54;font-weight:700"><span data-lv="ar">الكل</span><span data-lv="fr">Tous</span><span data-lv="en">All</span></button>
+      <button class="t-btn" id="bfPending"   onclick="bookFilter('pending')"     style="background:#fff3e0;color:#e65100"><span data-lv="ar">بانتظار التأكيد</span><span data-lv="fr">En attente</span><span data-lv="en">Pending</span></button>
+      <button class="t-btn" id="bfConfirmed" onclick="bookFilter('confirmed')"   style="background:#e8f5e9;color:#2e7d32"><span data-lv="ar">مؤكدة</span><span data-lv="fr">Confirmées</span><span data-lv="en">Confirmed</span></button>
+      <button class="t-btn" id="bfCancelled" onclick="bookFilter('cancelled')"   style="background:#ffebee;color:#c62828"><span data-lv="ar">ملغاة</span><span data-lv="fr">Annulées</span><span data-lv="en">Cancelled</span></button>
+      <button class="t-btn t-btn-teal" style="margin-right:auto" onclick="loadBookingsPage()">🔄 <span data-lv="ar">تحديث</span><span data-lv="fr">Actualiser</span><span data-lv="en">Refresh</span></button>
+      <a class="t-btn t-btn-teal" href="/booking" target="_blank">🔗 <span data-lv="ar">نموذج الحجز</span><span data-lv="fr">Formulaire</span><span data-lv="en">Booking form</span></a>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th><th>الاسم</th><th class="col-hide-mob">الهاتف</th><th class="col-hide-mob">الشقة</th>
-            <th>الدخول</th><th>الخروج</th><th class="col-hide-mob">الأشخاص</th>
-            <th class="col-hide-mob">🪪 البطاقة</th><th>الحالة</th><th class="col-hide-mob">التاريخ</th><th>إجراء</th>
+            <th>#</th>
+            <th><span data-lv="ar">الاسم</span><span data-lv="fr">Nom</span><span data-lv="en">Name</span></th>
+            <th class="col-hide-mob"><span data-lv="ar">الهاتف</span><span data-lv="fr">Tél</span><span data-lv="en">Phone</span></th>
+            <th class="col-hide-mob"><span data-lv="ar">الشقة</span><span data-lv="fr">Appart.</span><span data-lv="en">Apt.</span></th>
+            <th><span data-lv="ar">الدخول</span><span data-lv="fr">Arrivée</span><span data-lv="en">Check-in</span></th>
+            <th><span data-lv="ar">الخروج</span><span data-lv="fr">Départ</span><span data-lv="en">Check-out</span></th>
+            <th class="col-hide-mob"><span data-lv="ar">الأشخاص</span><span data-lv="fr">Pers.</span><span data-lv="en">Persons</span></th>
+            <th class="col-hide-mob">🪪 <span data-lv="ar">البطاقة</span><span data-lv="fr">CIN</span><span data-lv="en">ID</span></th>
+            <th><span data-lv="ar">الحالة</span><span data-lv="fr">Statut</span><span data-lv="en">Status</span></th>
+            <th class="col-hide-mob"><span data-lv="ar">التاريخ</span><span data-lv="fr">Date</span><span data-lv="en">Date</span></th>
+            <th><span data-lv="ar">إجراء</span><span data-lv="fr">Action</span><span data-lv="en">Action</span></th>
           </tr>
         </thead>
         <tbody id="bookingsBody"><tr class="empty-row"><td colspan="11">⏳ جاري التحميل...</td></tr></tbody>
@@ -738,43 +953,43 @@
 
       <!-- System Info -->
       <div class="admin-card">
-        <h4>📡 معلومات النظام</h4>
-        <div class="info-row"><span class="info-key">حالة البوت</span><span class="info-val" id="adBotStatus">—</span></div>
-        <div class="info-row"><span class="info-key">الردود التلقائية</span><span class="info-val" id="adAutoReply">—</span></div>
-        <div class="info-row"><span class="info-key">الأرقام المتصلة</span><span class="info-val" id="adBots">—</span></div>
-        <div class="info-row"><span class="info-key">إجمالي الزبائن</span><span class="info-val" id="adTotal">—</span></div>
-        <div class="info-row"><span class="info-key">رسائل اليوم</span><span class="info-val" id="adToday">—</span></div>
+        <h4>📡 <span data-lv="ar">معلومات النظام</span><span data-lv="fr">Info système</span><span data-lv="en">System info</span></h4>
+        <div class="info-row"><span class="info-key"><span data-lv="ar">حالة البوت</span><span data-lv="fr">État bot</span><span data-lv="en">Bot status</span></span><span class="info-val" id="adBotStatus">—</span></div>
+        <div class="info-row"><span class="info-key"><span data-lv="ar">الردود التلقائية</span><span data-lv="fr">Réponses auto</span><span data-lv="en">Auto replies</span></span><span class="info-val" id="adAutoReply">—</span></div>
+        <div class="info-row"><span class="info-key"><span data-lv="ar">الأرقام المتصلة</span><span data-lv="fr">Bots connectés</span><span data-lv="en">Connected bots</span></span><span class="info-val" id="adBots">—</span></div>
+        <div class="info-row"><span class="info-key"><span data-lv="ar">إجمالي الزبائن</span><span data-lv="fr">Total clients</span><span data-lv="en">Total contacts</span></span><span class="info-val" id="adTotal">—</span></div>
+        <div class="info-row"><span class="info-key"><span data-lv="ar">رسائل اليوم</span><span data-lv="fr">Messages aujourd'hui</span><span data-lv="en">Today's messages</span></span><span class="info-val" id="adToday">—</span></div>
       </div>
 
       <!-- Change Password -->
       <div class="admin-card">
-        <h4>🔐 تغيير كلمة المرور</h4>
+        <h4>🔐 <span data-lv="ar">تغيير كلمة المرور</span><span data-lv="fr">Changer le mot de passe</span><span data-lv="en">Change password</span></h4>
         <div class="form-row">
-          <label>كلمة المرور الحالية</label>
+          <label><span data-lv="ar">كلمة المرور الحالية</span><span data-lv="fr">Mot de passe actuel</span><span data-lv="en">Current password</span></label>
           <input class="form-input" type="password" id="curPass" placeholder="••••••••">
         </div>
         <div class="form-row">
-          <label>كلمة المرور الجديدة</label>
-          <input class="form-input" type="password" id="newPass" placeholder="6 أحرف على الأقل">
+          <label><span data-lv="ar">كلمة المرور الجديدة</span><span data-lv="fr">Nouveau mot de passe</span><span data-lv="en">New password</span></label>
+          <input class="form-input" type="password" id="newPass">
         </div>
         <div class="form-row">
-          <label>تأكيد كلمة المرور</label>
-          <input class="form-input" type="password" id="confPass" placeholder="كرر كلمة المرور الجديدة">
+          <label><span data-lv="ar">تأكيد كلمة المرور</span><span data-lv="fr">Confirmer</span><span data-lv="en">Confirm password</span></label>
+          <input class="form-input" type="password" id="confPass">
         </div>
-        <button class="form-btn fb-teal" onclick="changePassword()">🔒 تحديث كلمة المرور</button>
+        <button class="form-btn fb-teal" onclick="changePassword()">🔒 <span data-lv="ar">تحديث كلمة المرور</span><span data-lv="fr">Mettre à jour</span><span data-lv="en">Update password</span></button>
       </div>
 
       <!-- Bot Controls -->
       <div class="admin-card">
-        <h4>🎮 التحكم بالبوت</h4>
+        <h4>🎮 <span data-lv="ar">التحكم بالبوت</span><span data-lv="fr">Contrôle bot</span><span data-lv="en">Bot controls</span></h4>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <button class="form-btn" style="background:#fff3e0;color:#e65100" onclick="pauseBot()">⏸ إيقاف البوت مؤقتاً</button>
-          <button class="form-btn" style="background:#e8f5e9;color:#2e7d32" onclick="resumeBot()">▶ استئناف البوت</button>
-          <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">📝 تبديل Keywords</button>
-          <button id="adBtnAI" class="form-btn" style="background:#e3f2fd;color:#1565c0" onclick="toggleAiReply()">🤖 تبديل الذكاء الاصطناعي</button>
-          <a href="/qr" class="form-btn fb-teal" style="text-align:center;text-decoration:none;display:block">📲 ربط رقم جديد (QR)</a>
-          <a href="/sync" class="form-btn" style="background:#e3f2fd;color:var(--blue);text-align:center;text-decoration:none;display:block">🔄 مزامنة الرسائل القديمة</a>
-          <button class="form-btn" style="background:#f3e5f5;color:#6a1b9a" onclick="openBroadcast()">📢 إرسال تذكير جماعي</button>
+          <button class="form-btn" style="background:#fff3e0;color:#e65100" onclick="pauseBot()">⏸ <span data-lv="ar">إيقاف البوت مؤقتاً</span><span data-lv="fr">Pause bot</span><span data-lv="en">Pause bot</span></button>
+          <button class="form-btn" style="background:#e8f5e9;color:#2e7d32" onclick="resumeBot()">▶ <span data-lv="ar">استئناف البوت</span><span data-lv="fr">Reprendre bot</span><span data-lv="en">Resume bot</span></button>
+          <button id="adBtnAR" class="form-btn fb-green" onclick="toggleAutoReply()">📝 <span data-lv="ar">تبديل Keywords</span><span data-lv="fr">Basculer Keywords</span><span data-lv="en">Toggle Keywords</span></button>
+          <button id="adBtnAI" class="form-btn" style="background:#e3f2fd;color:#1565c0" onclick="toggleAiReply()">🤖 <span data-lv="ar">تبديل الذكاء الاصطناعي</span><span data-lv="fr">Basculer IA</span><span data-lv="en">Toggle AI</span></button>
+          <a href="/qr" class="form-btn fb-teal" style="text-align:center;text-decoration:none;display:block">📲 <span data-lv="ar">ربط رقم جديد (QR)</span><span data-lv="fr">Connecter (QR)</span><span data-lv="en">Connect new (QR)</span></a>
+          <a href="/sync" class="form-btn" style="background:#e3f2fd;color:var(--blue);text-align:center;text-decoration:none;display:block">🔄 <span data-lv="ar">مزامنة الرسائل القديمة</span><span data-lv="fr">Sync anciens msgs</span><span data-lv="en">Sync old messages</span></a>
+          <button class="form-btn" style="background:#f3e5f5;color:#6a1b9a" onclick="openBroadcast()">📢 <span data-lv="ar">إرسال تذكير جماعي</span><span data-lv="fr">Diffusion groupée</span><span data-lv="en">Broadcast reminder</span></button>
         </div>
       </div>
 
@@ -806,14 +1021,14 @@
 <div class="overlay" id="sendOverlay">
   <div class="modal">
     <div class="modal-hdr">
-      <h3>📤 إرسال رسالة</h3>
+      <h3>📤 <span data-lv="ar">إرسال رسالة</span><span data-lv="fr">Envoyer un message</span><span data-lv="en">Send message</span></h3>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-to" id="modalTo"></div>
     <textarea id="modalMsg" placeholder="اكتب رسالتك هنا..."></textarea>
     <div class="modal-actions">
-      <button class="mbtn mbtn-cancel" onclick="closeModal()">إلغاء</button>
-      <button class="mbtn mbtn-green"  onclick="sendMsg()">إرسال ✅</button>
+      <button class="mbtn mbtn-cancel" onclick="closeModal()"><span data-lv="ar">إلغاء</span><span data-lv="fr">Annuler</span><span data-lv="en">Cancel</span></button>
+      <button class="mbtn mbtn-green"  onclick="sendMsg()"><span data-lv="ar">إرسال</span><span data-lv="fr">Envoyer</span><span data-lv="en">Send</span> ✅</button>
     </div>
   </div>
 </div>
@@ -822,7 +1037,7 @@
 <div class="overlay" id="broadcastOverlay">
   <div class="modal" style="max-width:520px">
     <div class="modal-hdr">
-      <h3>📢 إرسال تذكير جماعي</h3>
+      <h3>📢 <span data-lv="ar">إرسال تذكير جماعي</span><span data-lv="fr">Diffusion groupée</span><span data-lv="en">Broadcast reminder</span></h3>
       <button class="modal-close" onclick="closeBroadcast()">✕</button>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -869,9 +1084,9 @@
       <div class="bc-stat s-blue"  id="bcTotal">📊 0 مجموع</div>
     </div>
     <div class="modal-actions">
-      <button class="mbtn mbtn-cancel" onclick="closeBroadcast()">إغلاق</button>
-      <button class="mbtn" id="bcStopBtn" onclick="stopBroadcast()" style="display:none;background:#e53935;color:#fff">⏹ وقف</button>
-      <button class="mbtn mbtn-green" id="bcSendBtn" onclick="runBroadcast()">📢 إرسال</button>
+      <button class="mbtn mbtn-cancel" onclick="closeBroadcast()"><span data-lv="ar">إغلاق</span><span data-lv="fr">Fermer</span><span data-lv="en">Close</span></button>
+      <button class="mbtn" id="bcStopBtn" onclick="stopBroadcast()" style="display:none;background:#e53935;color:#fff">⏹ <span data-lv="ar">وقف</span><span data-lv="fr">Arrêter</span><span data-lv="en">Stop</span></button>
+      <button class="mbtn mbtn-green" id="bcSendBtn" onclick="runBroadcast()">📢 <span data-lv="ar">إرسال</span><span data-lv="fr">Envoyer</span><span data-lv="en">Send</span></button>
     </div>
   </div>
 </div>
@@ -882,15 +1097,51 @@
   let allContacts   = [];
   let selectedPhone = "";
 
+  /* ── i18n ── */
+  function t(ar,fr,en){ const l=document.documentElement.dataset.lang||'fr'; return l==='fr'?fr:l==='en'?en:ar; }
+
+  /* ── Language switcher ── */
+  const _LANGS = ['ar','fr','en'];
+  const _LANG_LABELS = {ar:'عر',fr:'FR',en:'EN'};
+  function _dashApplyLang(l){
+    localStorage.setItem('navLang',l);
+    document.documentElement.dataset.lang=l;
+    const lbl=document.getElementById('sbLangLabel');
+    if(lbl) lbl.textContent=_LANG_LABELS[l]||l.toUpperCase();
+    _applyDashPlaceholders();
+  }
+  function _dashCycleLang(){
+    const cur=document.documentElement.dataset.lang||'fr';
+    _dashApplyLang(_LANGS[(_LANGS.indexOf(cur)+1)%_LANGS.length]);
+  }
+  function _applyDashPlaceholders(){
+    const cs=document.getElementById('contactSearch');
+    const mm=document.getElementById('modalMsg');
+    if(cs) cs.placeholder=t('🔍 ابحث باسم أو رقم هاتف...','🔍 Rechercher...','🔍 Search...');
+    if(mm) mm.placeholder=t('اكتب رسالتك هنا...','Votre message...','Write your message...');
+    // update topbar title
+    const tt=document.getElementById('topbarTitle');
+    if(tt) tt.textContent=pages[_curPage]||_curPage;
+  }
+  // apply label on load
+  (function(){ const l=document.documentElement.dataset.lang||'fr'; const lbl=document.getElementById('sbLangLabel'); if(lbl) lbl.textContent=_LANG_LABELS[l]||l.toUpperCase(); })();
+
   /* ── Page navigation ── */
-  const pages = { overview:"لوحة التحكم", contacts:"الزبائن", bookings:"الحجوزات", admin:"الإدارة" };
+  let _curPage = 'overview';
+  const pages = {
+    overview: ()=>t("لوحة التحكم","Tableau de bord","Dashboard"),
+    contacts: ()=>t("الزبائن","Clients","Contacts"),
+    bookings: ()=>t("الحجوزات","Réservations","Bookings"),
+    admin:    ()=>t("الإدارة","Administration","Admin")
+  };
   function showPage(id) {
+    _curPage = id;
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".sb-link[id^='nav-']").forEach(l => l.classList.remove("active"));
     document.getElementById("page-" + id).classList.add("active");
     const nav = document.getElementById("nav-" + id);
     if (nav) nav.classList.add("active");
-    document.getElementById("topbarTitle").textContent = pages[id] || id;
+    document.getElementById("topbarTitle").textContent = (pages[id]?.() ?? id);
     if (id === "bookings") loadBookingsPage();
   }
 
@@ -922,7 +1173,7 @@
       document.getElementById("statVideos").textContent = videos.total;
 
       const arOn = stats.autoReplyEnabled !== false;
-      document.getElementById("statAR").textContent = arOn ? "✅ شغالة" : "❌ مطفأة";
+      document.getElementById("statAR").textContent = arOn ? "✅ "+t("شغالة","Actif","On") : "❌ "+t("مطفأة","Inactif","Off");
 
       /* Booking stats */
       document.getElementById("statBookingsTotal").textContent     = bStats.total     || 0;
@@ -936,33 +1187,33 @@
       const connected = stats.botConnected;
       const sbDot = document.getElementById("sbDot");
       sbDot.className = "sb-dot " + (connected ? "on" : "off");
-      document.getElementById("sbStatus").textContent = stats.botPaused ? "موقوف مؤقتاً" : (connected ? "متصل" : "غير متصل");
+      document.getElementById("sbStatus").textContent = stats.botPaused ? t("موقوف مؤقتاً","En pause","Paused") : (connected ? t("متصل","Connecté","Connected") : t("غير متصل","Déconnecté","Offline"));
 
       /* Phone — show first connected bot's phone */
       const firstConnected = Object.values(qr).find(b => b.connected && b.phone);
-      const phone = firstConnected ? `+${firstConnected.phone}` : "غير متصل";
+      const phone = firstConnected ? `+${firstConnected.phone}` : t("غير متصل","Déconnecté","Offline");
       document.getElementById("sbBrandPhone").textContent = phone;
 
       /* Topbar auto-reply btn */
       const arBtn = document.getElementById("btnAutoReply");
-      arBtn.textContent = arOn ? "📝 Keywords: شغالة" : "📝 Keywords: مطفأة";
+      arBtn.textContent = arOn ? "📝 Keywords: "+t("شغالة","Actif","On") : "📝 Keywords: "+t("مطفأة","Inactif","Off");
       arBtn.className   = "tbar-btn " + (arOn ? "ar-on" : "ar-off");
 
       /* Topbar AI reply btn */
       const aiOn  = stats.aiAutoReplyEnabled !== false;
       const aiBtn = document.getElementById("btnAiReply");
-      aiBtn.textContent = aiOn ? "🤖 AI: شغال" : "🤖 AI: مطفأ";
+      aiBtn.textContent = aiOn ? "🤖 AI: "+t("شغال","Actif","On") : "🤖 AI: "+t("مطفأ","Inactif","Off");
       aiBtn.className   = "tbar-btn " + (aiOn ? "ai-on" : "ai-off");
 
       /* Admin page info */
-      document.getElementById("adBotStatus").textContent  = stats.botPaused ? "⏸ موقوف" : "🟢 شغال";
-      document.getElementById("adAutoReply").textContent  = arOn ? "✅ مفعّلة" : "❌ معطّلة";
+      document.getElementById("adBotStatus").textContent  = stats.botPaused ? "⏸ "+t("موقوف","En pause","Paused") : "🟢 "+t("شغال","Actif","Running");
+      document.getElementById("adAutoReply").textContent  = arOn ? "✅ "+t("مفعّلة","Activé","Enabled") : "❌ "+t("معطّلة","Désactivé","Disabled");
       document.getElementById("adTotal").textContent      = stats.total;
       document.getElementById("adToday").textContent      = stats.today;
       const adBtn = document.getElementById("adBtnAR");
       adBtn.style.background = arOn ? "#e8f5e9" : "#ffebee";
       adBtn.style.color      = arOn ? "#2e7d32" : "#c62828";
-      adBtn.textContent      = arOn ? "🔕 تعطيل الردود التلقائية" : "🤖 تفعيل الردود التلقائية";
+      adBtn.textContent      = arOn ? "🔕 "+t("تعطيل الردود التلقائية","Désactiver auto-réponse","Disable auto-reply") : "🤖 "+t("تفعيل الردود التلقائية","Activer auto-réponse","Enable auto-reply");
 
       /* Bots status cards */
       updateBotsRow(qr);
@@ -974,7 +1225,7 @@
 
       /* Admin bots info */
       const connectedCount = Object.values(qr).filter(b => b.connected).length;
-      document.getElementById("adBots").textContent = `${connectedCount} / 3 متصل`;
+      document.getElementById("adBots").textContent = `${connectedCount} / 3 `+t("متصل","connecté(s)","connected");
 
       renderRecent(allContacts.slice(0,8));
       filterContacts();
@@ -994,11 +1245,11 @@
           <div class="bot-head">
             <span class="bot-num">Bot ${i+1}</span>
             <span class="bot-status ${isOn?"on":"off"}">
-              <span class="bot-dot"></span>${isOn?"متصل":"غير متصل"}
+              <span class="bot-dot"></span>${isOn?t("متصل","Connecté","Connected"):t("غير متصل","Déconnecté","Offline")}
             </span>
           </div>
           <div class="bot-phone">${phone}</div>
-          <button class="bot-qr-btn" onclick="location.href='/qr'">📲 ${isOn?"إدارة":"ربط QR"}</button>
+          <button class="bot-qr-btn" onclick="location.href='/qr'">📲 ${isOn?t("إدارة","Gérer","Manage"):t("ربط QR","Relier QR","Link QR")}</button>
         </div>`;
     }).join("");
   }
@@ -1028,9 +1279,9 @@
   function fmtLastMsg(body, direction) {
     if (!body) return "—";
     const arrow = direction === "out" ? "↗ " : "";
-    if (/\/uploads\/images\//.test(body))  return arrow + "📷 صورة";
-    if (/\/uploads\/videos\//.test(body))  return arrow + "🎬 فيديو";
-    if (/\/uploads\/voices\//.test(body))  return arrow + "🎤 رسالة صوتية";
+    if (/\/uploads\/images\//.test(body))  return arrow + "📷 " + t("صورة","Photo","Photo");
+    if (/\/uploads\/videos\//.test(body))  return arrow + "🎬 " + t("فيديو","Vidéo","Video");
+    if (/\/uploads\/voices\//.test(body))  return arrow + "🎤 " + t("رسالة صوتية","Vocal","Voice");
     return arrow + body.substring(0, 38);
   }
 
@@ -1038,21 +1289,23 @@
     if (!dateStr) return "";
     const d = new Date(dateStr), now = new Date();
     const diff = (now - d) / 1000;
-    if (diff < 60)   return "الآن";
-    if (diff < 3600) return Math.floor(diff/60) + " د";
-    if (diff < 86400)return Math.floor(diff/3600) + " س";
+    const lang = document.documentElement.dataset.lang||'fr';
+    const loc  = lang==='fr'?'fr-FR':lang==='en'?'en-GB':'ar-MA';
+    if (diff < 60)    return t("الآن","Maintenant","Now");
+    if (diff < 3600)  return lang==='ar' ? Math.floor(diff/60)+" د" : Math.floor(diff/60)+"m";
+    if (diff < 86400) return lang==='ar' ? Math.floor(diff/3600)+" س" : Math.floor(diff/3600)+"h";
     if (diff < 604800) {
-      const days = ["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"];
-      return days[d.getDay()];
+      if(lang==='ar'){ const days=["أحد","إثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"]; return days[d.getDay()]; }
+      return d.toLocaleDateString(loc,{weekday:'short'});
     }
-    return d.toLocaleDateString("ar-MA");
+    return d.toLocaleDateString(loc);
   }
 
   /* ── Render recent ── */
   function renderRecent(list) {
     const body = document.getElementById("recentBody");
     if (!list.length) {
-      body.innerHTML = `<tr class="empty-row"><td colspan="6">لا يوجد زبائن بعد</td></tr>`;
+      body.innerHTML = `<tr class="empty-row"><td colspan="6">${t("لا يوجد زبائن بعد","Aucun client encore","No contacts yet")}</td></tr>`;
       return;
     }
     body.innerHTML = list.map(c => {
@@ -1072,7 +1325,7 @@
           <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg}</div></td>
           <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${time}</td>
           <td><div class="actions-cell">
-                        <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
+                        <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 ${t("إرسال","Envoyer","Send")}</button>
           </div></td>
         </tr>`;
     }).join("");
@@ -1090,7 +1343,7 @@
   function renderContacts(list) {
     const body = document.getElementById("contactsBody");
     if (!list.length) {
-      body.innerHTML = `<tr class="empty-row"><td colspan="7">لا يوجد نتائج</td></tr>`;
+      body.innerHTML = `<tr class="empty-row"><td colspan="7">${t("لا يوجد نتائج","Aucun résultat","No results")}</td></tr>`;
       return;
     }
     body.innerHTML = list.map((c, i) => {
@@ -1111,22 +1364,22 @@
           <td class="col-hide-mob"><div class="last-msg" title="${escHtml(c.lastMessage||"")}">${msg}</div></td>
           <td class="col-hide-mob" style="font-size:0.78rem;color:var(--muted)">${time}</td>
           <td><div class="actions-cell">
-                        <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 إرسال</button>
-            <a href="/messages?phone=${c.phone}" class="action-btn ab-msg">📨 رسائل</a>
+                        <button class="action-btn ab-send" onclick="openModal('${c.phone}','${escHtml(c.name)}')">📤 ${t("إرسال","Envoyer","Send")}</button>
+            <a href="/messages?phone=${c.phone}" class="action-btn ab-msg">📨 ${t("رسائل","Messages","Messages")}</a>
           </div></td>
         </tr>`;
     }).join("");
   }
 
   /* ── Bot controls ── */
-  async function pauseBot()  { await fetch("/api/pause",{method:"POST"}); showToast("⏸ البوت موقوف"); loadData(); }
-  async function resumeBot() { await fetch("/api/resume",{method:"POST"}); showToast("▶ البوت شغال"); loadData(); }
+  async function pauseBot()  { await fetch("/api/pause",{method:"POST"}); showToast("⏸ "+t("البوت موقوف","Bot en pause","Bot paused")); loadData(); }
+  async function resumeBot() { await fetch("/api/resume",{method:"POST"}); showToast("▶ "+t("البوت شغال","Bot actif","Bot running")); loadData(); }
 
   async function toggleAutoReply() {
     const arBtn = document.getElementById("btnAutoReply");
     const isOn  = arBtn.className.includes("ar-on");
     await fetch(isOn ? "/api/auto-reply/disable" : "/api/auto-reply/enable", { method:"POST" });
-    showToast(isOn ? "🔕 Keywords مطفأة" : "📝 Keywords مفعّلة");
+    showToast(isOn ? "🔕 Keywords "+t("مطفأة","désactivé","off") : "📝 Keywords "+t("مفعّلة","activé","on"));
     loadData();
   }
 
@@ -1134,14 +1387,14 @@
     const aiBtn = document.getElementById("btnAiReply");
     const isOn  = aiBtn.className.includes("ai-on");
     await fetch(isOn ? "/api/ai-reply/disable" : "/api/ai-reply/enable", { method:"POST" });
-    showToast(isOn ? "🔕 AI مطفأ" : "🤖 AI مفعّل");
+    showToast(isOn ? "🔕 AI "+t("مطفأ","désactivé","off") : "🤖 AI "+t("مفعّل","activé","on"));
     loadData();
   }
 
   /* ── Send modal ── */
   function openModal(phone, name) {
     selectedPhone = phone;
-    document.getElementById("modalTo").textContent  = `إلى: ${name} (+${phone})`;
+    document.getElementById("modalTo").textContent  = `${t("إلى","À","To")}: ${name} (+${phone})`;
     document.getElementById("modalMsg").value       = "";
     document.getElementById("sendOverlay").classList.add("open");
     setTimeout(() => document.getElementById("modalMsg").focus(), 100);
@@ -1151,15 +1404,15 @@
 
   async function sendMsg() {
     const message = document.getElementById("modalMsg").value.trim();
-    if (!message) return showToast("⚠️ اكتب رسالة أولاً");
+    if (!message) return showToast("⚠️ "+t("اكتب رسالة أولاً","Écrivez un message","Write a message"));
     try {
       const d = await fetch("/api/send",{
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ phone:selectedPhone, message })
       }).then(r=>r.json());
-      if (d.ok) { showToast("✅ تم الإرسال"); closeModal(); }
-      else showToast("❌ " + (d.error||"خطأ في الإرسال"));
-    } catch { showToast("❌ فشل الاتصال"); }
+      if (d.ok) { showToast("✅ "+t("تم الإرسال","Envoyé","Sent")); closeModal(); }
+      else showToast("❌ " + (d.error||t("خطأ في الإرسال","Erreur envoi","Send error")));
+    } catch { showToast("❌ "+t("فشل الاتصال","Connexion échouée","Connection failed")); }
   }
 
   /* ── Change password ── */
@@ -1167,16 +1420,16 @@
     const current  = document.getElementById("curPass").value;
     const newPass  = document.getElementById("newPass").value;
     const confPass = document.getElementById("confPass").value;
-    if (!current || !newPass) return showToast("⚠️ أدخل كلمة المرور الحالية والجديدة");
-    if (newPass !== confPass)  return showToast("⚠️ كلمتا المرور غير متطابقتين");
-    if (newPass.length < 6)    return showToast("⚠️ كلمة المرور قصيرة جداً");
+    if (!current || !newPass) return showToast("⚠️ "+t("أدخل كلمة المرور الحالية والجديدة","Entrez les deux mots de passe","Enter both passwords"));
+    if (newPass !== confPass)  return showToast("⚠️ "+t("كلمتا المرور غير متطابقتين","Mots de passe différents","Passwords don't match"));
+    if (newPass.length < 6)    return showToast("⚠️ "+t("كلمة المرور قصيرة جداً","Mot de passe trop court","Password too short"));
     try {
       const d = await fetch("/api/admin/change-password",{
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ current, newPass })
       }).then(r=>r.json());
       if (d.ok) {
-        showToast("✅ تم تغيير كلمة المرور — سيتم تسجيل الخروج");
+        showToast("✅ "+t("تم تغيير كلمة المرور — سيتم تسجيل الخروج","Mot de passe mis à jour — Déconnexion","Password updated — Logging out"));
         document.getElementById("curPass").value  = "";
         document.getElementById("newPass").value  = "";
         document.getElementById("confPass").value = "";
@@ -1298,9 +1551,9 @@
       document.getElementById("bcResultBox").textContent = lines;
 
       const stoppedCount = d.stopped || 0;
-      document.getElementById("bcSent").textContent   = `✅ ${d.sent} تم`;
-      document.getElementById("bcFailed").textContent = `❌ ${d.failed} فشل`;
-      document.getElementById("bcTotal").textContent  = stoppedCount ? `⏹ ${stoppedCount} موقوف` : `📊 ${d.total} مجموع`;
+      document.getElementById("bcSent").textContent   = `✅ ${d.sent} ${t("تم","envoyé","sent")}`;
+      document.getElementById("bcFailed").textContent = `❌ ${d.failed} ${t("فشل","échoué","failed")}`;
+      document.getElementById("bcTotal").textContent  = stoppedCount ? `⏹ ${stoppedCount} ${t("موقوف","arrêté","stopped")}` : `📊 ${d.total} ${t("مجموع","total","total")}`;
       document.getElementById("bcSummary").style.display = "flex";
 
       if (d.cancelled) showToast(`⏹ توقف الإرسال: ${d.sent} / ${d.total}`);
@@ -1346,13 +1599,33 @@
     if (e.changedTouches[0].clientX - _tsx > 60) closeSidebar();
   }, { passive: true });
 
+  _applyDashPlaceholders();
   loadData();
   setInterval(loadData, 30000);
+
+  /* ── Charger les infos de l'utilisateur connecté ── */
+  fetch('/api/me').then(r => r.ok ? r.json() : null).then(info => {
+    if (!info) return;
+    const nameEl   = document.getElementById('sbUserName');
+    const roleEl   = document.getElementById('sbUserRole');
+    const avatarEl = document.getElementById('sbAvatarLetter');
+    if (nameEl)   nameEl.textContent = info.name || 'Admin';
+    if (roleEl)   roleEl.textContent = info.role === 'admin' ? 'Administrateur' : 'Agent';
+    if (avatarEl) {
+      const n = info.name || 'A';
+      avatarEl.textContent = n.trim().split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+      avatarEl.style.background = avatarGrad(n);
+    }
+  }).catch(() => {});
 
   /* ════════ BOOKINGS PAGE ════════ */
   let allBookings = [], bookCurrentFilter = null, bookPage = 1;
   const BOOK_PAGE_SIZE = 20;
-  const BSTATUS_LABEL = { pending:'بانتظار التأكيد', confirmed:'مؤكد', cancelled:'ملغي' };
+  const BSTATUS_LABEL = {
+    pending:   ()=>t('بانتظار التأكيد','En attente','Pending'),
+    confirmed: ()=>t('مؤكد','Confirmé','Confirmed'),
+    cancelled: ()=>t('ملغي','Annulé','Cancelled')
+  };
   const BSTATUS_COLOR = { pending:'#e65100', confirmed:'#2e7d32', cancelled:'#c62828' };
   const BSTATUS_BG    = { pending:'#fff3e0', confirmed:'#e8f5e9', cancelled:'#ffebee' };
 
@@ -1368,7 +1641,7 @@
       document.getElementById('bsConfirmed').textContent = stats.confirmed || 0;
       document.getElementById('bsCancelled').textContent = stats.cancelled || 0;
       renderBookingsTable();
-    } catch { showToast('❌ خطأ في تحميل الحجوزات'); }
+    } catch { showToast('❌ '+t('خطأ في تحميل الحجوزات','Erreur chargement réservations','Bookings load error')); }
   }
 
   function bookFilter(status) {
@@ -1384,7 +1657,7 @@
     const page = list.slice((bookPage-1)*BOOK_PAGE_SIZE, bookPage*BOOK_PAGE_SIZE);
     const tbody = document.getElementById('bookingsBody');
     if (!list.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="10">📭 لا توجد حجوزات</td></tr>';
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="10">📭 ${t("لا توجد حجوزات","Aucune réservation","No bookings")}</td></tr>`;
       document.getElementById('bookingsPg').innerHTML = '';
       return;
     }
@@ -1392,17 +1665,17 @@
       const nights  = Math.ceil((new Date(b.check_out) - new Date(b.check_in)) / 86400000);
       const persons = b.adults + (b.children > 0 ? '+' + b.children + '👶' : '');
       const date    = new Date(b.created_at).toLocaleDateString('ar-MA', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-      const badge   = `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:${BSTATUS_BG[b.status]};color:${BSTATUS_COLOR[b.status]}">${BSTATUS_LABEL[b.status]}</span>`;
+      const badge   = `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:${BSTATUS_BG[b.status]};color:${BSTATUS_COLOR[b.status]}">${BSTATUS_LABEL[b.status]?.()}</span>`;
       const waMsg   = encodeURIComponent(`مرحباً ${b.name}، بخصوص طلب حجز الشقة من ${b.check_in} إلى ${b.check_out}:`);
       const waPhone = b.phone.replace(/\D/g,'');
       let actions = '';
       if (b.status==='pending') {
-        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'confirmed')">✅ تأكيد</button>`;
-        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'confirmed')">✅ ${t("تأكيد","Confirmer","Confirm")}</button>`;
+        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ ${t("إلغاء","Annuler","Cancel")}</button>`;
       } else if (b.status==='confirmed') {
-        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ إلغاء</button>`;
+        actions += `<button class="action-btn ab-msg"  onclick="bookSetStatus(${b.id},'cancelled')">✖ ${t("إلغاء","Annuler","Cancel")}</button>`;
       } else {
-        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'pending')">↩ إعادة</button>`;
+        actions += `<button class="action-btn ab-chat" onclick="bookSetStatus(${b.id},'pending')">↩ ${t("إعادة","Rouvrir","Reopen")}</button>`;
       }
       actions += `<a class="action-btn ab-send" href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank">💬 WA</a>`;
       let imgs = []; try { imgs = b.id_images ? JSON.parse(b.id_images) : []; } catch {}
@@ -1457,13 +1730,243 @@
 
   function bookGoPage(p) { bookPage = p; renderBookingsTable(); }
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ════════════════════════════════════════════════════════
+     CHAT POPUP — messages clients + réponse directe
+  ════════════════════════════════════════════════════════ */
+  let _cpopOpen    = false;
+  let _cpopFilter  = "all";      // "all" | "unanswered"
+  let _cpopPhone   = null;       // phone sélectionné (conversation view)
+  let _cpopName    = "";
+  let _cpopContacts = [];        // cache contacts pour le popup
+
+  const CPOP_COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
+  function cpopColor(p){ let n=0;for(const c of String(p||""))n+=c.charCodeAt(0);return CPOP_COLORS[n%CPOP_COLORS.length]; }
+  function cpopIni(name,phone){ if(name&&name!==phone){const p=name.trim().split(" ");return p.length>=2?p[0][0]+p[1][0]:p[0].substring(0,2);} return String(phone||"").replace(/\D/g,"").slice(-2)||"?"; }
+  function cpopFmt(p){ const d=String(p||"").replace(/\D/g,"");return d?"+"+d:""; }
+  function cpopTime(dt){ if(!dt)return""; const d=new Date(dt),s=(Date.now()-d)/1000; if(s<60)return"maintenant"; if(s<3600)return Math.floor(s/60)+"m"; if(s<86400)return Math.floor(s/3600)+"h"; return d.toLocaleDateString("fr-FR"); }
+  function cpopPreview(body){ if(!body)return"—"; if(/\/uploads\/images\//.test(body))return"📷 Photo"; if(/\/uploads\/videos\//.test(body))return"🎬 Vidéo"; if(/\/uploads\/voices\//.test(body))return"🎤 Vocal"; return body.substring(0,48); }
+
+  function toggleChatPopup(){ _cpopOpen ? closeChatPopup() : openChatPopup(); }
+
+  function openChatPopup(){
+    _cpopOpen = true;
+    document.getElementById("cpopPanel").classList.add("open");
+    document.getElementById("cpopBackdrop").classList.add("open");
+    cpopRefresh();
+  }
+
+  function closeChatPopup(){
+    _cpopOpen = false;
+    document.getElementById("cpopPanel").classList.remove("open");
+    document.getElementById("cpopBackdrop").classList.remove("open");
+  }
+
+  function cpopSetFilter(f){
+    _cpopFilter = f;
+    document.getElementById("cpopBtnAll").classList.toggle("active",        f==="all");
+    document.getElementById("cpopBtnUnanswered").classList.toggle("active", f==="unanswered");
+    renderCpopList();
+  }
+
+  async function cpopRefresh(){
+    try {
+      const data = await fetch("/api/contacts?limit=200&sort=recent").then(r=>r.json());
+      _cpopContacts = Array.isArray(data) ? data : (data.contacts||[]);
+      renderCpopList();
+      updateCpopBadge();
+    } catch {}
+  }
+
+  function updateCpopBadge(){
+    const cnt = _cpopContacts.filter(c=>c.lastDirection==="in").length;
+    const el  = document.getElementById("cpopBadge");
+    el.textContent = cnt > 99 ? "99+" : cnt;
+    el.style.display = cnt > 0 ? "flex" : "none";
+  }
+
+  function renderCpopList(){
+    const q   = (document.getElementById("cpopSrch").value||"").trim().toLowerCase();
+    let list  = _cpopContacts;
+    if (_cpopFilter==="unanswered") list = list.filter(c=>c.lastDirection==="in");
+    if (q) list = list.filter(c=> (c.name||"").toLowerCase().includes(q) || (c.phone||"").includes(q));
+
+    const wrap = document.getElementById("cpopContacts");
+    if (!list.length){
+      wrap.innerHTML = `<div class="cpop-empty">${_cpopFilter==="unanswered"?"✅ Tous les messages ont été répondus":"Aucun contact trouvé"}</div>`;
+      return;
+    }
+    wrap.innerHTML = list.slice(0,60).map(c=>{
+      const col   = cpopColor(c.phone);
+      const ini   = cpopIni(c.name,c.phone);
+      const unans = c.lastDirection==="in";
+      const badge = unans ? `<span class="cpop-ci-badge">●</span>` : "";
+      const prev  = cpopPreview(c.lastMessage);
+      const arrow = c.lastDirection==="out" ? "↗ " : "";
+      return `<div class="cpop-ci${unans?" unans":""}" onclick="cpopOpenChat('${escHtml(c.phone)}','${escHtml(c.name||c.phone)}')">
+        <div class="cpop-ci-av" style="background:${col}">${escHtml(ini)}</div>
+        <div class="cpop-ci-body">
+          <div class="cpop-ci-top">
+            <span class="cpop-ci-name">${escHtml(c.name||cpopFmt(c.phone))}</span>
+            <span class="cpop-ci-time">${cpopTime(c.lastMessageAt||c.lastSeen)}</span>
+            ${badge}
+          </div>
+          <div class="cpop-ci-prev">${unans?"":"↗ "}${escHtml(prev)}</div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  async function cpopOpenChat(phone, name){
+    _cpopPhone = phone;
+    _cpopName  = name;
+    const col = cpopColor(phone);
+    const ini = cpopIni(name, phone);
+    document.getElementById("cpopChatAv").style.background = col;
+    document.getElementById("cpopChatAv").textContent      = ini;
+    document.getElementById("cpopChatName").textContent    = name !== phone ? name : cpopFmt(phone);
+    document.getElementById("cpopChatPhone").textContent   = cpopFmt(phone);
+    document.getElementById("cpopOpenFull").href = `/user-reply`;
+    document.getElementById("cpopMsgs").innerHTML = `<div class="cpop-loading">Chargement…</div>`;
+    cpopShowChat();
+    document.getElementById("cpopTxt").value = "";
+    cpopAutoResize(document.getElementById("cpopTxt"));
+    await cpopLoadMsgs(phone);
+    document.getElementById("cpopTxt").focus();
+  }
+
+  async function cpopLoadMsgs(phone){
+    try {
+      const cid = phone.replace(/\D/g,"") + "@c.us";
+      const r   = await fetch(`/api/messages?cid=${encodeURIComponent(cid)}&limit=30`);
+      const msgs = await r.json();
+      cpopRenderMsgs(Array.isArray(msgs)?msgs:[]);
+    } catch {
+      document.getElementById("cpopMsgs").innerHTML = `<div class="cpop-empty">Impossible de charger les messages</div>`;
+    }
+  }
+
+  function cpopRenderMsgs(msgs){
+    const wrap = document.getElementById("cpopMsgs");
+    if (!msgs.length){ wrap.innerHTML=`<div class="cpop-empty">Aucun message</div>`; return; }
+    let lastDate="", html="";
+    for (const m of msgs){
+      const d    = m.created_at ? new Date(m.created_at) : null;
+      const ds   = d ? d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) : "";
+      if (ds && ds!==lastDate){ html+=`<div class="cpop-date-sep">${ds}</div>`; lastDate=ds; }
+      const isOut = m.direction==="out";
+      let body = m.body||"";
+      if (/\/uploads\/images\//.test(body))      body = "📷 Photo";
+      else if (/\/uploads\/videos\//.test(body)) body = "🎬 Vidéo";
+      else if (/\/uploads\/voices\//.test(body)) body = "🎤 Vocal";
+      const ts = d ? d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) : "";
+      html += `<div class="cpop-bubble ${isOut?"out":"in"}">
+        ${escHtml(body)}
+        <div class="cpop-bubble-time">${ts}${isOut?" ✓✓":""}</div>
+      </div>`;
+    }
+    wrap.innerHTML = html;
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function cpopShowList(){
+    document.getElementById("cpopViewList").style.display = "flex";
+    document.getElementById("cpopViewChat").style.display = "none";
+    _cpopPhone = null;
+  }
+  function cpopShowChat(){
+    document.getElementById("cpopViewList").style.display = "none";
+    document.getElementById("cpopViewChat").style.display = "flex";
+  }
+
+  async function cpopSend(){
+    const txt = document.getElementById("cpopTxt").value.trim();
+    if (!txt || !_cpopPhone) return;
+    document.getElementById("cpopTxt").value = "";
+    cpopAutoResize(document.getElementById("cpopTxt"));
+    // Optimistic bubble
+    const wrap = document.getElementById("cpopMsgs");
+    const ts   = new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    wrap.insertAdjacentHTML("beforeend",
+      `<div class="cpop-bubble out">${escHtml(txt)}<div class="cpop-bubble-time">${ts} ✓✓</div></div>`);
+    wrap.scrollTop = wrap.scrollHeight;
+    try {
+      const d = await fetch("/api/send",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ phone:_cpopPhone, message:txt })
+      }).then(r=>r.json());
+      if (!d.ok) showToast("❌ " + (d.error||"Erreur envoi"));
+    } catch { showToast("❌ Connexion échouée"); }
+  }
+
+  function cpopKeydown(e){
+    if (e.key==="Enter" && !e.shiftKey){ e.preventDefault(); cpopSend(); }
+  }
+  function cpopAutoResize(ta){
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 110) + "px";
+  }
+
 </script>
+<!-- ════════ CHAT POPUP ════════ -->
+<div class="cpop-backdrop" id="cpopBackdrop" onclick="closeChatPopup()"></div>
+
+<div class="cpop-panel" id="cpopPanel">
+
+  <!-- VIEW 1 : liste contacts -->
+  <div id="cpopViewList" style="display:flex;flex-direction:column;height:100%">
+    <div class="cpop-head">
+      <span class="cpop-title">💬 Messages clients</span>
+      <button class="cpop-close" onclick="closeChatPopup()">✕</button>
+    </div>
+    <div class="cpop-filters">
+      <button class="cpop-filter-btn active" id="cpopBtnAll"       onclick="cpopSetFilter('all')">Tous</button>
+      <button class="cpop-filter-btn"        id="cpopBtnUnanswered" onclick="cpopSetFilter('unanswered')">⚠ Non répondus</button>
+    </div>
+    <input class="cpop-srch" id="cpopSrch" type="search" placeholder="🔍 Rechercher…" oninput="renderCpopList()">
+    <div class="cpop-contacts" id="cpopContacts">
+      <div class="cpop-loading">Chargement…</div>
+    </div>
+  </div>
+
+  <!-- VIEW 2 : conversation -->
+  <div id="cpopViewChat" style="display:none;flex-direction:column;height:100%">
+    <div class="cpop-head">
+      <button class="cpop-back" onclick="cpopShowList()">←</button>
+      <div class="cpop-av" id="cpopChatAv"></div>
+      <div style="flex:1;min-width:0">
+        <div class="cpop-contact-name"  id="cpopChatName"></div>
+        <div class="cpop-contact-phone" id="cpopChatPhone"></div>
+      </div>
+      <a id="cpopOpenFull" href="#" target="_blank" style="background:rgba(255,255,255,.15);color:#fff;padding:5px 10px;border-radius:8px;font-size:.75rem;text-decoration:none;flex-shrink:0">↗ Ouvrir</a>
+      <button class="cpop-close" onclick="closeChatPopup()" style="margin-left:6px">✕</button>
+    </div>
+    <div class="cpop-msgs" id="cpopMsgs">
+      <div class="cpop-loading">Chargement…</div>
+    </div>
+    <div class="cpop-input-row">
+      <textarea class="cpop-input" id="cpopTxt" placeholder="Écrire une réponse…" rows="1"
+        onkeydown="cpopKeydown(event)" oninput="cpopAutoResize(this)"></textarea>
+      <button class="cpop-send-btn" onclick="cpopSend()" title="Envoyer">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating button -->
+<button class="cpop-fab" id="cpopFab" onclick="toggleChatPopup()" title="Messages clients">
+  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+  <span class="cpop-fab-badge" id="cpopBadge" style="display:none">0</span>
+</button>
+
 <script src="/js/nav.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const _sock = io();
   _sock.on("new_media", () => { loadData(); });
-  _sock.on("new_message", () => { loadData(); });
+  _sock.on("new_message", () => { loadData(); cpopRefresh(); });
 </script>
 </body>
 </html>

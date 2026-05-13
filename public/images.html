@@ -1,299 +1,478 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>صور الزبائن — واتساب بوت</title>
+  <title>Photos clients — WhatsApp</title>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #1a1a2e; direction: rtl; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --green:#075e54;--teal:#128c7e;--g:#25d366;
+      --bg:#f0f2f5;--bd:#e0e0e0;--card:#fff;
+    }
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+      background:var(--bg);color:#111b21;direction:ltr}
 
-    header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
-      color: white; padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 8px;
+    /* ─── Header ─── */
+    header{
+      background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;
+      padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:50;
     }
-    header h1 { font-size: 1.3rem; }
-    .nav-links a {
-      color: white; text-decoration: none; margin-right: 10px;
-      font-size: 0.85rem; padding: 5px 10px;
-      border-radius: 8px; transition: background 0.2s;
+    .h-title{font-size:1.05rem;font-weight:700;flex:1}
+    .nav-links a{
+      color:rgba(255,255,255,.85);text-decoration:none;font-size:.8rem;
+      padding:5px 11px;border-radius:8px;white-space:nowrap;margin-left:4px;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .nav-links a:hover,.nav-links a.active{background:rgba(255,255,255,.2);color:#fff}
 
-    /* Stats */
-    .stats { display: flex; gap: 16px; padding: 20px 24px 10px; flex-wrap: wrap; }
-    .stat-card {
-      background: white; border-radius: 12px; padding: 14px 22px;
-      flex: 1; min-width: 110px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center;
+    /* ─── Stats ─── */
+    .stats{display:flex;gap:14px;padding:18px 20px 10px;flex-wrap:wrap}
+    .stat-card{
+      background:#fff;border-radius:12px;padding:14px 20px;
+      flex:1;min-width:100px;box-shadow:0 1px 4px rgba(0,0,0,.07);text-align:center;
     }
-    .stat-card .num { font-size: 1.7rem; font-weight: 700; color: #075e54; }
-    .stat-card .label { font-size: 0.78rem; color: #666; margin-top: 3px; }
+    .stat-card .num{font-size:1.6rem;font-weight:700;color:var(--green)}
+    .stat-card .lbl{font-size:.75rem;color:#888;margin-top:3px}
 
-    /* Toolbar */
-    .toolbar {
-      padding: 10px 24px 16px;
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    /* ─── Toolbar ─── */
+    .toolbar{
+      background:#fff;border-bottom:1px solid var(--bd);
+      padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
     }
-    .search-input {
-      flex: 1; min-width: 160px;
-      padding: 8px 14px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 0.88rem; outline: none; direction: rtl; background: white;
+    .srch{
+      flex:1;min-width:200px;padding:8px 14px 8px 38px;
+      border:1px solid #ddd;border-radius:20px;font-size:.86rem;
+      outline:none;direction:ltr;
+      background:#f6f6f6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23999' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10'/%3E%3C/svg%3E") 12px center no-repeat;
     }
-    .search-input:focus { border-color: #128c7e; }
-    .btn {
-      padding: 8px 15px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 0.82rem; font-weight: 600;
-      transition: opacity 0.2s; white-space: nowrap;
+    .srch:focus{border-color:var(--teal);background-color:#fff}
+    .sort-sel{
+      padding:7px 10px;border:1px solid #ddd;border-radius:20px;
+      background:#fff;font-size:.79rem;outline:none;cursor:pointer;color:#555;
+      font-family:inherit;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-green  { background: #25d366; color: white; }
-    .btn-blue   { background: #128c7e; color: white; }
-    .btn-red    { background: #e53935; color: white; }
-    .btn-gray   { background: #ccc; color: #333; }
-    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn{
+      padding:7px 14px;border:none;border-radius:20px;
+      cursor:pointer;font-size:.79rem;font-weight:600;
+      transition:opacity .2s;white-space:nowrap;font-family:inherit;
+    }
+    .btn:hover{opacity:.85}
+    .btn-green{background:var(--g);color:#fff}
+    .btn-blue{background:var(--teal);color:#fff}
+    .btn-gray{background:#ddd;color:#444}
+    .count-badge{font-size:.77rem;color:#999;white-space:nowrap}
 
-    /* Selection bar */
-    .sel-bar {
-      display: none; align-items: center; gap: 10px;
-      padding: 8px 24px; background: #e8f5e9;
-      border-bottom: 1px solid #c8e6c9; flex-wrap: wrap;
-    }
-    .sel-bar.show { display: flex; }
-    .sel-count { font-size: 0.88rem; color: #2e7d32; font-weight: 600; flex: 1; }
+    /* ─── Groups ─── */
+    .groups-wrap{padding:14px 20px 40px}
 
-    /* Gallery */
-    .gallery-wrap { padding: 0 24px 32px; }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 14px;
+    /* ─── Group section ─── */
+    .group{
+      background:#fff;border-radius:14px;margin-bottom:16px;
+      box-shadow:0 1px 6px rgba(0,0,0,.08);overflow:hidden;
+    }
+    .group-head{
+      display:flex;align-items:center;gap:12px;
+      padding:12px 16px;cursor:pointer;
+      border-bottom:1px solid #f0f0f0;
+      transition:background .15s;
+      user-select:none;
+    }
+    .group-head:hover{background:#fafafa}
+    .group-av{
+      width:44px;height:44px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;font-size:1rem;color:#fff;flex-shrink:0;
+    }
+    .group-info{flex:1;min-width:0}
+    .group-phone{
+      font-family:monospace;font-size:.9rem;font-weight:700;color:var(--green);
+    }
+    .group-name{font-size:.78rem;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* ─── Note dans header groupe ─── */
+    .group-note-row{
+      display:flex;align-items:center;gap:6px;margin-top:5px;
+    }
+    .group-note-txt{
+      font-size:.77rem;color:#555;
+      background:#fffde7;border:1px solid #ffd54f;
+      border-radius:8px;padding:3px 10px;
+      max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      cursor:pointer;transition:background .15s;flex:1;min-width:0;
+    }
+    .group-note-txt:hover{background:#fff9c4}
+    .group-note-add{
+      font-size:.72rem;color:#aaa;cursor:pointer;
+      display:flex;align-items:center;gap:3px;
+      padding:3px 8px;border-radius:8px;border:1px dashed #ddd;
+      background:none;font-family:inherit;white-space:nowrap;
+      transition:all .15s;
+    }
+    .group-note-add:hover{color:var(--teal);border-color:var(--teal);background:#e0f4f1}
+
+    .group-meta{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+    .gmeta-chip{
+      font-size:.7rem;padding:2px 9px;border-radius:10px;font-weight:600;
+    }
+    .gm-count{background:#e8f5e9;color:#2e7d32}
+    .gm-date{background:#e3f2fd;color:#1565c0}
+    .gm-size{background:#f3e5f5;color:#7b1fa2}
+    .group-acts{display:flex;gap:6px;flex-shrink:0}
+    .g-btn{
+      padding:5px 11px;border:none;border-radius:14px;font-size:.73rem;
+      cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .15s;
+    }
+    .g-btn:hover{opacity:.8}
+    .gb-dl{background:#e3f2fd;color:#1565c0}
+    .gb-del{background:#ffebee;color:#c62828}
+    .group-chevron{font-size:.8rem;color:#bbb;transition:transform .2s;flex-shrink:0}
+    .group.collapsed .group-chevron{transform:rotate(-90deg)}
+
+    /* ─── Image row ─── */
+    .group-imgs{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:2px;padding:2px;
+      transition:max-height .25s ease, opacity .2s;
+    }
+    .group.collapsed .group-imgs{display:none}
+
+    /* ─── Image thumb ─── */
+    .thumb{
+      aspect-ratio:1;overflow:hidden;background:#f0f0f0;
+      position:relative;cursor:pointer;
+    }
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+    .thumb:hover img{transform:scale(1.06)}
+    .thumb-ov{
+      position:absolute;inset:0;background:rgba(0,0,0,0);
+      display:flex;align-items:flex-end;justify-content:flex-end;
+      padding:6px;transition:background .2s;
+    }
+    .thumb:hover .thumb-ov{background:rgba(0,0,0,.28)}
+    .tov-btns{
+      display:flex;gap:5px;
+      opacity:0;transition:opacity .2s;
+    }
+    .thumb:hover .tov-btns{opacity:1}
+    .tov-btn{
+      background:rgba(255,255,255,.9);border:none;border-radius:50%;
+      width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+      font-size:.8rem;cursor:pointer;text-decoration:none;
+    }
+    .tov-btn:hover{background:#fff}
+    .tov-btn.del:hover{background:#ffebee}
+    .thumb-chips{
+      position:absolute;top:5px;left:5px;display:flex;gap:3px;flex-wrap:wrap;
+      opacity:0;transition:opacity .2s;
+    }
+    .thumb:hover .thumb-chips{opacity:1}
+    .t-chip{
+      background:rgba(0,0,0,.55);color:#fff;
+      font-size:.6rem;padding:1px 6px;border-radius:8px;font-family:monospace;
     }
 
-    /* Pagination */
-    .pagination-wrap {
-      display: flex; align-items: center; justify-content: center;
-      gap: 6px; padding: 16px 24px; background: white;
-      border-top: 1px solid #ddd;
+    /* ─── Show more ─── */
+    .show-more{
+      text-align:center;padding:10px;
+      border-top:1px solid #f5f5f5;
     }
-    .pg-btn {
-      padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
-      background: white; color: #333; cursor: pointer; font-size: 0.88rem;
-      transition: background 0.2s, border-color 0.2s;
+    .show-more button{
+      background:none;border:none;color:var(--teal);
+      font-size:.8rem;cursor:pointer;font-family:inherit;
+      padding:4px 12px;border-radius:10px;
     }
-    .pg-btn:hover { background: #f0f2f5; border-color: #128c7e; }
-    .pg-btn.active { background: #128c7e; color: white; border-color: #128c7e; }
-    .pg-btn:disabled { opacity: 0.5; cursor: default; }
+    .show-more button:hover{background:#f0f9f8}
 
-    .img-card {
-      background: white; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative;
+    /* ─── Empty / Loading ─── */
+    .state-msg{
+      padding:60px 20px;text-align:center;
+      color:#bbb;font-size:.9rem;display:flex;flex-direction:column;
+      align-items:center;gap:12px;
     }
-    .img-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
-    .img-card.selected { outline: 3px solid #128c7e; }
+    .state-msg .ico{font-size:3rem;opacity:.3}
+    .spin{
+      display:inline-block;width:28px;height:28px;
+      border:3px solid #ddd;border-top-color:var(--teal);
+      border-radius:50%;animation:sp .7s linear infinite;
+    }
+    @keyframes sp{to{transform:rotate(360deg)}}
 
-    /* Checkbox overlay */
-    .card-cb {
-      position: absolute; top: 8px; right: 8px;
-      width: 22px; height: 22px;
-      background: white; border: 2px solid #ccc; border-radius: 5px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 2; transition: border-color 0.15s, background 0.15s;
-      font-size: 0.75rem; color: white;
+    /* ─── Lightbox ─── */
+    #lb{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:200;
+      display:none;flex-direction:column}
+    #lb.open{display:flex}
+    .lb-head{
+      display:flex;align-items:center;gap:12px;padding:12px 18px;
+      background:rgba(0,0,0,.45);flex-shrink:0;
     }
-    .img-card.selected .card-cb { background: #128c7e; border-color: #128c7e; }
-    .img-card.selected .card-cb::after { content: "✓"; }
-
-    .card-img-wrap { cursor: pointer; }
-    .img-card img {
-      width: 100%; height: 155px; object-fit: cover;
-      display: block; background: #eee;
+    .lb-av{
+      width:40px;height:40px;border-radius:50%;background:#444;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:700;font-size:1rem;flex-shrink:0;
     }
-    .img-info {
-      padding: 8px 12px; font-size: 0.78rem; color: #555;
+    .lb-meta{flex:1;color:#fff;min-width:0}
+    .lb-phone{font-family:monospace;font-size:.9rem;font-weight:700}
+    .lb-name{font-size:.74rem;color:rgba(255,255,255,.6);margin-top:1px}
+    .lb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+    .lb-chip{
+      background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);
+      border-radius:12px;padding:2px 10px;font-size:.71rem;
     }
-    .img-info b { display: block; font-size: 0.82rem; color: #222; margin-bottom: 2px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .phone-tag {
-      background: #e8f5e9; color: #2e7d32;
-      padding: 1px 7px; border-radius: 5px;
-      font-family: monospace; font-size: 0.76rem; display: inline-block; margin-bottom: 3px;
+    .lb-chip b{color:#fff}
+    .lb-acts{display:flex;gap:7px;flex-shrink:0}
+    .lb-btn{
+      background:rgba(255,255,255,.13);border:none;color:#fff;
+      padding:7px 14px;border-radius:9px;cursor:pointer;
+      font-size:.78rem;font-family:inherit;transition:background .15s;
+      text-decoration:none;display:inline-flex;align-items:center;gap:5px;
     }
-    .img-info .time { color: #999; font-size: 0.73rem; }
-
-    /* card actions */
-    .card-actions {
-      display: flex; gap: 6px; padding: 6px 10px 10px;
+    .lb-btn:hover{background:rgba(255,255,255,.25)}
+    .lb-btn.red{background:rgba(231,76,60,.4)}
+    .lb-btn.red:hover{background:rgba(231,76,60,.85)}
+    .lb-body{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      padding:14px;overflow:hidden;position:relative;
     }
-    .card-actions button {
-      flex: 1; padding: 5px; border: none; border-radius: 6px;
-      font-size: 0.75rem; cursor: pointer; font-weight: 600;
+    .lb-body img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+    .lb-nav{
+      position:absolute;top:50%;transform:translateY(-50%);
+      background:rgba(255,255,255,.13);border:none;color:#fff;
+      width:46px;height:46px;border-radius:50%;font-size:1.2rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;transition:background .15s;
     }
-    .ca-view   { background: #e3f2fd; color: #1565c0; }
-    .ca-dl     { background: #e8f5e9; color: #2e7d32; }
-    .ca-del    { background: #ffebee; color: #c62828; }
-
-    /* Lightbox */
-    #lightbox {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.88); z-index: 200;
-      align-items: center; justify-content: center; flex-direction: column; gap: 14px;
-    }
-    #lightbox.open { display: flex; }
-    #lightbox img { max-width: 90vw; max-height: 78vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-    #lightbox .lb-info { color: #ccc; font-size: 0.85rem; text-align: center; }
-    #lightbox .lb-close {
-      position: absolute; top: 18px; left: 18px;
-      background: rgba(255,255,255,0.18); border: none; color: white;
-      width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
-      font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
-    }
-    #lightbox .lb-btns { display: flex; gap: 10px; }
-    #lightbox .lb-dl {
-      padding: 8px 20px; background: #25d366; color: white;
-      border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
-      text-decoration: none;
-    }
-    #lightbox .lb-del {
-      padding: 8px 16px; background: #e53935; color: white;
-      border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    .lb-nav:hover{background:rgba(255,255,255,.28)}
+    .lb-prev{left:14px}.lb-next{right:14px}
+    .lb-counter{
+      position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+      background:rgba(0,0,0,.55);color:rgba(255,255,255,.75);
+      font-size:.72rem;padding:3px 10px;border-radius:10px;pointer-events:none;
     }
 
-    /* Upload modal */
-    #uploadOverlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55); z-index: 300;
-      align-items: center; justify-content: center;
+    /* ─── Upload modal ─── */
+    #uploadOverlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.55);z-index:300;
+      align-items:center;justify-content:center;
     }
-    #uploadOverlay.open { display: flex; }
-    .upload-modal {
-      background: white; border-radius: 14px; padding: 26px;
-      width: 90%; max-width: 460px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    #uploadOverlay.open{display:flex}
+    .upload-modal{
+      background:#fff;border-radius:14px;padding:26px;
+      width:90%;max-width:460px;
+      box-shadow:0 8px 32px rgba(0,0,0,.25);
     }
-    .upload-modal h3 { font-size: 1.05rem; color: #075e54; margin-bottom: 14px; }
-    .upload-modal label { display: block; font-size: 0.8rem; color: #555; margin-bottom: 5px; margin-top: 10px; }
-    .upload-modal input[type=text], .upload-modal input[type=tel] {
-      width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.88rem; outline: none; direction: rtl;
+    .upload-modal h3{font-size:1.02rem;color:var(--green);margin-bottom:14px}
+    .upload-modal label{display:block;font-size:.79rem;color:#555;margin-bottom:4px;margin-top:10px}
+    .upload-modal input[type=text],.upload-modal input[type=tel]{
+      width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;
+      font-size:.87rem;outline:none;direction:ltr;font-family:inherit;
     }
-    .upload-modal input:focus { border-color: #128c7e; }
-    .drop-zone {
-      border: 2px dashed #ccc; border-radius: 10px; padding: 22px;
-      text-align: center; cursor: pointer; margin-top: 12px;
-      color: #888; background: #fafafa; transition: border-color 0.2s;
+    .upload-modal input:focus{border-color:var(--teal)}
+    .drop-zone{
+      border:2px dashed #ccc;border-radius:10px;padding:22px;
+      text-align:center;cursor:pointer;margin-top:12px;
+      color:#aaa;background:#fafafa;transition:border-color .2s;
     }
-    .drop-zone:hover, .drop-zone.drag-over { border-color: #128c7e; color: #128c7e; }
-    .drop-zone .dz-icon { font-size: 2rem; }
-    #uploadFileInput { display: none; }
-    .upload-preview {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(70px,1fr));
-      gap: 6px; margin-top: 10px;
+    .drop-zone:hover,.drop-zone.drag-over{border-color:var(--teal);color:var(--teal)}
+    .drop-zone .dz-icon{font-size:2rem}
+    #uploadFileInput{display:none}
+    .upload-preview{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));
+      gap:6px;margin-top:10px;
     }
-    .up-thumb {
-      aspect-ratio: 1; border-radius: 6px; overflow: hidden; position: relative; background: #eee;
+    .up-thumb{aspect-ratio:1;border-radius:7px;overflow:hidden;position:relative;background:#eee}
+    .up-thumb img{width:100%;height:100%;object-fit:cover}
+    .up-thumb .rm{
+      position:absolute;top:2px;left:2px;width:16px;height:16px;
+      background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;
+      font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
     }
-    .up-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .up-thumb .rm { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-      background: rgba(0,0,0,0.55); color: white; border: none; border-radius: 50%;
-      font-size: 0.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .upload-modal .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
-    .up-progress { margin-top: 10px; font-size: 0.8rem; color: #128c7e; display: none; }
+    .modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+    .up-progress{margin-top:10px;font-size:.8rem;color:var(--teal);display:none}
 
-    .empty { text-align: center; padding: 60px; color: #aaa; font-size: 1rem; }
-
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1a1a2e; color: white; padding: 10px 22px;
-      border-radius: 10px; font-size: 0.88rem;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 400;
+    /* ─── Toast ─── */
+    /* ─── Note badge on thumb ─── */
+    .note-badge-wrap{position:absolute;inset:0;pointer-events:none}
+    .note-badge-wrap .note-badge,.note-badge-wrap .note-preview{pointer-events:auto}
+    .note-badge{
+      position:absolute;top:5px;right:5px;z-index:4;
+      background:#ffd600;color:#333;border-radius:50%;
+      width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+      font-size:.75rem;box-shadow:0 1px 4px rgba(0,0,0,.35);
+      cursor:pointer;transition:transform .15s;
     }
-    #toast.show { opacity: 1; }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; height: auto; }
-      .nav-links { display: flex; flex-wrap: wrap; gap: 4px; }
-      .nav-links a { font-size: 0.78rem; padding: 4px 8px; margin-right: 0; }
-      .stats { padding: 12px 16px 0; gap: 10px; }
-      .stat-card { padding: 12px 16px; }
+    .note-badge:hover{transform:scale(1.2)}
+    .note-preview{
+      position:absolute;bottom:0;left:0;right:0;z-index:5;
+      background:rgba(0,0,0,.72);color:#fff;
+      font-size:.69rem;padding:5px 7px;line-height:1.4;
+      max-height:0;overflow:hidden;transition:max-height .2s;
+      border-radius:0 0 0 0;
+      display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
     }
-    @media (max-width: 480px) {
-      header { padding: 10px 12px; }
-      .nav-links a { font-size: 0.7rem; padding: 3px 6px; }
-      .stats { padding: 10px 12px 0; }
-      .stat-card { min-width: calc(50% - 5px); }
-      .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; padding: 10px 12px !important; }
+    .thumb:hover .note-preview{max-height:80px}
+
+    /* ─── Note modal ─── */
+    #noteOverlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.55);z-index:500;
+      align-items:center;justify-content:center;
+    }
+    #noteOverlay.open{display:flex}
+    .note-modal{
+      background:#fff;border-radius:16px;padding:24px 22px;
+      width:92%;max-width:440px;
+      box-shadow:0 8px 32px rgba(0,0,0,.28);
+    }
+    .note-modal h3{font-size:1rem;color:var(--green);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .note-modal .note-sub{font-size:.75rem;color:#888;margin-bottom:14px}
+    .note-modal textarea{
+      width:100%;min-height:120px;padding:10px 13px;
+      border:1.5px solid #ddd;border-radius:10px;
+      font-size:.88rem;font-family:inherit;outline:none;resize:vertical;
+      direction:ltr;color:#222;line-height:1.55;
+    }
+    .note-modal textarea:focus{border-color:var(--teal)}
+    .note-modal .note-counter{font-size:.72rem;color:#aaa;text-align:right;margin-top:3px}
+    .note-modal .note-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+    .note-modal .nbtn{
+      padding:8px 20px;border:none;border-radius:9px;font-size:.86rem;
+      font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s;
+    }
+    .note-modal .nbtn:hover{opacity:.85}
+    .note-modal .nbtn-save{background:var(--teal);color:#fff}
+    .note-modal .nbtn-del{background:#ffebee;color:#c62828}
+    .note-modal .nbtn-cancel{background:#eee;color:#555}
+
+    #toast{
+      position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+      background:#1a1a2e;color:#fff;padding:9px 22px;border-radius:10px;
+      font-size:.85rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:400;
+    }
+    #toast.show{opacity:1}
+
+    /* ─── Responsive ─── */
+    @media(max-width:768px){
+      header{height:auto;padding:10px 14px;flex-wrap:wrap}
+      .stats{padding:12px 14px 6px;gap:10px}
+      .groups-wrap{padding:10px 12px 30px}
+      .group-imgs{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+    }
+    @media(max-width:480px){
+      .group-imgs{grid-template-columns:repeat(3,1fr)}
+      .group-acts{display:none}
     }
   </style>
 </head>
 <body>
 
-<header id="app-header"></header>
+<header>
+  <span style="font-size:1.3rem">📸</span>
+  <span class="h-title">Photos clients</span>
+  <nav class="nav-links">
+    <a href="/media">🗂 Toutes</a>
+    <a href="/gallery">🖼️ Galerie</a>
+    <a href="/dashboard">🏠 Accueil</a>
+  </nav>
+</header>
 
 <!-- Stats -->
 <div class="stats">
-  <div class="stat-card"><div class="num" id="sTotal">—</div><div class="label">إجمالي الصور</div></div>
-  <div class="stat-card"><div class="num" id="sToday">—</div><div class="label">صور اليوم</div></div>
-  <div class="stat-card"><div class="num" id="sSelected">0</div><div class="label">محددة</div></div>
+  <div class="stat-card">
+    <div class="num" id="sTotal">—</div>
+    <div class="lbl">Total photos</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="sContacts">—</div>
+    <div class="lbl">Contacts</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="sToday">—</div>
+    <div class="lbl">Aujourd'hui</div>
+  </div>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
-  <input class="search-input" id="searchPhone" type="text" placeholder="🔍 ابحث برقم الهاتف...">
-  <button class="btn btn-blue"  onclick="openUploadModal()">📤 رفع صور</button>
-  <button class="btn btn-green" onclick="toggleSelectAll()" id="btnSelAll">☑️ تحديد الكل</button>
-  <button class="btn btn-red"   id="btnDelSel" onclick="deleteSelected()" disabled>🗑️ حذف المحددة (<span id="selCount">0</span>)</button>
-  <button class="btn btn-gray"  onclick="load()">🔄 تحديث</button>
+  <input class="srch" id="srch" type="search"
+    placeholder="🔍 Rechercher par numéro ou nom…" oninput="applyFilter()">
+  <select class="sort-sel" id="sortSel" onchange="applyFilter()">
+    <option value="recent">Plus récents d'abord</option>
+    <option value="most">Plus de photos d'abord</option>
+    <option value="phone">Par numéro</option>
+  </select>
+  <span class="count-badge" id="countBadge"></span>
+  <button class="btn btn-blue" onclick="openUploadModal()">📤 Envoyer</button>
+  <button class="btn btn-gray" onclick="toggleAll()">⊞ Tout ouvrir</button>
+  <button class="btn btn-gray" onclick="load()">🔄</button>
 </div>
 
-<!-- Gallery -->
-<div class="gallery-wrap">
-  <div class="gallery" id="gallery">
-    <div class="empty" style="grid-column:1/-1">جاري التحميل...</div>
-  </div>
-</div>
-
-<!-- Pagination -->
-<div class="pagination-wrap" id="pagination-wrap">
-  <button class="pg-btn" id="pg-prev" onclick="prevPage()">← السابقة</button>
-  <div id="pg-numbers"></div>
-  <button class="pg-btn" id="pg-next" onclick="nextPage()">التالية →</button>
+<!-- Groups -->
+<div class="groups-wrap" id="groupsWrap">
+  <div class="state-msg"><span class="spin"></span></div>
 </div>
 
 <!-- Lightbox -->
-<div id="lightbox">
-  <button class="lb-close" onclick="closeLb()">✕</button>
-  <img id="lbImg" src="" alt="">
-  <div class="lb-info" id="lbInfo"></div>
-  <div class="lb-btns">
-    <a id="lbDl" href="#" download class="lb-dl">⬇️ تحميل</a>
-    <button class="lb-del" onclick="deleteFromLb()">🗑️ حذف</button>
+<div id="lb">
+  <div class="lb-head">
+    <div class="lb-av" id="lbAv"></div>
+    <div class="lb-meta">
+      <div class="lb-phone" id="lbPhone"></div>
+      <div class="lb-name"  id="lbName"></div>
+      <div class="lb-chips" id="lbChips"></div>
+    </div>
+    <div class="lb-acts">
+      <a  class="lb-btn" id="lbDl" href="#" download>⬇ Télécharger</a>
+      <button class="lb-btn red" onclick="deleteLbImg()">🗑 Supprimer</button>
+      <button class="lb-btn" onclick="closeLb()">✕ Fermer</button>
+    </div>
+  </div>
+  <div class="lb-body">
+    <img id="lbImg" src="" alt="">
+    <button class="lb-nav lb-prev" onclick="navLb(-1)">❮</button>
+    <button class="lb-nav lb-next" onclick="navLb(1)">❯</button>
+    <span class="lb-counter" id="lbCnt"></span>
   </div>
 </div>
 
 <!-- Upload Modal -->
 <div id="uploadOverlay">
   <div class="upload-modal">
-    <h3>📤 رفع صور يدوياً</h3>
-    <label>رقم الهاتف (اختياري)</label>
+    <h3>📤 Envoyer des photos manuellement</h3>
+    <label>Numéro de téléphone (optionnel)</label>
     <input type="tel" id="upPhone" placeholder="212600123456" dir="ltr">
-    <label>اسم (اختياري)</label>
-    <input type="text" id="upName" placeholder="يدوي">
+    <label>Nom (optionnel)</label>
+    <input type="text" id="upName" placeholder="Manuel">
     <div class="drop-zone" id="upDropZone" onclick="document.getElementById('uploadFileInput').click()">
       <div class="dz-icon">🖼️</div>
-      <p style="font-size:0.85rem;margin-top:4px">اسحب الصور هنا أو اضغط للاختيار</p>
+      <p style="font-size:.84rem;margin-top:5px">Déposez les photos ici ou cliquez pour choisir</p>
     </div>
     <input type="file" id="uploadFileInput" accept="image/*" multiple>
     <div class="upload-preview" id="upPreview"></div>
-    <div class="up-progress" id="upProgress">⏳ جاري الرفع...</div>
+    <div class="up-progress" id="upProgress"></div>
     <div class="modal-actions">
-      <button class="btn btn-gray" onclick="closeUploadModal()">إلغاء</button>
-      <button class="btn btn-blue" id="upSendBtn" onclick="doUpload()">📤 رفع (<span id="upCount">0</span>)</button>
+      <button class="btn btn-gray" onclick="closeUploadModal()">Annuler</button>
+      <button class="btn btn-blue" id="upSendBtn" onclick="doUpload()">
+        📤 Envoyer (<span id="upCount">0</span>)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Note Modal -->
+<div id="noteOverlay">
+  <div class="note-modal">
+    <h3>📝 Note / Renseignement</h3>
+    <div class="note-sub" id="noteSubtitle"></div>
+    <textarea id="noteTxt" maxlength="1000" placeholder="Ajoutez une note, un renseignement, un rappel…" oninput="document.getElementById('noteCnt').textContent=this.value.length+'/1000'"></textarea>
+    <div class="note-counter" id="noteCnt">0/1000</div>
+    <div class="note-actions">
+      <button class="nbtn nbtn-del"    id="noteDelBtn" onclick="deleteNote()" style="display:none">🗑 Supprimer</button>
+      <button class="nbtn nbtn-cancel" onclick="closeNoteModal()">Annuler</button>
+      <button class="nbtn nbtn-save"   onclick="saveNote()">💾 Enregistrer</button>
     </div>
   </div>
 </div>
@@ -301,358 +480,568 @@
 <div id="toast"></div>
 
 <script>
-  let allImages  = [];
-  let selectedIds = new Set();
-  let upFiles    = [];
-  let lbCurrentId = null;
-  const ITEMS_PER_PAGE = 50;
-  let currentPage = 1;
+const COLORS=["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
+const SHOW_INIT = 12; // images shown per group before "voir plus"
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
-  async function loadStats() {
-    try {
-      const stats = await fetch("/api/images/stats").then(r => r.json());
-      document.getElementById("sTotal").textContent = stats.total;
-      document.getElementById("sToday").textContent = stats.today;
-    } catch {}
+let allImages  = [];
+let groups     = []; // [{phone, name, imgs:[]}]
+let upFiles    = [];
+let lbList     = []; // images currently in lightbox context
+let lbIdx      = 0;
+let allOpen    = true;
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+(async()=>{ await Promise.all([loadStats(), load()]); })();
+
+async function loadStats() {
+  try {
+    const d = await fetch("/api/images/stats").then(r=>r.json());
+    document.getElementById("sTotal").textContent = d.total;
+    document.getElementById("sToday").textContent = d.today;
+  } catch {}
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function load() {
+  document.getElementById("groupsWrap").innerHTML =
+    `<div class="state-msg"><span class="spin"></span></div>`;
+  try {
+    allImages = await fetch("/api/images?limit=20000").then(r=>r.json());
+    applyFilter();
+  } catch { showToast("❌ Erreur de chargement des photos"); }
+}
+
+// ── Filter / Sort ─────────────────────────────────────────────────────────────
+function applyFilter() {
+  const q    = document.getElementById("srch").value.trim().toLowerCase();
+  const sort = document.getElementById("sortSel").value;
+
+  // filter images
+  const filtered = allImages.filter(img => {
+    if (!q) return true;
+    const phone = String(img.phone||"");
+    const name  = (img.name||"").toLowerCase();
+    return phone.includes(q) || name.includes(q);
+  });
+
+  // group by phone
+  const map = new Map();
+  for (const img of filtered) {
+    const key = String(img.phone||"unknown");
+    if (!map.has(key)) map.set(key, { phone:key, name: img.name||key, imgs:[] });
+    const g = map.get(key);
+    if (img.name && img.name !== img.phone) g.name = img.name; // keep latest non-phone name
+    g.imgs.push(img);
   }
 
-  // ── Load gallery ──────────────────────────────────────────────────────────
-  async function load() {
-    const phone = document.getElementById("searchPhone").value.trim();
-    let url = "/api/images?limit=10000";
-    if (phone) url += `&phone=${encodeURIComponent(phone)}`;
-    try {
-      allImages = await fetch(url).then(r => r.json());
-      selectedIds.clear();
-      updateSelUI();
-      currentPage = 1;
-      renderPage();
-      updatePagination();
-    } catch { showToast("❌ خطأ في تحميل الصور"); }
+  groups = [...map.values()];
+
+  // sort each group's images by date desc
+  groups.forEach(g => g.imgs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+
+  // sort groups
+  if (sort==="recent") groups.sort((a,b)=>new Date(b.imgs[0].created_at)-new Date(a.imgs[0].created_at));
+  if (sort==="most")   groups.sort((a,b)=>b.imgs.length - a.imgs.length);
+  if (sort==="phone")  groups.sort((a,b)=>a.phone.localeCompare(b.phone));
+
+  document.getElementById("sContacts").textContent = groups.length;
+  document.getElementById("countBadge").textContent =
+    `${fmt(groups.length)} contact(s) · ${fmt(filtered.length)} photo(s)`;
+
+  renderGroups();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderGroups() {
+  const wrap = document.getElementById("groupsWrap");
+  if (_lazyObs) { _lazyObs.disconnect(); _lazyObs = null; }
+  if (!groups.length) {
+    wrap.innerHTML = `<div class="state-msg"><div class="ico">📭</div><span>Aucune photo trouvée</span></div>`;
+    return;
   }
+  wrap.innerHTML = groups.map((g, gi) => groupHTML(g, gi)).join("");
+  setTimeout(lazyLoad, 60);
+}
 
-  function getPageImages() {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return allImages.slice(start, end);
-  }
+function groupHTML(g, gi) {
+  const phone = "+"+g.phone;
+  const name  = g.name && g.name !== g.phone ? g.name : "";
+  const col   = colorOf(g.phone);
+  const ini   = String(g.phone).slice(-2)||"?";
+  const count = g.imgs.length;
+  const latest= g.imgs[0];
+  const dateStr = latest ? new Date(latest.created_at).toLocaleDateString("fr-FR") : "";
+  const totalSize = g.imgs.reduce((s,i)=>s+(i.filesize||0),0);
+  const sizeStr = fmtSize(totalSize);
 
-  function renderPage() {
-    renderGallery(getPageImages());
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const visible = g.imgs.slice(0, SHOW_INIT);
+  const more    = count - SHOW_INIT;
 
-  function updatePagination() {
-    const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
-    const pgNumbers = document.getElementById("pg-numbers");
+  const thumbs = visible.map((img, ti) => thumbHTML(img, gi, ti)).join("");
+  const showMoreBtn = more > 0
+    ? `<div class="show-more">
+        <button onclick="expandGroup(${gi})">
+          ▼ Voir ${more} photo(s) de plus
+        </button>
+       </div>`
+    : "";
 
-    if (totalPages <= 1) {
-      document.getElementById("pagination-wrap").style.display = "none";
-      return;
-    }
-    document.getElementById("pagination-wrap").style.display = "flex";
+  // première image avec une note (pour affichage dans header)
+  const noteImg  = g.imgs.find(i => i.note && i.note.trim());
+  const noteText = noteImg ? noteImg.note.trim() : "";
 
-    let html = "";
-    for (let i = 1; i <= totalPages; i++) {
-      const active = i === currentPage ? " active" : "";
-      html += `<button class="pg-btn${active}" onclick="goToPage(${i})">${i}</button>`;
-    }
-    pgNumbers.innerHTML = html;
-
-    document.getElementById("pg-prev").disabled = currentPage === 1;
-    document.getElementById("pg-next").disabled = currentPage === totalPages;
-  }
-
-  function nextPage() {
-    const totalPages = Math.ceil(allImages.length / ITEMS_PER_PAGE);
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderPage();
-      updatePagination();
-    }
-  }
-
-  function prevPage() {
-    if (currentPage > 1) {
-      currentPage--;
-      renderPage();
-      updatePagination();
-    }
-  }
-
-  function goToPage(page) {
-    currentPage = page;
-    renderPage();
-    updatePagination();
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  function renderGallery(list) {
-    const g = document.getElementById("gallery");
-    if (!list.length) {
-      g.innerHTML = `<div class="empty" style="grid-column:1/-1">لا توجد صور 📭</div>`;
-      return;
-    }
-    g.innerHTML = list.map(img => {
-      const src  = `/uploads/images/${img.filename}`;
-      const time = new Date(img.created_at).toLocaleString("ar-MA");
-      const sel  = selectedIds.has(img.id) ? " selected" : "";
-      return `
-        <div class="img-card${sel}" id="card-${img.id}">
-          <div class="card-cb" onclick="toggleCard(${img.id})"></div>
-          <div class="card-img-wrap" onclick="openLb(${img.id})">
-            <img src="${src}" alt="" loading="lazy" onerror="this.style.height='60px';this.style.background='#f5f5f5';">
+  return `<div class="group" id="group-${gi}">
+    <div class="group-head" onclick="toggleGroup(${gi})">
+      <div class="group-av" style="background:${col}">${ini}</div>
+      <div class="group-info">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="group-phone">${phone}</div>
+          <div id="gnote-${gi}" onclick="event.stopPropagation()">
+            ${groupNoteHTML(gi, g, noteText)}
           </div>
-          <div class="img-info">
-            <b title="${img.name}">${img.name}</b>
-            <span class="phone-tag">+${img.phone}</span><br>
-            <span class="time">${time}</span>
-          </div>
-          <div class="card-actions">
-            <button class="ca-view" onclick="openLb(${img.id})">🔍 عرض</button>
-            <button class="ca-dl"   onclick="dlImg(${img.id})">⬇️</button>
-            <button class="ca-del"  onclick="deleteSingle(${img.id})">🗑️</button>
-          </div>
-        </div>`;
-    }).join("");
-  }
+        </div>
+        ${name?`<div class="group-name">${esc(name)}</div>`:""}
+        <div class="group-meta">
+          <span class="gmeta-chip gm-count">📷 ${count} photo${count>1?"s":""}</span>
+          ${dateStr?`<span class="gmeta-chip gm-date">📅 ${dateStr}</span>`:""}
+          ${sizeStr?`<span class="gmeta-chip gm-size">📦 ${sizeStr}</span>`:""}
+        </div>
+      </div>
+      <div class="group-acts" onclick="event.stopPropagation()">
+        <button class="g-btn gb-dl"  onclick="downloadGroup(${gi})">⬇ ZIP</button>
+        <button class="g-btn gb-del" onclick="deleteGroup(${gi})">🗑 Tout</button>
+      </div>
+      <span class="group-chevron">▼</span>
+    </div>
+    <div class="group-imgs" id="gimgs-${gi}">
+      ${thumbs}
+    </div>
+    ${showMoreBtn}
+  </div>`;
+}
 
-  // ── Selection ─────────────────────────────────────────────────────────────
-  function toggleCard(id) {
-    if (selectedIds.has(id)) selectedIds.delete(id);
-    else selectedIds.add(id);
-    updateSelUI();
-    const card = document.getElementById(`card-${id}`);
-    if (card) card.classList.toggle("selected", selectedIds.has(id));
-  }
+function thumbHTML(img, gi, ti) {
+  const url  = `/uploads/images/${esc(img.filename)}`;
+  const mime = (img.mimetype||"").replace("image/","");
+  const size = fmtSize(img.filesize);
+  const note = img.note ? img.note.trim() : "";
+  return `<div class="thumb" data-imgid="${img.id}" onclick="openLb(${gi},${ti})">
+    <img data-src="${url}" class="lz" alt=""
+         onerror="this.removeAttribute('data-src');if(this.parentElement)this.parentElement.style.background='#e8e8e8'">
+    <div class="thumb-ov">
+      <div class="tov-btns">
+        <button class="tov-btn" onclick="event.stopPropagation();openNoteModal(${img.id})" title="Ajouter une note">📝</button>
+        <a class="tov-btn" href="${url}" download="${esc(img.filename)}" onclick="event.stopPropagation()" title="Télécharger">⬇</a>
+        <button class="tov-btn del" onclick="event.stopPropagation();deleteSingleImg(${img.id})" title="Supprimer">🗑</button>
+      </div>
+    </div>
+    <div class="thumb-chips">
+      ${mime?`<span class="t-chip">${esc(mime)}</span>`:""}
+      ${size?`<span class="t-chip">${size}</span>`:""}
+    </div>
+    <div class="note-badge-wrap" id="nbw-${img.id}">
+      ${noteBadgeHTML(img.id, note)}
+    </div>
+  </div>`;
+}
 
-  function toggleSelectAll() {
-    if (selectedIds.size === allImages.length) {
-      selectedIds.clear();
+function noteBadgeHTML(imgId, note) {
+  if (!note) return "";
+  return `<div class="note-badge" onclick="event.stopPropagation();openNoteModal(${imgId})" title="${esc(note)}">📝</div>
+          <div class="note-preview">${esc(note)}</div>`;
+}
+
+function groupNoteHTML(gi, g, noteText) {
+  if (noteText) {
+    const noteImg = g.imgs.find(i => i.note && i.note.trim());
+    return `<span class="group-note-txt" onclick="openNoteModal(${noteImg.id})" title="${esc(noteText)}">📝 ${esc(noteText)}</span>`;
+  }
+  // pas de note — bouton discret pour en ajouter une
+  const firstImg = g.imgs[0];
+  if (!firstImg) return "";
+  return `<button class="group-note-add" onclick="openNoteModal(${firstImg.id})">✏️ Ajouter une note</button>`;
+}
+
+// ── Expand group ──────────────────────────────────────────────────────────────
+function expandGroup(gi) {
+  const g     = groups[gi];
+  const extra = g.imgs.slice(SHOW_INIT);
+  const imgsEl= document.getElementById(`gimgs-${gi}`);
+  extra.forEach((img, i) => {
+    imgsEl.insertAdjacentHTML("beforeend", thumbHTML(img, gi, SHOW_INIT + i));
+  });
+  // remove "voir plus" button
+  const groupEl = document.getElementById(`group-${gi}`);
+  const sm = groupEl.querySelector(".show-more");
+  if (sm) sm.remove();
+  setTimeout(lazyLoad, 60);
+}
+
+// ── Toggle group ──────────────────────────────────────────────────────────────
+function toggleGroup(gi) {
+  const el = document.getElementById(`group-${gi}`);
+  el.classList.toggle("collapsed");
+}
+
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll(".group").forEach(el => {
+    el.classList.toggle("collapsed", !allOpen);
+  });
+}
+
+// ── Lazy load ─────────────────────────────────────────────────────────────────
+let _lazyObs = null;
+function lazyLoad() {
+  const imgs = document.querySelectorAll("img.lz[data-src]");
+  if (!imgs.length) return;
+  if (!("IntersectionObserver" in window)) {
+    imgs.forEach(img=>{ img.src=img.dataset.src; img.removeAttribute("data-src"); });
+    return;
+  }
+  if (!_lazyObs) {
+    _lazyObs = new IntersectionObserver((entries, ob)=>{
+      entries.forEach(e=>{
+        if (!e.isIntersecting) return;
+        const img = e.target;
+        const src = img.dataset.src;
+        ob.unobserve(img);
+        if (!src) return;           // already loaded by a previous call
+        img.src = src;
+        img.removeAttribute("data-src");
+      });
+    }, { rootMargin: "500px" });
+  }
+  imgs.forEach(img => _lazyObs.observe(img));
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+function openLb(gi, ti) {
+  // build lightbox list = all imgs of this group (including expanded)
+  lbList = groups[gi].imgs;
+  lbIdx  = ti;
+  renderLb();
+  document.getElementById("lb").classList.add("open");
+}
+
+function renderLb() {
+  const img = lbList[lbIdx];
+  if (!img) return;
+  const url  = `/uploads/images/${img.filename}`;
+  const mime = img.mimetype||"";
+  const size = fmtSize(img.filesize);
+  const date = img.created_at ? new Date(img.created_at).toLocaleString("fr-FR") : "";
+  const phone= img.phone?"+"+img.phone:"—";
+  const name = img.name&&img.name!==img.phone?img.name:"";
+
+  const av = document.getElementById("lbAv");
+  av.style.background = colorOf(img.phone);
+  av.textContent = String(img.phone||"").slice(-2)||"?";
+
+  document.getElementById("lbPhone").textContent = phone;
+  document.getElementById("lbName").textContent  = name;
+  const noteHtml = img.note
+    ? `<span class="lb-chip" style="background:rgba(255,214,0,.22);color:#ffd600;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+         onclick="openNoteModal(${img.id})" title="Modifier la note">📝 ${esc(img.note)}</span>`
+    : `<span class="lb-chip" style="cursor:pointer;opacity:.7" onclick="openNoteModal(${img.id})">📝 Ajouter une note</span>`;
+
+  document.getElementById("lbChips").innerHTML = [
+    date ?`<span class="lb-chip">📅 ${date}</span>`:"",
+    mime ?`<span class="lb-chip">🗂 <b>${esc(mime)}</b></span>`:"",
+    size ?`<span class="lb-chip">📦 ${size}</span>`:"",
+    img.filename?`<span class="lb-chip">📄 ${esc(img.filename)}</span>`:"",
+    noteHtml,
+  ].join("");
+
+  document.getElementById("lbImg").src     = url;
+  document.getElementById("lbDl").href     = url;
+  document.getElementById("lbDl").download = img.filename;
+  document.getElementById("lbCnt").textContent = `${lbIdx+1} / ${lbList.length}`;
+}
+
+function navLb(dir){ lbIdx=(lbIdx+dir+lbList.length)%lbList.length; renderLb(); }
+function closeLb(){ document.getElementById("lb").classList.remove("open"); document.getElementById("lbImg").src=""; }
+
+async function deleteLbImg() {
+  const img = lbList[lbIdx];
+  if (!img || !confirm("Supprimer cette photo définitivement ?")) return;
+  closeLb();
+  if (await doDelete(img.id)) { showToast("✅ Photo supprimée"); await load(); await loadStats(); }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function deleteSingleImg(id) {
+  if (!confirm("Supprimer cette photo définitivement ?")) return;
+  if (await doDelete(id)) { showToast("✅ Photo supprimée"); await load(); await loadStats(); }
+}
+
+async function deleteGroup(gi) {
+  const g = groups[gi];
+  if (!confirm(`Supprimer toutes les ${g.imgs.length} photos de +${g.phone} définitivement ?`)) return;
+  let done=0;
+  for (const img of g.imgs) { if (await doDelete(img.id)) done++; }
+  showToast(`✅ ${done} photo(s) supprimée(s)`);
+  await load(); await loadStats();
+}
+
+async function doDelete(id) {
+  try { return (await fetch(`/api/images/${id}`,{method:"DELETE"}).then(r=>r.json())).ok; }
+  catch { return false; }
+}
+
+// ── Download group ZIP ────────────────────────────────────────────────────────
+function _crc32(data){
+  if(!_crc32._t){_crc32._t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);_crc32._t[i]=c;}}
+  let crc=0xFFFFFFFF;for(let i=0;i<data.length;i++)crc=_crc32._t[(crc^data[i])&0xFF]^(crc>>>8);return(crc^0xFFFFFFFF)>>>0;
+}
+function _buildZip(files){
+  const enc=new TextEncoder(),parts=[],cds=[];let off=0;
+  for(const{name,data}of files){
+    const nb=enc.encode(name),crc=_crc32(data),sz=data.length;
+    const lh=new Uint8Array(30+nb.length+sz),v=new DataView(lh.buffer);
+    v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0,true);v.setUint16(8,0,true);
+    v.setUint16(10,0,true);v.setUint16(12,0,true);v.setUint32(14,crc,true);v.setUint32(18,sz,true);
+    v.setUint32(22,sz,true);v.setUint16(26,nb.length,true);v.setUint16(28,0,true);
+    lh.set(nb,30);lh.set(data,30+nb.length);
+    const cd=new Uint8Array(46+nb.length),cv=new DataView(cd.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0,true);
+    cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,crc,true);
+    cv.setUint32(20,sz,true);cv.setUint32(24,sz,true);cv.setUint16(28,nb.length,true);cv.setUint16(30,0,true);
+    cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);
+    cv.setUint32(42,off,true);cd.set(nb,46);parts.push(lh);cds.push(cd);off+=lh.length;
+  }
+  const cdSz=cds.reduce((s,c)=>s+c.length,0),eo=new Uint8Array(22),ev=new DataView(eo.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,cds.length,true);
+  ev.setUint16(10,cds.length,true);ev.setUint32(12,cdSz,true);ev.setUint32(16,off,true);ev.setUint16(20,0,true);
+  return new Blob([...parts,...cds,eo],{type:"application/zip"});
+}
+
+async function downloadGroup(gi) {
+  const g = groups[gi];
+  if (!g.imgs.length) return;
+  showToast(`⏳ Préparation de ${g.imgs.length} photo(s)…`);
+  try {
+    const files=[];
+    for (let i=0;i<g.imgs.length;i++) {
+      showToast(`⏳ ${i+1} / ${g.imgs.length}`);
+      const resp = await fetch(`/uploads/images/${g.imgs[i].filename}`);
+      if (!resp.ok) continue;
+      files.push({name:g.imgs[i].filename, data:new Uint8Array(await resp.arrayBuffer())});
+    }
+    if (!files.length) { showToast("❌ Aucune photo trouvée"); return; }
+    const blob = _buildZip(files);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href=url; a.download=`photos_${g.phone}_${Date.now()}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast(`✅ ${files.length} photo(s) téléchargée(s)`);
+  } catch(e) { showToast("❌ Erreur: "+e.message); }
+}
+
+// ── Keyboard / Touch ──────────────────────────────────────────────────────────
+document.addEventListener("keydown", e=>{
+  const lbOpen   = document.getElementById("lb").classList.contains("open");
+  const noteOpen = document.getElementById("noteOverlay").classList.contains("open");
+  if (e.key==="ArrowLeft"  && lbOpen && !noteOpen) navLb(-1);
+  if (e.key==="ArrowRight" && lbOpen && !noteOpen) navLb(1);
+});
+
+let _txStart=0;
+document.addEventListener("touchstart",e=>{ _txStart=e.touches[0].clientX; });
+document.addEventListener("touchend",e=>{
+  const diff=_txStart-e.changedTouches[0].clientX;
+  if (Math.abs(diff)<50) return;
+  if (document.getElementById("lb").classList.contains("open")) {
+    diff>0?navLb(1):navLb(-1);
+  }
+});
+
+// ── Upload Modal ──────────────────────────────────────────────────────────────
+function openUploadModal(){
+  upFiles=[];
+  ["upPhone","upName"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("upPreview").innerHTML="";
+  document.getElementById("upProgress").style.display="none";
+  document.getElementById("upCount").textContent="0";
+  document.getElementById("uploadFileInput").value="";
+  document.getElementById("uploadOverlay").classList.add("open");
+}
+function closeUploadModal(){ document.getElementById("uploadOverlay").classList.remove("open"); }
+
+document.getElementById("uploadOverlay").addEventListener("click",e=>{
+  if(e.target===document.getElementById("uploadOverlay")) closeUploadModal();
+});
+
+const upDrop=document.getElementById("upDropZone");
+upDrop.addEventListener("dragover", e=>{e.preventDefault();upDrop.classList.add("drag-over")});
+upDrop.addEventListener("dragleave",()=>upDrop.classList.remove("drag-over"));
+upDrop.addEventListener("drop",e=>{
+  e.preventDefault();upDrop.classList.remove("drag-over");
+  addUpFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith("image/")));
+});
+document.getElementById("uploadFileInput").addEventListener("change",function(){
+  addUpFiles(Array.from(this.files)); this.value="";
+});
+
+function addUpFiles(files){
+  files.forEach(file=>{
+    const entry={file,mime:file.type||"image/jpeg",dataUrl:null,data:null};
+    upFiles.push(entry);
+    const reader=new FileReader();
+    reader.onload=e=>{ entry.dataUrl=e.target.result;entry.data=e.target.result.split(",")[1];renderUpPreview(); };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("upCount").textContent=upFiles.length;
+  renderUpPreview();
+}
+
+function removeUpFile(i){ upFiles.splice(i,1);document.getElementById("upCount").textContent=upFiles.length;renderUpPreview(); }
+
+function renderUpPreview(){
+  document.getElementById("upPreview").innerHTML=upFiles.map((f,i)=>
+    f.dataUrl
+      ?`<div class="up-thumb"><img src="${f.dataUrl}"><button class="rm" onclick="removeUpFile(${i})">✕</button></div>`
+      :`<div class="up-thumb" style="display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#aaa">…</div>`
+  ).join("");
+}
+
+async function doUpload(){
+  if(!upFiles.length) return showToast("⚠️ Choisissez une photo d'abord");
+  if(upFiles.some(f=>!f.data)) return showToast("⚠️ Attendez la fin du chargement");
+  const phone=document.getElementById("upPhone").value.trim()||"000000000";
+  const name =document.getElementById("upName").value.trim()||"Manuel";
+  const prog =document.getElementById("upProgress");
+  const btn  =document.getElementById("upSendBtn");
+  prog.style.display="block"; btn.disabled=true;
+  let sent=0,failed=0;
+  for(const f of upFiles){
+    try{
+      prog.textContent=`⏳ ${sent+failed+1} / ${upFiles.length}`;
+      const r=await fetch("/api/images/upload",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({phone,name,data:f.data,mimetype:f.mime})});
+      const d=await r.json(); if(d.ok)sent++; else failed++;
+    }catch{failed++;}
+  }
+  prog.textContent=`✅ ${sent} envoyée(s)${failed?` · ❌ ${failed} échoué(s)`:""}`;
+  btn.disabled=false;
+  if(sent>0) setTimeout(()=>{closeUploadModal();load();loadStats();},1200);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function fmt(n){ return Number(n||0).toLocaleString("fr-FR"); }
+function fmtSize(b){ if(!b)return""; if(b>=1024*1024)return(b/1024/1024).toFixed(1)+" Mo"; return Math.round(b/1024)+" Ko"; }
+function colorOf(p){ let n=0;for(const c of String(p||""))n+=c.charCodeAt(0);return COLORS[n%COLORS.length]; }
+
+// ── Note modal ────────────────────────────────────────────────────────────────
+let _noteImgId = null;
+
+function openNoteModal(imgId) {
+  _noteImgId = imgId;
+  // find image in allImages
+  let img = null;
+  for (const g of groups) { img = g.imgs.find(i => i.id === imgId); if (img) break; }
+  if (!img) return;
+
+  const note = img.note || "";
+  document.getElementById("noteTxt").value       = note;
+  document.getElementById("noteCnt").textContent = note.length + "/1000";
+  document.getElementById("noteSubtitle").textContent =
+    `+${img.phone}${img.name && img.name !== img.phone ? " · " + img.name : ""}`;
+  document.getElementById("noteDelBtn").style.display = note ? "inline-flex" : "none";
+  document.getElementById("noteOverlay").classList.add("open");
+  setTimeout(() => document.getElementById("noteTxt").focus(), 80);
+}
+
+function closeNoteModal() {
+  document.getElementById("noteOverlay").classList.remove("open");
+  _noteImgId = null;
+}
+
+async function saveNote() {
+  if (!_noteImgId) return;
+  const note = document.getElementById("noteTxt").value.trim();
+  const id   = _noteImgId;
+  try {
+    const r = await fetch(`/api/images/${id}/note`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ note })
+    });
+    const d = await r.json();
+    if (!d.ok) { showToast("❌ Erreur sauvegarde note"); return; }
+
+    // 1. Update in-memory data (same object reference → lbList updates too)
+    for (const g of groups) {
+      const img = g.imgs.find(i => i.id === id);
+      if (img) { img.note = note || null; break; }
+    }
+
+    // 2. Targeted DOM update — update badge on every visible thumb for this image
+    document.querySelectorAll(`[data-imgid="${id}"] .note-badge-wrap`).forEach(wrap => {
+      wrap.innerHTML = noteBadgeHTML(id, note);
+    });
+
+    // 3. Refresh group note header for the group containing this image
+    groups.forEach((g, gi) => {
+      if (!g.imgs.find(i => i.id === id)) return;
+      const gnoteEl = document.getElementById(`gnote-${gi}`);
+      if (gnoteEl) {
+        const freshNote = g.imgs.find(i => i.note && i.note.trim());
+        gnoteEl.innerHTML = groupNoteHTML(gi, g, freshNote ? freshNote.note.trim() : "");
+      }
+    });
+
+    // 4. If lightbox is open and showing this image, refresh its chips
+    const lbOpen = document.getElementById("lb").classList.contains("open");
+    if (lbOpen && lbList[lbIdx] && lbList[lbIdx].id === id) {
+      renderLb();
+    }
+
+    closeNoteModal();
+    showToast(note ? "✅ Note enregistrée" : "✅ Note supprimée");
+  } catch(e) { showToast("❌ " + e.message); }
+}
+
+async function deleteNote() {
+  document.getElementById("noteTxt").value = "";
+  await saveNote();
+}
+
+document.getElementById("noteOverlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("noteOverlay")) closeNoteModal();
+});
+
+document.addEventListener("keydown", e => {
+  // Escape : ferme note modal en priorité, sinon ferme le lightbox
+  if (e.key === "Escape") {
+    if (document.getElementById("noteOverlay").classList.contains("open")) {
+      closeNoteModal();
     } else {
-      allImages.forEach(img => selectedIds.add(img.id));
-    }
-    updateSelUI();
-    document.querySelectorAll(".img-card").forEach(card => {
-      const id = parseInt(card.id.replace("card-", ""));
-      card.classList.toggle("selected", selectedIds.has(id));
-    });
-  }
-
-  function updateSelUI() {
-    const n = selectedIds.size;
-    document.getElementById("sSelected").textContent = n;
-    document.getElementById("selCount").textContent  = n;
-    document.getElementById("btnDelSel").disabled    = n === 0;
-    document.getElementById("btnSelAll").textContent =
-      (n === allImages.length && n > 0) ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
-  }
-
-  // ── Delete ────────────────────────────────────────────────────────────────
-  async function deleteSingle(id) {
-    if (!confirm("حذف هذه الصورة نهائياً؟")) return;
-    const ok = await doDelete(id);
-    if (ok) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
-  }
-
-  async function deleteSelected() {
-    if (!selectedIds.size) return;
-    if (!confirm(`حذف ${selectedIds.size} صورة نهائياً؟`)) return;
-    let done = 0;
-    for (const id of [...selectedIds]) {
-      if (await doDelete(id)) done++;
-    }
-    showToast(`✅ تم حذف ${done} صورة`);
-    await load(); await loadStats();
-  }
-
-  async function doDelete(id) {
-    try {
-      const r = await fetch(`/api/images/${id}`, { method: "DELETE" });
-      return (await r.json()).ok;
-    } catch { return false; }
-  }
-
-  // ── Lightbox ──────────────────────────────────────────────────────────────
-  function openLb(id) {
-    const img = allImages.find(i => i.id === id);
-    if (!img) return;
-    lbCurrentId = id;
-    const src = `/uploads/images/${img.filename}`;
-    document.getElementById("lbImg").src   = src;
-    document.getElementById("lbDl").href   = src;
-    document.getElementById("lbDl").download = img.filename;
-    document.getElementById("lbInfo").textContent =
-      `${img.name} · +${img.phone} · ${new Date(img.created_at).toLocaleString("ar-MA")}`;
-    document.getElementById("lightbox").classList.add("open");
-  }
-
-  function closeLb() {
-    document.getElementById("lightbox").classList.remove("open");
-    document.getElementById("lbImg").src = "";
-    lbCurrentId = null;
-  }
-
-  async function deleteFromLb() {
-    if (!lbCurrentId || !confirm("حذف هذه الصورة نهائياً؟")) return;
-    const id = lbCurrentId;
-    closeLb();
-    if (await doDelete(id)) { showToast("✅ تم الحذف"); await load(); await loadStats(); }
-  }
-
-  function dlImg(id) {
-    const img = allImages.find(i => i.id === id);
-    if (!img) return;
-    const a = document.createElement("a");
-    a.href = `/uploads/images/${img.filename}`;
-    a.download = img.filename;
-    a.click();
-  }
-
-  document.getElementById("lightbox").addEventListener("click", e => {
-    if (e.target === document.getElementById("lightbox")) closeLb();
-  });
-
-  // ── Upload Modal ──────────────────────────────────────────────────────────
-  function openUploadModal() {
-    upFiles = [];
-    document.getElementById("upPhone").value   = "";
-    document.getElementById("upName").value    = "";
-    document.getElementById("upPreview").innerHTML = "";
-    document.getElementById("upProgress").style.display = "none";
-    document.getElementById("upCount").textContent = "0";
-    document.getElementById("uploadFileInput").value = "";
-    document.getElementById("uploadOverlay").classList.add("open");
-  }
-
-  function closeUploadModal() {
-    document.getElementById("uploadOverlay").classList.remove("open");
-  }
-
-  document.getElementById("uploadOverlay").addEventListener("click", e => {
-    if (e.target === document.getElementById("uploadOverlay")) closeUploadModal();
-  });
-
-  const upDrop = document.getElementById("upDropZone");
-  upDrop.addEventListener("dragover",  e => { e.preventDefault(); upDrop.classList.add("drag-over"); });
-  upDrop.addEventListener("dragleave", () => upDrop.classList.remove("drag-over"));
-  upDrop.addEventListener("drop", e => {
-    e.preventDefault(); upDrop.classList.remove("drag-over");
-    addUpFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/")));
-  });
-
-  document.getElementById("uploadFileInput").addEventListener("change", function () {
-    addUpFiles(Array.from(this.files));
-    this.value = "";
-  });
-
-  function addUpFiles(files) {
-    files.forEach(file => {
-      const entry = { file, mime: file.type || "image/jpeg", dataUrl: null, data: null };
-      upFiles.push(entry);
-      const reader = new FileReader();
-      reader.onload = e => {
-        entry.dataUrl = e.target.result;
-        entry.data    = e.target.result.split(",")[1];
-        renderUpPreview();
-      };
-      reader.readAsDataURL(file);
-    });
-    document.getElementById("upCount").textContent = upFiles.length;
-    renderUpPreview();
-  }
-
-  function removeUpFile(i) {
-    upFiles.splice(i, 1);
-    document.getElementById("upCount").textContent = upFiles.length;
-    renderUpPreview();
-  }
-
-  function renderUpPreview() {
-    document.getElementById("upPreview").innerHTML = upFiles.map((f, i) =>
-      f.dataUrl
-        ? `<div class="up-thumb"><img src="${f.dataUrl}"><button class="rm" onclick="removeUpFile(${i})">✕</button></div>`
-        : `<div class="up-thumb" style="background:#eee;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#aaa">...</div>`
-    ).join("");
-  }
-
-  async function doUpload() {
-    if (!upFiles.length) return showToast("⚠️ اختر صورة أولاً");
-    if (upFiles.some(f => !f.data)) return showToast("⚠️ انتظر حتى يكتمل التحميل");
-    const phone = document.getElementById("upPhone").value.trim() || "000000000";
-    const name  = document.getElementById("upName").value.trim()  || "يدوي";
-    const prog  = document.getElementById("upProgress");
-    const btn   = document.getElementById("upSendBtn");
-    prog.style.display = "block"; btn.disabled = true;
-    let sent = 0, failed = 0;
-    for (const f of upFiles) {
-      try {
-        prog.textContent = `⏳ ${sent + failed + 1} / ${upFiles.length}`;
-        const r = await fetch("/api/images/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, name, data: f.data, mimetype: f.mime }),
-        });
-        const d = await r.json();
-        if (d.ok) sent++; else failed++;
-      } catch { failed++; }
-    }
-    prog.textContent = `✅ تم رفع ${sent}${failed ? ` · ❌ فشل ${failed}` : ""}`;
-    btn.disabled = false;
-    if (sent > 0) {
-      setTimeout(() => { closeUploadModal(); load(); loadStats(); }, 1200);
+      closeLb();
+      closeUploadModal();
     }
   }
+});
 
-  // ── Keyboard ──────────────────────────────────────────────────────────────
-  let touchStartX = 0;
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") { closeLb(); closeUploadModal(); }
-    if (e.key === "ArrowRight") prevPage();  // RTL: flèche droite = page précédente
-    if (e.key === "ArrowLeft") nextPage();   // RTL: flèche gauche = page suivante
-  });
+let _toastT;
+function showToast(msg){
+  const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");
+  clearTimeout(_toastT);_toastT=setTimeout(()=>el.classList.remove("show"),3000);
+}
 
-  // ── Touch/Swipe support pour mobile ────────────────────────────────────────
-  document.addEventListener("touchstart", e => {
-    touchStartX = e.touches[0].clientX;
-  });
-
-  document.addEventListener("touchend", e => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX - touchEndX;
-    if (Math.abs(diff) > 50) {  // 50px minimum swipe distance
-      if (diff > 0) nextPage();   // Swipe gauche = page suivante
-      if (diff < 0) prevPage();   // Swipe droite = page précédente
-    }
-  });
-
-  document.getElementById("searchPhone").addEventListener("input", load);
-
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg; t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3000);
-  }
-
-  loadStats();
-  load();
-  setInterval(() => { loadStats(); load(); }, 120000);  // Rafraîchir toutes les 2 minutes au lieu de 30s
+setInterval(()=>{loadStats();load();},120000);
 </script>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  // ── Auto-reload عند وصول صورة جديدة من واتساب ─────────────────────────
-  const _sock = io();
-  _sock.on("new_media", (data) => {
-    if (data.type !== "image") return;
-    const t = document.getElementById("toast");
-    t.textContent = `📸 صورة جديدة من ${data.name || data.phone}`;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 3500);
-    loadStats();
-    load();
-  });
+const _sock=io();
+_sock.on("new_media",data=>{
+  if(data.type!=="image") return;
+  showToast(`📸 Nouvelle photo de ${data.name||data.phone}`);
+  loadStats(); load();
+});
 </script>
 <footer id="app-footer"></footer>
 <script src="/js/nav.js"></script>

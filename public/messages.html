@@ -5,6 +5,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>سجل الرسائل — واتساب بوت</title>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'ar'</script>
   <style>
     :root {
       --green: #25d366; --teal: #128c7e; --dark: #075e54;
@@ -209,41 +210,41 @@
 
 <!-- Stats -->
 <div class="stats">
-  <div class="stat-card"><div class="sc-icon green">💬</div><div class="sc-body"><div class="num" id="sTotal">—</div><div class="lbl">إجمالي الرسائل</div></div></div>
-  <div class="stat-card"><div class="sc-icon blue">📅</div><div class="sc-body"><div class="num" id="sToday">—</div><div class="lbl">اليوم</div></div></div>
-  <div class="stat-card"><div class="sc-icon blue">📥</div><div class="sc-body"><div class="num" id="sIn">—</div><div class="lbl">واردة</div></div></div>
-  <div class="stat-card"><div class="sc-icon green">📤</div><div class="sc-body"><div class="num" id="sOut">—</div><div class="lbl">صادرة</div></div></div>
-  <div class="stat-card" id="scUnanswered"><div class="sc-icon red">⚠️</div><div class="sc-body"><div class="num" id="sUnanswered">—</div><div class="lbl">لم يُرد بعد</div></div></div>
+  <div class="stat-card"><div class="sc-icon green">💬</div><div class="sc-body"><div class="num" id="sTotal">—</div><div class="lbl"><span data-lv="ar">إجمالي الرسائل</span><span data-lv="fr">Total messages</span><span data-lv="en">Total messages</span></div></div></div>
+  <div class="stat-card"><div class="sc-icon blue">📅</div><div class="sc-body"><div class="num" id="sToday">—</div><div class="lbl"><span data-lv="ar">اليوم</span><span data-lv="fr">Aujourd'hui</span><span data-lv="en">Today</span></div></div></div>
+  <div class="stat-card"><div class="sc-icon blue">📥</div><div class="sc-body"><div class="num" id="sIn">—</div><div class="lbl"><span data-lv="ar">واردة</span><span data-lv="fr">Reçus</span><span data-lv="en">Received</span></div></div></div>
+  <div class="stat-card"><div class="sc-icon green">📤</div><div class="sc-body"><div class="num" id="sOut">—</div><div class="lbl"><span data-lv="ar">صادرة</span><span data-lv="fr">Envoyés</span><span data-lv="en">Sent</span></div></div></div>
+  <div class="stat-card" id="scUnanswered"><div class="sc-icon red">⚠️</div><div class="sc-body"><div class="num" id="sUnanswered">—</div><div class="lbl"><span data-lv="ar">لم يُرد بعد</span><span data-lv="fr">Sans réponse</span><span data-lv="en">Unanswered</span></div></div></div>
 </div>
 
 <!-- Tabs -->
 <div class="tabs">
-  <button class="tab active" id="tab-all"        onclick="switchTab('all')">📋 كل الرسائل</button>
+  <button class="tab active" id="tab-all"        onclick="switchTab('all')">📋 <span data-lv="ar">كل الرسائل</span><span data-lv="fr">Tous les messages</span><span data-lv="en">All messages</span></button>
   <button class="tab tab-alert" id="tab-unanswered" onclick="switchTab('unanswered')">
-    ⚠️ لم يُرد بعد <span class="cnt" id="unansCnt">0</span>
+    ⚠️ <span data-lv="ar">لم يُرد بعد</span><span data-lv="fr">Sans réponse</span><span data-lv="en">Unanswered</span> <span class="cnt" id="unansCnt">0</span>
   </button>
-  <button class="tab" id="tab-in"  onclick="switchTab('in')">📥 واردة</button>
-  <button class="tab" id="tab-out" onclick="switchTab('out')">📤 صادرة</button>
+  <button class="tab" id="tab-in"  onclick="switchTab('in')">📥 <span data-lv="ar">واردة</span><span data-lv="fr">Reçus</span><span data-lv="en">Received</span></button>
+  <button class="tab" id="tab-out" onclick="switchTab('out')">📤 <span data-lv="ar">صادرة</span><span data-lv="fr">Envoyés</span><span data-lv="en">Sent</span></button>
 </div>
 
 <!-- Toolbar -->
 <div class="toolbar">
   <div class="search-wrap">
     <span class="search-ico">🔍</span>
-    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث بالاسم أو رقم الهاتف...">
+    <input class="search-input" id="searchPhone" type="text" placeholder="ابحث بالاسم أو رقم الهاتف... / Rechercher...">
   </div>
   <select id="filterSource">
-    <option value="">كل المصادر</option>
-    <option value="user">👤 مستخدم</option>
-    <option value="manual">✍️ يدوي</option>
-    <option value="custom">📋 مبرمج</option>
-    <option value="default">↩️ افتراضي</option>
-    <option value="ai">🤖 ذكاء</option>
+    <option value=""><span data-lv="ar">كل المصادر</span></option>
+    <option value="user">👤 مستخدم / Utilisateur</option>
+    <option value="manual">✍️ يدوي / Manuel</option>
+    <option value="custom">📋 مبرمج / Programmé</option>
+    <option value="default">↩️ افتراضي / Défaut</option>
+    <option value="ai">🤖 ذكاء / IA</option>
   </select>
-  <button class="tbtn tbtn-green" onclick="refresh()">🔄 تحديث</button>
-  <button class="tbtn tbtn-teal"  onclick="exportCSV()">⬇️ تصدير</button>
-  <button class="tbtn" id="btnSelAll" onclick="toggleSelectAll()" style="background:#e3f2fd;color:#1565c0">☑️ تحديد الكل</button>
-  <button class="tbtn" id="btnDelSel" onclick="deleteSelected()" disabled style="background:#ffebee;color:#c62828">🗑️ حذف (<span id="selCount">0</span>)</button>
+  <button class="tbtn tbtn-green" onclick="refresh()">🔄 <span data-lv="ar">تحديث</span><span data-lv="fr">Actualiser</span><span data-lv="en">Refresh</span></button>
+  <button class="tbtn tbtn-teal"  onclick="exportCSV()">⬇️ <span data-lv="ar">تصدير</span><span data-lv="fr">Exporter</span><span data-lv="en">Export</span></button>
+  <button class="tbtn" id="btnSelAll" onclick="toggleSelectAll()" style="background:#e3f2fd;color:#1565c0">☑️ <span data-lv="ar">تحديد الكل</span><span data-lv="fr">Tout sélectionner</span><span data-lv="en">Select all</span></button>
+  <button class="tbtn" id="btnDelSel" onclick="deleteSelected()" disabled style="background:#ffebee;color:#c62828">🗑️ <span data-lv="ar">حذف</span><span data-lv="fr">Supprimer</span><span data-lv="en">Delete</span> (<span id="selCount">0</span>)</button>
 </div>
 
 <!-- Table -->
@@ -253,17 +254,17 @@
       <thead>
         <tr>
           <th style="width:36px"><input type="checkbox" id="chkAll" onclick="toggleSelectAll()" style="width:16px;height:16px;cursor:pointer;accent-color:#25d366"></th>
-          <th>الاسم</th>
-          <th>الهاتف</th>
-          <th>الاتجاه</th>
-          <th>الرسالة</th>
-          <th>المصدر</th>
-          <th>الوقت</th>
-          <th>شات</th>
+          <th><span data-lv="ar">الاسم</span><span data-lv="fr">Nom</span><span data-lv="en">Name</span></th>
+          <th><span data-lv="ar">الهاتف</span><span data-lv="fr">Téléphone</span><span data-lv="en">Phone</span></th>
+          <th><span data-lv="ar">الاتجاه</span><span data-lv="fr">Direction</span><span data-lv="en">Direction</span></th>
+          <th><span data-lv="ar">الرسالة</span><span data-lv="fr">Message</span><span data-lv="en">Message</span></th>
+          <th><span data-lv="ar">المصدر</span><span data-lv="fr">Source</span><span data-lv="en">Source</span></th>
+          <th><span data-lv="ar">الوقت</span><span data-lv="fr">Heure</span><span data-lv="en">Time</span></th>
+          <th><span data-lv="ar">شات</span><span data-lv="fr">Chat</span><span data-lv="en">Chat</span></th>
         </tr>
       </thead>
       <tbody id="msgBody">
-        <tr><td colspan="8" class="empty-row" style="text-align:center;padding:50px;color:var(--muted)">جاري التحميل...</td></tr>
+        <tr><td colspan="8" class="empty-row" style="text-align:center;padding:50px;color:var(--muted)"><span data-lv="ar">جاري التحميل...</span><span data-lv="fr">Chargement...</span><span data-lv="en">Loading...</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -275,17 +276,19 @@
 <!-- ── Quick Reply Modal ── -->
 <div class="qr-overlay" id="replyOverlay" onclick="if(event.target===this)closeReply()">
   <div class="qr-modal-box">
-    <h3>✏️ رد سريع</h3>
+    <h3>✏️ <span data-lv="ar">رد سريع</span><span data-lv="fr">Réponse rapide</span><span data-lv="en">Quick reply</span></h3>
     <div class="qr-modal-to" id="replyTo"></div>
-    <textarea class="qr-modal-ta" id="replyText" placeholder="اكتب ردك هنا..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
+    <textarea class="qr-modal-ta" id="replyText" placeholder="اكتب ردك هنا... / Votre réponse..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
     <div class="qr-modal-actions">
-      <button class="qr-btn qr-btn-cancel" onclick="closeReply()">إلغاء</button>
-      <button class="qr-btn qr-btn-send" id="replySendBtn" onclick="sendReply()">إرسال ✉️</button>
+      <button class="qr-btn qr-btn-cancel" onclick="closeReply()"><span data-lv="ar">إلغاء</span><span data-lv="fr">Annuler</span><span data-lv="en">Cancel</span></button>
+      <button class="qr-btn qr-btn-send" id="replySendBtn" onclick="sendReply()"><span data-lv="ar">إرسال</span><span data-lv="fr">Envoyer</span><span data-lv="en">Send</span> ✉️</button>
     </div>
   </div>
 </div>
 
 <script>
+  function t(ar,fr,en){ const l=document.documentElement.dataset.lang||'ar'; return l==='fr'?fr:l==='en'?en:ar; }
+
   /* ── State ── */
   let currentOffset  = 0;
   const LIMIT        = 50;
@@ -332,7 +335,7 @@
       document.getElementById("sIn").textContent    = s.incoming;
       document.getElementById("sOut").textContent   = s.outgoing;
       totalMsgs = s.total;
-    } catch { showToast("❌ خطأ في تحميل الإحصائيات"); }
+    } catch { showToast(`❌ ${t('خطأ في تحميل الإحصائيات','Erreur de chargement des stats','Error loading stats')}`); }
   }
 
   async function loadUnanswered() {
@@ -363,7 +366,7 @@
       allMessages = await res.json();
       if (activeTab !== "unanswered") renderTable(filterList());
       renderPagination();
-    } catch { showToast("❌ خطأ في تحميل الرسائل"); }
+    } catch { showToast(`❌ ${t('خطأ في تحميل الرسائل','Erreur de chargement des messages','Error loading messages')}`); }
   }
 
   /* ── Render table ── */
@@ -373,7 +376,7 @@
     const unansPhones = new Set(unansweredList.map(u => u.phone));
 
     if (!list.length) {
-      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">لا توجد رسائل</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">${t('لا توجد رسائل','Aucun message','No messages')}</td></tr>`;
       return;
     }
     body.innerHTML = list.map((m, i) => {
@@ -418,7 +421,7 @@
   function renderUnanswered() {
     const body = document.getElementById("msgBody");
     if (!unansweredList.length) {
-      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">✅ كل الرسائل تم الرد عليها</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:50px;color:var(--muted)">✅ ${t('كل الرسائل تم الرد عليها','Tous les messages ont reçu une réponse','All messages have been replied to')}</td></tr>`;
       return;
     }
     body.innerHTML = unansweredList.map((u, i) => {
@@ -484,13 +487,15 @@
     const allSel  = visible.length > 0 && visible.every(m => selectedIds.has(m.id));
     const chkAll  = document.getElementById("chkAll");
     if (chkAll) { chkAll.checked = allSel; chkAll.indeterminate = !allSel && n > 0; }
-    document.getElementById("btnSelAll").textContent = allSel ? "☐ إلغاء التحديد" : "☑️ تحديد الكل";
+    document.getElementById("btnSelAll").textContent = allSel
+      ? `☐ ${t('إلغاء التحديد','Désélectionner tout','Deselect all')}`
+      : `☑️ ${t('تحديد الكل','Tout sélectionner','Select all')}`;
   }
 
   async function deleteSelected() {
     const n = selectedIds.size;
     if (!n) return;
-    if (!confirm(`حذف ${n} رسالة نهائياً؟`)) return;
+    if (!confirm(t(`حذف ${n} رسالة نهائياً؟`,`Supprimer ${n} message(s) définitivement ?`,`Permanently delete ${n} message(s)?`))) return;
     let done = 0;
     for (const id of [...selectedIds]) {
       try {
@@ -498,7 +503,7 @@
         if ((await r.json()).ok) { done++; selectedIds.delete(id); }
       } catch {}
     }
-    showToast(`✅ تم حذف ${done} رسالة`);
+    showToast(`✅ ${t(`تم حذف ${done} رسالة`,`${done} message(s) supprimé(s)`,`${done} message(s) deleted`)}`);
     updateSelUI();
     await refresh();
   }
@@ -586,7 +591,7 @@
   function openReply(phone, name) {
     _replyPhone = phone;
     _replyName  = name;
-    document.getElementById("replyTo").textContent = `إلى: ${name} (+${phone})`;
+    document.getElementById("replyTo").textContent = `${t('إلى','À','To')}: ${name} (+${phone})`;
     document.getElementById("replyText").value = "";
     document.getElementById("replyOverlay").classList.add("open");
     setTimeout(() => document.getElementById("replyText").focus(), 100);
@@ -598,9 +603,9 @@
 
   async function sendReply() {
     const text = document.getElementById("replyText").value.trim();
-    if (!text) return showToast("⚠️ اكتب رسالة أولاً");
+    if (!text) return showToast(`⚠️ ${t('اكتب رسالة أولاً','Écrivez un message d\'abord','Write a message first')}`);
     const btn = document.getElementById("replySendBtn");
-    btn.disabled = true; btn.textContent = "جاري الإرسال...";
+    btn.disabled = true; btn.textContent = `${t('جاري الإرسال...','Envoi...','Sending...')}`;
     try {
       const r = await fetch("/api/send", {
         method: "POST",
@@ -609,14 +614,14 @@
       });
       const d = await r.json();
       if (d.ok || d.status === "sent") {
-        showToast("✅ تم الإرسال");
+        showToast(`✅ ${t('تم الإرسال','Message envoyé','Message sent')}`);
         closeReply();
         await refresh();
       } else {
-        showToast("❌ " + (d.error || "فشل الإرسال"));
+        showToast("❌ " + (d.error || t("فشل الإرسال","Échec de l'envoi","Send failed")));
       }
-    } catch { showToast("❌ خطأ في الاتصال"); }
-    btn.disabled = false; btn.textContent = "إرسال ✉️";
+    } catch { showToast(`❌ ${t('خطأ في الاتصال','Erreur de connexion','Connection error')}`); }
+    btn.disabled = false; btn.textContent = `${t('إرسال','Envoyer','Send')} ✉️`;
   }
 
   /* ── Init & auto-refresh every 10s ── */

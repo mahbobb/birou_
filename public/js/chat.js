@@ -2,6 +2,7 @@
 // GLOBAL STATE
 // ─────────────────────────────────────────
 let selectedPhone = ""
+let selectedCid   = ""   // DB contact id — used for active highlight & message fetch
 let selectedName = ""
 let selectedColor = "#00a884"
 let currentViewTab = "msgs"
@@ -119,10 +120,10 @@ if (m.direction === "in") {
   }
 
   if (isHidden && Notification.permission === "granted") {
-    const senderName = m.senderName || m.phone || "رسالة جديدة"
+    const senderName = m.senderName || m.phone || "Nouveau message"
     const body = previewText(m.body || "")
     const notif = new Notification(senderName, {
-      body: body || "رسالة جديدة",
+      body: body || "Nouveau message",
       icon: "/favicon.ico",
       tag:  "wa-" + mKey,   // replace older notif from same contact
     })
@@ -181,18 +182,25 @@ lastMessageId = m.id || lastMessageId
 // ─── Mobile: show chat panel, hide sidebar ───────────────────────────────────
 function showChatPanel(){
   if(window.innerWidth <= 640){
-    const sb = document.getElementById("sidebar")
-    const cp = document.getElementById("chatPanel")
-    if(sb) sb.classList.add("hidden")
-    if(cp) cp.classList.add("show")
+    const sb  = document.getElementById("sidebar")
+    const cp  = document.getElementById("chatPanel")
+    const fab = document.getElementById("waFab")
+    if(sb)  sb.classList.add("hidden")
+    if(cp)  cp.classList.add("show")
+    if(fab) fab.classList.add("hidden")
   }
 }
 
 function backToList(){
-  const sb = document.getElementById("sidebar")
-  const cp = document.getElementById("chatPanel")
-  if(sb) sb.classList.remove("hidden")
-  if(cp) cp.classList.remove("show")
+  const sb  = document.getElementById("sidebar")
+  const cp  = document.getElementById("chatPanel")
+  const fab = document.getElementById("waFab")
+  if(sb)  sb.classList.remove("hidden")
+  if(cp)  cp.classList.remove("show")
+  if(fab) fab.classList.remove("hidden")
+  selectedPhone = ""; selectedCid = ""; selectedName = ""
+  document.getElementById("chatView").classList.remove("open")
+  document.getElementById("noSelection").style.display = ""
 }
 
 function selectContact(el){
@@ -203,6 +211,7 @@ const source = el.dataset.source || "whatsapp"
 const botId  = el.dataset.botid || ""
 
 selectedPhone  = phone
+selectedCid    = el.dataset.cid || ""
 selectedName   = name
 selectedColor  = avatarColor(name || phone)
 selectedSource = source
@@ -275,42 +284,62 @@ let phone = normalizeOutPhone(raw)
 
 if(!phone || phone.length < 7){
 
-showToast("⚠️ أدخل رقم صحيح")
+showToast("⚠️ Entrez un numéro valide")
 return
 
 }
 
 selectedPhone = phone
-selectedName = phone
+selectedName  = phone
 selectedColor = avatarColor(phone)
+selectedCid   = ""
 
 lastMessageId = 0
 lastDateRendered = ""
-
 socketSeenId.clear()
 socketSeenSig.clear()
 
 socket.emit("join", normalizeKey(phone))
-
 document.getElementById("newChatBar").classList.remove("open")
-
 setViewTab("msgs")
-
-document.getElementById("noSelection").style.display="none"
+document.getElementById("noSelection").style.display = "none"
 document.getElementById("chatView").classList.add("open")
 showChatPanel()
 
 const av = document.getElementById("chatAvatar")
-
-av.textContent = phone[0]
+av.textContent     = phone[0].toUpperCase()
 av.style.background = selectedColor
-
-document.getElementById("chatName").textContent = phone
-document.getElementById("chatPhone").textContent = "+"+phone
+document.getElementById("chatName").textContent  = phone
+document.getElementById("chatPhone").textContent = "+" + phone
 
 loadMessages(true)
 loadBlockStatus(phone)
-showToast("📱 فتح محادثة: +"+phone)
+showToast("📱 Chargement des données: +" + phone)
+
+// جلب البيانات الكاملة (cid + اسم + صورة) من الخادم
+fetch(`/api/contacts/lookup?phone=${encodeURIComponent(phone)}`)
+  .then(r => r.json())
+  .then(d => {
+    if (!d || d.error) return
+    if (d.cid) {
+      selectedCid = String(d.cid)
+      renderContacts && renderContacts(
+        (typeof allContacts !== "undefined" ? allContacts : []).slice(0, 50)
+      )
+    }
+    const displayName = d.name || phone
+    selectedName = displayName
+    document.getElementById("chatName").textContent  = displayName
+    document.getElementById("chatPhone").textContent = "+" + (d.phone || phone)
+    const avEl = document.getElementById("chatAvatar")
+    if (d.photo) {
+      avEl.innerHTML = `<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${displayName[0].toUpperCase()}'">`
+    } else {
+      avEl.textContent = displayName[0].toUpperCase()
+    }
+    if (!d.found) showToast("✅ Client enregistré : " + displayName)
+  })
+  .catch(() => {})
 
 }
 
@@ -345,20 +374,20 @@ const data = await res.json()
 
 if(data.ok){
 
-showToast("✅ تم الإرسال")
+showToast("✅ Message envoyé")
 markContactReplied(selectedPhone)
 clearUnansweredMarks()
 setTimeout(()=>loadMessages(true),500)
 
 }else{
 
-showToast("❌ "+(data.error || "فشل"))
+showToast("❌ "+(data.error || "Échec"))
 
 }
 
 }catch{
 
-showToast("❌ خطأ في الاتصال")
+showToast("❌ Erreur de connexion")
 
 }
 
@@ -462,7 +491,7 @@ function renderQuickReplies(list) {
   const el = document.getElementById("qrList");
   if (!el) return;
   if (!list.length) {
-    el.innerHTML = `<div class="qr-empty">لا توجد ردود محفوظة<br><small>اضغط "+ جديد" لإضافة رد</small></div>`;
+    el.innerHTML = `<div class="qr-empty">Aucune réponse enregistrée<br><small>Cliquez sur "+ Nouveau" pour en ajouter</small></div>`;
     return;
   }
   el.innerHTML = list.map((r, i) => {
@@ -475,7 +504,7 @@ function renderQuickReplies(list) {
           <div class="qr-item-reply">${escHtml(reply)}</div>
           ${kws ? `<div class="qr-item-kw">${escHtml(kws)}</div>` : ""}
         </div>
-        <button class="qr-item-send" onclick="event.stopPropagation();sendQuickReply(${i})">إرسال</button>
+        <button class="qr-item-send" onclick="event.stopPropagation();sendQuickReply(${i})">Envoyer</button>
       </div>`;
   }).join("");
 }
@@ -502,7 +531,7 @@ function insertQuickReply(i) {
 
 async function sendQuickReply(i) {
   const r = _qrAll[i];
-  if (!r || !selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  if (!r || !selectedPhone) return showToast("⚠️ Sélectionnez une conversation d'abord");
   const reply = Array.isArray(r.reply) ? r.reply[0] : (r.reply || "");
   closeQuickReplies();
   const ta = document.getElementById("msgInput");
@@ -548,21 +577,21 @@ function closeAddReplyModal() {
 async function saveQuickReply() {
   const keywords = document.getElementById("arKeywords").value.trim();
   const reply    = document.getElementById("arReply").value.trim();
-  if (!reply) return showToast("⚠️ اكتب نص الرد");
+  if (!reply) return showToast("⚠️ Écrivez le texte de la réponse");
   try {
-    const body = { reply, keywords: keywords || "عام" };
+    const body = { reply, keywords: keywords || "general" };
     const d = await fetch("/api/responses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then(r => r.json());
     if (d.ok) {
-      showToast("✅ تم حفظ الرد");
+      showToast("✅ Réponse sauvegardée");
       closeAddReplyModal();
     } else {
-      showToast("❌ " + (d.error || "خطأ"));
+      showToast("❌ " + (d.error || "Erreur"));
     }
-  } catch { showToast("❌ فشل الاتصال"); }
+  } catch { showToast("❌ Échec de connexion"); }
 }
 
 // أغلق panel عند الضغط خارجه
@@ -660,7 +689,7 @@ function renderMediaPage(type) {
   const grid = document.getElementById(`${type}Grid`);
 
   if (!page.length) {
-    const labels = { imgs:"📷 لا توجد صور", vids:"🎬 لا توجد فيديوهات", auds:"🎤 لا توجد رسائل صوتية" };
+    const labels = { imgs:"📷 Aucune photo", vids:"🎬 Aucune vidéo", auds:"🎤 Aucun message vocal" };
     grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">${labels[type]}</div>`;
     renderMediaPagination(type, 0);
     return;
@@ -670,7 +699,7 @@ function renderMediaPage(type) {
     grid.innerHTML = page.map(img => {
       const src  = `/uploads/images/${escHtml(img.filename)}`;
       const note = img.note ? `<span class="m-note">${escHtml(img.note)}</span>` : "";
-      const date = new Date(img.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
+      const date = new Date(img.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
       return `<div class="media-thumb" onclick="openLightbox('${src}')" title="${date}">
         <img src="${src}" loading="lazy">${note}
       </div>`;
@@ -679,7 +708,7 @@ function renderMediaPage(type) {
     grid.innerHTML = page.map(v => {
       const src  = `/uploads/videos/${escHtml(v.filename)}`;
       const note = v.note ? `<span class="m-note">${escHtml(v.note)}</span>` : "";
-      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short"});
+      const date = new Date(v.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
       return `<div class="media-thumb" title="${date}" onclick="openVideoModal('${src}')">
         <video src="${src}" preload="metadata"></video>
         <span class="m-play">▶️</span>${note}
@@ -688,13 +717,13 @@ function renderMediaPage(type) {
   } else {
     grid.innerHTML = page.map(v => {
       const src  = `/uploads/voices/${escHtml(v.filename)}`;
-      const date = new Date(v.created_at).toLocaleDateString("ar-MA",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+      const date = new Date(v.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
       const dir  = v.direction === "out" ? "📤" : "📥";
       return `<div class="voice-item" onclick="openAudioModal('${escAttr(src)}')" style="cursor:pointer;padding:8px;border-radius:8px;background:#2a3942;transition:background 0.2s;hover:background:#374045">
         <div class="voice-item-meta">${dir} ${date}</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="#00a884"><path d="M12 14c-.833 0-1.542-.292-2.125-.875S9 11.833 9 11V5c0-.833.292-1.542.875-2.125S11.167 2 12 2s1.542.292 2.125.875S15 4.167 15 5v6c0 .833-.292 1.542-.875 2.125S12.833 14 12 14Zm0 7c-.552 0-1-.448-1-1v-2.075C9.267 17.692 7.833 16.917 6.7 15.6 5.787 14.54 5.242 13.34 5.064 11.997 4.992 11.45 5.448 11 6 11s.988.452 1.09.995c.183.963.63 1.81 1.363 2.543C9.438 15.512 10.617 16 12 16s2.563-.488 3.538-1.462c.732-.733 1.18-1.58 1.362-2.543C17.012 11.452 17.448 11 18 11s1.008.45.936.997c-.178 1.34-.723 2.542-1.636 3.603C16.167 16.917 14.733 17.692 13 17.925V20c0 .552-.448 1-1 1Zm0-9c.283 0 .521-.096.713-.288.191-.191.287-.429.287-.712V5c0-.283-.096-.521-.287-.713A.968.968 0 0 0 12 4a.968.968 0 0 0-.713.287A.968.968 0 0 0 11 5v6c0 .283.096.521.287.712.192.192.43.288.713.288Z"/></svg>
-          <span style="color:#00a884;font-size:0.8rem;flex:1">اضغط للاستماع</span>
+          <span style="color:#00a884;font-size:0.8rem;flex:1">Écouter</span>
         </div>
       </div>`;
     }).join("");
@@ -710,13 +739,13 @@ async function loadImagesPanel() {
   if (!selectedPhone) return;
   mediaPage.imgs = 1;
   const grid = document.getElementById("imgsGrid");
-  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ Chargement...</div>`;
   try {
     const res = await fetch(`/api/images?phone=${encodeURIComponent(selectedPhone)}&limit=500`);
     mediaData.imgs = await res.json();
     renderMediaPage("imgs");
   } catch {
-    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصور</div>`;
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ Erreur de chargement des photos</div>`;
   }
 }
 
@@ -727,13 +756,13 @@ async function loadVideosPanel() {
   if (!selectedPhone) return;
   mediaPage.vids = 1;
   const grid = document.getElementById("vidsGrid");
-  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ Chargement...</div>`;
   try {
     const res = await fetch(`/api/videos?phone=${encodeURIComponent(selectedPhone)}&limit=200`);
     mediaData.vids = await res.json();
     renderMediaPage("vids");
   } catch {
-    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الفيديوهات</div>`;
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ Erreur de chargement des vidéos</div>`;
   }
 }
 
@@ -744,13 +773,13 @@ async function loadVoicesPanel() {
   if (!selectedPhone) return;
   mediaPage.auds = 1;
   const grid = document.getElementById("audsGrid");
-  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ جاري التحميل...</div>`;
+  grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">⏳ Chargement...</div>`;
   try {
     const res  = await fetch(`/api/voices?phone=${encodeURIComponent(selectedPhone)}&limit=500`);
     mediaData.auds = await res.json();
     renderMediaPage("auds");
   } catch {
-    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ خطأ في تحميل الصوتيات</div>`;
+    grid.innerHTML = `<div class="media-empty" style="grid-column:1/-1">❌ Erreur de chargement des audios</div>`;
   }
 }
 
@@ -767,7 +796,7 @@ el.id = "videoModal"
 el.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;"
 el.innerHTML = `
   <video src="${escHtml(src)}" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,0.5)"></video>
-  <button onclick="this.closest('#videoModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;padding:8px 22px;border-radius:8px;cursor:pointer;">✕ إغلاق</button>`
+  <button onclick="this.closest('#videoModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;padding:8px 22px;border-radius:8px;cursor:pointer;">✕ Fermer</button>`
 
 el.addEventListener("click", e=>{ if(e.target===el) el.remove() })
 document.body.appendChild(el)
@@ -796,10 +825,10 @@ function openAudioModal(src) {
       <div style="display:flex;gap:12px;align-items:center;margin-top:16px">
         <button onclick="document.getElementById('${audioId}').play()" style="background:#00a884;color:white;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">▶</button>
         <button onclick="document.getElementById('${audioId}').pause()" style="background:#888;color:white;border:none;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center">⏸</button>
-        <a href="${escAttr(src)}" download style="background:#374045;color:#00a884;border:none;flex:1;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:center;text-decoration:none;font-weight:600">📥 تحميل</a>
+        <a href="${escAttr(src)}" download style="background:#374045;color:#00a884;border:none;flex:1;padding:10px 16px;border-radius:8px;cursor:pointer;text-align:center;text-decoration:none;font-weight:600">📥 Télécharger</a>
       </div>
     </div>
-    <button onclick="this.closest('#audioModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;padding:8px 24px;border-radius:8px;cursor:pointer;margin-top:8px">✕ إغلاق</button>`;
+    <button onclick="this.closest('#audioModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;padding:8px 24px;border-radius:8px;cursor:pointer;margin-top:8px">✕ Fermer</button>`;
 
   el.addEventListener("click", e => { if (e.target === el) el.remove(); });
   document.body.appendChild(el);
@@ -849,8 +878,8 @@ async function saveQuickResponse(){
   const keywords = document.getElementById("qrKeywords").value.trim()
   const reply    = document.getElementById("qrReply").value.trim()
 
-  if(!reply) return showToast("⚠️ اكتب نص الرد")
-  if(!keywords) return showToast("⚠️ اكتب كلمة مفتاحية واحدة على الأقل")
+  if(!reply) return showToast("⚠️ Écrivez le texte de la réponse")
+  if(!keywords) return showToast("⚠️ Ajoutez au moins un mot-clé")
 
   try{
     const res = await fetch("/api/responses",{
@@ -860,13 +889,13 @@ async function saveQuickResponse(){
     })
     const data = await res.json()
     if(data.ok){
-      showToast("✅ تم حفظ الرد المبرمج")
+      showToast("✅ Réponse programmée sauvegardée")
       closeResponseModal()
     }else{
-      showToast("❌ "+(data.error||"خطأ في الحفظ"))
+      showToast("❌ "+(data.error||"Erreur de sauvegarde"))
     }
   }catch{
-    showToast("❌ خطأ في الاتصال")
+    showToast("❌ Erreur de connexion")
   }
 }
 
@@ -909,7 +938,7 @@ async function loadBlockStatus(phone) {
         const tag = document.createElement("span");
         tag.className = "blocked-tag";
         tag.textContent = "🚫";
-        tag.title = "محجوب";
+        tag.title = "Bloqué";
         item.querySelector(".contact-avatar")?.after(tag);
       }
     }
@@ -923,20 +952,20 @@ function updateBlockBtn() {
   const blocker = document.getElementById("blockedBar");
 
   if (_isBlocked) {
-    if (btn)    { btn.textContent = "✅"; btn.title = "إلغاء الحجب"; btn.classList.add("blocked"); }
-    if (btnBot) { btnBot.classList.add("active-block"); btnBot.title = "إلغاء الحجب"; }
+    if (btn)    { btn.textContent = "✅"; btn.title = "Débloquer"; btn.classList.add("blocked"); }
+    if (btnBot) { btnBot.classList.add("active-block"); btnBot.title = "Débloquer"; }
     if (bar) bar.style.display = "none";
     if (!blocker) {
       const div = document.createElement("div");
       div.id        = "blockedBar";
       div.className = "blocked-bar";
-      div.innerHTML = `<span>🚫 هذا المستخدم محجوب</span>
-        <button onclick="toggleBlock()">إلغاء الحجب</button>`;
+      div.innerHTML = `<span>🚫 Cet utilisateur est bloqué</span>
+        <button onclick="toggleBlock()">Débloquer</button>`;
       bar?.parentNode?.insertBefore(div, bar);
     }
   } else {
-    if (btn)    { btn.textContent = "🚫"; btn.title = "حجب المستخدم"; btn.classList.remove("blocked"); }
-    if (btnBot) { btnBot.classList.remove("active-block"); btnBot.title = "حجب المستخدم"; }
+    if (btn)    { btn.textContent = "🚫"; btn.title = "Bloquer l'utilisateur"; btn.classList.remove("blocked"); }
+    if (btnBot) { btnBot.classList.remove("active-block"); btnBot.title = "Bloquer"; }
     if (bar) bar.style.display = "";
     blocker?.remove();
   }
@@ -945,19 +974,19 @@ function updateBlockBtn() {
 async function toggleBlock() {
   if (!selectedPhone) return;
   const action = _isBlocked ? "unblock" : "block";
-  const label  = _isBlocked ? "إلغاء الحجب" : "حجب";
+  const label  = _isBlocked ? "Débloquer" : "Bloquer";
   const name   = selectedName || selectedPhone;
-  if (!confirm(`${label} "${name}"؟`)) return;
+  if (!confirm(`${label} "${name}" ?`)) return;
   try {
     const d = await fetch(`/api/${action}/${encodeURIComponent(selectedPhone)}`, { method: "POST" }).then(r => r.json());
     if (d.ok) {
       _isBlocked = !_isBlocked;
       updateBlockBtn();
-      showToast(_isBlocked ? `🚫 تم حجب ${name}` : `✅ تم إلغاء حجب ${name}`);
+      showToast(_isBlocked ? `🚫 ${name} bloqué` : `✅ ${name} débloqué`);
     } else {
-      showToast("❌ " + (d.error || "فشل"));
+      showToast("❌ " + (d.error || "Échec"));
     }
-  } catch { showToast("❌ خطأ في الاتصال"); }
+  } catch { showToast("❌ Erreur de connexion"); }
 }
 
 // ─────────────────────────────────────────
@@ -966,12 +995,12 @@ async function toggleBlock() {
 async function deleteChat() {
   if (!selectedPhone) return;
   const name = selectedName || selectedPhone;
-  if (!confirm(`هل تريد حذف محادثة "${name}" نهائياً؟\nسيتم حذف جميع الرسائل.`)) return;
+  if (!confirm(`Supprimer définitivement la conversation "${name}" ?\nTous les messages seront supprimés.`)) return;
   try {
     const res  = await fetch(`/api/contacts/${encodeURIComponent(selectedPhone)}`, { method: "DELETE" });
     const data = await res.json();
     if (data.ok) {
-      showToast("🗑 تم حذف المحادثة");
+      showToast("🗑 Conversation supprimée");
       selectedPhone = "";
       selectedName  = "";
       document.getElementById("chatView").classList.remove("open");
@@ -979,10 +1008,10 @@ async function deleteChat() {
       backToList();
       loadContacts();
     } else {
-      showToast("❌ " + (data.error || "فشل الحذف"));
+      showToast("❌ " + (data.error || "Échec de suppression"));
     }
   } catch {
-    showToast("❌ خطأ في الاتصال");
+    showToast("❌ Erreur de connexion");
   }
 }
 
@@ -990,7 +1019,7 @@ async function deleteChat() {
 // WHATSAPP CALL
 // ─────────────────────────────────────────
 function startCall(callType) {
-  if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  if (!selectedPhone) return showToast("⚠️ Sélectionnez une conversation d'abord");
   // بناء رقم بصيغة دولية
   let p = String(selectedPhone).replace(/\D/g, "");
   if (p.startsWith("00")) p = p.slice(2);
@@ -1007,7 +1036,7 @@ function startCall(callType) {
 // SYNC FROM WHATSAPP (on-demand)
 // ─────────────────────────────────────────
 async function syncWaHistory() {
-  if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  if (!selectedPhone) return showToast("⚠️ Sélectionnez une conversation d'abord");
   const btn = document.getElementById("syncWaBtn");
   if (btn) btn.textContent = "⏳";
   try {
@@ -1019,10 +1048,10 @@ async function syncWaHistory() {
     socketSeenId.clear();
     socketSeenSig.clear();
     await loadMessages(true);
-    if (typeof showToast === "function") showToast("✅ تمت المزامنة");
+    if (typeof showToast === "function") showToast("✅ Synchronisation réussie");
   } catch (err) {
     console.error("syncWaHistory error:", err);
-    if (typeof showToast === "function") showToast("❌ فشلت المزامنة من واتساب");
+    if (typeof showToast === "function") showToast("❌ Échec de synchronisation depuis WhatsApp");
   } finally {
     if (btn) btn.textContent = "🔄";
   }
@@ -1035,7 +1064,7 @@ document.getElementById("msgInput").addEventListener("paste", e => {
   const items = Array.from(e.clipboardData?.items || []);
   const imageItems = items.filter(i => i.kind === "file" && i.type.startsWith("image/"));
   if (!imageItems.length) return;
-  if (!selectedPhone) return showToast("⚠️ اختر محادثة أولاً");
+  if (!selectedPhone) return showToast("⚠️ Sélectionnez une conversation d'abord");
   e.preventDefault();
   const files = imageItems.map(i => i.getAsFile()).filter(Boolean);
   openMediaModal();

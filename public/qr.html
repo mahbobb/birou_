@@ -5,169 +5,300 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Code — واتساب بوت</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'ar'</script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
       background: #f0f2f5;
       color: #1a1a2e;
       direction: rtl;
+      min-height: 100vh;
     }
 
+    /* ── Header ─────────────────────────────────────────────── */
     header {
-      background: linear-gradient(135deg, #075e54, #128c7e);
+      background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
       color: white;
       padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    header h1 { font-size: 1.3rem; }
+    header h1 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
 
-    .nav-links {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
+    .nav-links { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .nav-links a {
-      color: white;
+      color: rgba(255,255,255,.9);
       text-decoration: none;
       padding: 6px 13px;
       border-radius: 8px;
       font-size: 0.84rem;
-      transition: background 0.2s;
+      transition: background .2s;
     }
-    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.2); }
+    .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,.2); }
 
+    /* ── Page layout ─────────────────────────────────────────── */
     .container {
-      max-width: 1100px;
-      margin: 40px auto;
+      max-width: 1120px;
+      margin: 36px auto;
       padding: 0 16px;
     }
 
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 32px 24px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    .page-title {
       text-align: center;
+      margin-bottom: 32px;
     }
-
-    .card h2 {
-      font-size: 1.15rem;
+    .page-title h2 {
+      font-size: 1.5rem;
       color: #075e54;
       margin-bottom: 6px;
     }
-
-    .card p {
-      font-size: 0.85rem;
-      color: #666;
-      margin-bottom: 20px;
+    .page-title p {
+      color: #777;
+      font-size: 0.9rem;
     }
 
-    .qr-box {
+    /* ── Cards grid ──────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
+    }
+
+    /* ── Bot card ────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.09);
+      overflow: hidden;
+      transition: box-shadow .25s;
+    }
+    .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.14); }
+
+    .card-header {
+      background: linear-gradient(135deg, #075e54, #128c7e);
+      color: #fff;
+      padding: 16px 20px;
       display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-      min-height: 220px;
       align-items: center;
+      justify-content: space-between;
     }
-
-    .qr-box canvas, .qr-box img {
-      border: 6px solid #f0f2f5;
-      border-radius: 12px;
+    .card-header-left { display: flex; align-items: center; gap: 10px; }
+    .bot-icon {
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
     }
+    .bot-name { font-size: 1rem; font-weight: 700; }
+    .bot-id   { font-size: 0.76rem; opacity: .8; }
 
-    .status {
+    .status-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      border-radius: 24px;
-      font-size: 0.9rem;
-      font-weight: 600;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
     }
-    .status.connected { background: #d4f5e1; color: #075e54; }
-    .status.waiting   { background: #fff3cd; color: #856404; }
-    .status.loading   { background: #e8e8e8; color: #555; }
+    .status-pill.connected { background: #d4f5e1; color: #065f46; }
+    .status-pill.scanning  { background: #fef3c7; color: #92400e; }
+    .status-pill.loading   { background: rgba(255,255,255,.2); color: #fff; }
 
-    .dot {
-      width: 10px; height: 10px;
+    .pill-dot {
+      width: 7px; height: 7px;
       border-radius: 50%;
       background: currentColor;
     }
-
-    .status-label {
-      margin-top: 10px;
-      font-size: 0.85rem;
+    .pill-dot.pulse {
+      animation: pulseAnim 1.4s ease-in-out infinite;
+    }
+    @keyframes pulseAnim {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .4; transform: scale(.7); }
     }
 
-    .refresh-note {
-      margin-top: 16px;
-      font-size: 0.78rem;
-      color: #aaa;
+    /* ── Card body ───────────────────────────────────────────── */
+    .card-body { padding: 24px 20px 20px; }
+
+    /* QR frame */
+    .qr-frame {
+      width: 232px; height: 232px;
+      margin: 0 auto 20px;
+      position: relative;
+      border-radius: 16px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qr-frame::before {
+      content: "";
+      position: absolute; inset: -3px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #075e54, #25d366);
+      z-index: -1;
     }
 
-    .restart-btn {
-      margin-top: 14px;
-      padding: 9px 20px;
-      border: none;
-      border-radius: 10px;
-      background: #e8f5e9;
-      color: #075e54;
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
+    /* corner decorations */
+    .qr-corner {
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: #075e54;
+      border-style: solid;
     }
-    .restart-btn:hover { background: #c8e6c9; }
-    .restart-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .qr-corner.tl { top: 4px; right: 4px; border-width: 3px 0 0 3px; border-radius: 3px 0 0 0; }
+    .qr-corner.tr { top: 4px; left:  4px; border-width: 3px 3px 0 0; border-radius: 0 3px 0 0; }
+    .qr-corner.bl { bottom: 4px; right: 4px; border-width: 0 0 3px 3px; border-radius: 0 0 0 3px; }
+    .qr-corner.br { bottom: 4px; left:  4px; border-width: 0 3px 3px 0; border-radius: 0 0 3px 0; }
 
-    .disconnect-btn {
-      margin-top: 8px;
-      padding: 7px 16px;
-      border: none;
-      border-radius: 10px;
-      background: #ffebee;
-      color: #c62828;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .disconnect-btn:hover { background: #ffcdd2; }
+    .qr-inner { width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; }
+    .qr-inner canvas, .qr-inner img { border-radius: 8px; }
 
+    /* spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
       width: 48px; height: 48px;
-      border: 5px solid #e0f2f1;
+      border: 4px solid #e0f2f1;
       border-top-color: #128c7e;
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto 12px;
+      animation: spin .9s linear infinite;
+      margin: 0 auto;
     }
 
-    /* ── Responsive ── */
+    /* connected overlay */
+    .connected-overlay {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+    }
+    .connected-check {
+      width: 64px; height: 64px;
+      background: #d4f5e1;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      animation: popIn .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(.4); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* countdown bar */
+    .countdown-wrap {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .countdown-bar-bg {
+      height: 4px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 6px 0 4px;
+    }
+    .countdown-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #25d366, #128c7e);
+      border-radius: 4px;
+      width: 100%;
+      transition: width 1s linear;
+    }
+    .countdown-text { font-size: 0.75rem; color: #999; }
+
+    /* phone display */
+    .phone-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #f0faf5;
+      border: 1px solid #b7e4cc;
+      border-radius: 12px;
+      padding: 10px 16px;
+      margin-bottom: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #065f46;
+      direction: ltr;
+    }
+
+    /* instructions */
+    .steps {
+      list-style: none;
+      margin: 4px 0 16px;
+    }
+    .steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 5px 0;
+      font-size: 0.82rem;
+      color: #555;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .steps li:last-child { border-bottom: none; }
+    .step-num {
+      min-width: 22px; height: 22px;
+      background: #e8f5e9;
+      color: #075e54;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.73rem;
+      font-weight: 700;
+    }
+
+    /* buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      width: 100%;
+      justify-content: center;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-green  { background: #e8f5e9; color: #075e54; }
+    .btn-green:hover:not(:disabled)  { background: #c8e6c9; }
+    .btn-red    { background: #ffebee; color: #c62828; }
+    .btn-red:hover:not(:disabled)    { background: #ffcdd2; }
+    .btn + .btn { margin-top: 8px; }
+
+    /* footer note */
+    .footer-note {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #aaa;
+      margin-top: 28px;
+      padding-bottom: 20px;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 768px) {
       header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; }
-      .nav-links { display: flex; flex-wrap: wrap; gap: 4px; }
-      .nav-links a { font-size: 0.78rem; padding: 4px 8px; }
-      .container { margin: 20px auto; padding: 0 12px; }
+      .nav-links a { font-size: .78rem; padding: 4px 8px; }
+      .container { margin: 20px auto; }
+      .cards-grid { gap: 20px; }
     }
     @media (max-width: 480px) {
-      header { padding: 10px 12px; }
-      .nav-links a { font-size: 0.7rem; padding: 3px 6px; }
       .cards-grid { grid-template-columns: 1fr; }
-      .card { padding: 20px 16px; }
+      .card-body { padding: 18px 16px 16px; }
+      .qr-frame { width: 210px; height: 210px; }
+      .qr-inner { width: 200px; height: 200px; }
     }
   </style>
 </head>
@@ -176,106 +307,257 @@
 <header id="app-header"></header>
 
 <div class="container">
-  <div class="cards-grid" id="cardsGrid">
-    <!-- cards injected by JS -->
+  <div class="page-title">
+    <h2>📱 <span data-lv="ar">ربط البوت بالواتساب</span><span data-lv="fr">Connexion Bot WhatsApp</span><span data-lv="en">Connect Bot to WhatsApp</span></h2>
+    <p><span data-lv="ar">اسكن كود QR بكل رقم لتوصيل البوت</span><span data-lv="fr">Scannez le QR code de chaque numéro pour connecter le bot</span><span data-lv="en">Scan QR code with each number to connect the bot</span></p>
   </div>
-  <div class="refresh-note" style="text-align:center;margin-top:20px;">يتجدد تلقائياً كل 5 ثواني</div>
+
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <div class="footer-note">
+    <span data-lv="ar">يتجدد تلقائياً كل 5 ثواني • كود QR يصلح 60 ثانية</span>
+    <span data-lv="fr">Actualisation auto toutes les 5s • QR valable 60 secondes</span>
+    <span data-lv="en">Auto-refresh every 5s • QR valid for 60 seconds</span>
+  </div>
 </div>
 
 <script>
-  const BOT_LABELS = { bot1: "الرقم 1", bot2: "الرقم 2", bot3: "الرقم 3" };
+  function t(ar,fr,en){ const l=document.documentElement.dataset.lang||'ar'; return l==='fr'?fr:l==='en'?en:ar; }
+  function _qrImgError(el){ el.outerHTML=`<p style="color:#e55;font-size:.8rem">❌ ${t('فشل تحميل الصورة — أعد التشغيل','Erreur chargement — Redémarrez','Load failed — Restart')}</p>`; }
+
+  const BOT_LABELS = {
+    bot1: ()=>t("البوت الأول","Bot 1","Bot 1"),
+    bot2: ()=>t("البوت الثاني","Bot 2","Bot 2"),
+    bot3: ()=>t("البوت الثالث","Bot 3","Bot 3")
+  };
+  const BOT_ICONS  = { bot1: "🤖", bot2: "🤖", bot3: "🤖" };
   const BOT_IDS    = ["bot1", "bot2", "bot3"];
 
   const state = {};
-  BOT_IDS.forEach(id => { state[id] = { lastQr: null }; });
+  BOT_IDS.forEach(id => {
+    state[id] = { lastQr: null, countdownTimer: null, countdownSecs: 0, waitingSince: null };
+  });
 
-  function logout() {
-    fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/login');
-  }
-
+  // ── Build cards ─────────────────────────────────────────────
   function buildCards() {
-    const grid = document.getElementById('cardsGrid');
-    grid.innerHTML = BOT_IDS.map(id => `
+    document.getElementById("cardsGrid").innerHTML = BOT_IDS.map(id => `
       <div class="card" id="card-${id}">
-        <h2>${BOT_LABELS[id]}</h2>
-        <p>افتح واتساب ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز ← اسكن الكود</p>
-        <div class="qr-box" id="qr-box-${id}">
-          <div><div class="spinner"></div><span class="status loading"><span class="dot"></span> جاري التحميل...</span></div>
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="bot-icon">${BOT_ICONS[id]}</div>
+            <div>
+              <div class="bot-name">${BOT_LABELS[id]()}</div>
+              <div class="bot-id">${id}</div>
+            </div>
+          </div>
+          <div id="pill-${id}" class="status-pill loading">
+            <span class="pill-dot pulse"></span> ${t('تحميل...','Chargement...','Loading...')}
+          </div>
         </div>
-        <div class="status-label" id="status-${id}"></div>
+
+        <div class="card-body">
+          <!-- QR frame -->
+          <div class="qr-frame" id="qr-frame-${id}">
+            <span class="qr-corner tl"></span>
+            <span class="qr-corner tr"></span>
+            <span class="qr-corner bl"></span>
+            <span class="qr-corner br"></span>
+            <div class="qr-inner" id="qr-box-${id}">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+          <!-- countdown -->
+          <div class="countdown-wrap" id="countdown-${id}" style="display:none">
+            <div class="countdown-bar-bg">
+              <div class="countdown-bar" id="cbar-${id}" style="width:100%"></div>
+            </div>
+            <div class="countdown-text" id="ctext-${id}">صالح 60 ث</div>
+          </div>
+
+          <!-- dynamic area below QR -->
+          <div id="info-${id}"></div>
+        </div>
       </div>
-    `).join('');
+    `).join("");
   }
 
+  // ── Countdown timer ─────────────────────────────────────────
+  function startCountdown(id, totalSecs = 60) {
+    stopCountdown(id);
+    state[id].countdownSecs = totalSecs;
+
+    const cbar  = document.getElementById(`cbar-${id}`);
+    const ctext = document.getElementById(`ctext-${id}`);
+    const wrap  = document.getElementById(`countdown-${id}`);
+    if (!wrap) return;
+    wrap.style.display = "block";
+
+    state[id].countdownTimer = setInterval(() => {
+      state[id].countdownSecs--;
+      if (state[id].countdownSecs <= 0) {
+        stopCountdown(id);
+        if (cbar)  cbar.style.width = "0%";
+        if (ctext) ctext.textContent = t("انتهت صلاحية الكود — ينتظر كود جديد...","QR expiré — En attente du nouveau...","QR expired — Waiting for new...");
+        return;
+      }
+      const pct  = (state[id].countdownSecs / totalSecs) * 100;
+      const secs = state[id].countdownSecs;
+      if (cbar)  cbar.style.width = pct + "%";
+      if (ctext) ctext.textContent = t(`صالح ${secs} ث`, `Valide ${secs}s`, `Valid ${secs}s`);
+    }, 1000);
+  }
+
+  function stopCountdown(id) {
+    if (state[id].countdownTimer) {
+      clearInterval(state[id].countdownTimer);
+      state[id].countdownTimer = null;
+    }
+    const wrap = document.getElementById(`countdown-${id}`);
+    if (wrap) wrap.style.display = "none";
+  }
+
+  // ── Update single card ──────────────────────────────────────
   function updateCard(id, data) {
     const box   = document.getElementById(`qr-box-${id}`);
-    const label = document.getElementById(`status-${id}`);
-    if (!box || !label) return;
+    const pill  = document.getElementById(`pill-${id}`);
+    const info  = document.getElementById(`info-${id}`);
+    if (!box || !pill || !info) return;
 
+    // ── CONNECTED ───────────────────────────────────────────
     if (data.connected) {
-      box.innerHTML = '<span class="status connected"><span class="dot"></span> متصل ✅</span>';
-      label.innerHTML = `
-        ${data.phone ? `<p style="color:#075e54;font-weight:600;margin-bottom:6px;">البوت متصل ويعمل بشكل طبيعي</p>
-        <p style="color:#555;font-size:0.95rem;margin-bottom:10px;">📞 <strong dir="ltr">+${data.phone}</strong></p>` : '<p style="color:#075e54;font-weight:600;margin-bottom:10px;">البوت متصل ويعمل بشكل طبيعي</p>'}
-        <button class="disconnect-btn" onclick="restartBot('${id}')">🔌 قطع الاتصال وإعادة QR</button>`;
+      stopCountdown(id);
       state[id].lastQr = null;
 
+      pill.className = "status-pill connected";
+      pill.innerHTML = `<span class="pill-dot"></span> ${t('متصل ✅','Connecté ✅','Connected ✅')}`;
+
+      box.innerHTML = `
+        <div class="connected-overlay">
+          <div class="connected-check">✅</div>
+          <span style="font-size:0.82rem;color:#075e54;font-weight:600">${t('متصل ويخدم','Connecté · actif','Connected · active')}</span>
+        </div>`;
+
+      info.innerHTML = `
+        ${data.phone ? `<div class="phone-display">📞 +${data.phone}</div>` : ""}
+        <button class="btn btn-red" onclick="restartBot('${id}')">
+          🔌 ${t('قطع الاتصال وتوليد QR جديد','Déconnecter · générer QR','Disconnect · generate QR')}
+        </button>`;
+
+    // ── HAS QR ──────────────────────────────────────────────
     } else if (data.qr) {
-      label.innerHTML = '<p style="color:#128c7e;font-size:0.82rem;margin-top:6px;">اسكن الكود بالواتساب ⬆️</p>';
+      state[id].waitingSince = null;
+      pill.className = "status-pill scanning";
+      pill.innerHTML = `<span class="pill-dot pulse"></span> ${t('سكان الكود بالواتساب','Scannez avec WhatsApp','Scan with WhatsApp')}`;
+
       if (data.qr !== state[id].lastQr) {
         state[id].lastQr = data.qr;
-        box.innerHTML = `<div id="qr-render-${id}"></div>`;
-        new QRCode(document.getElementById(`qr-render-${id}`), {
-          text: data.qr,
-          width: 220,
-          height: 220,
-          colorDark: '#075e54',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
+        const ts = Date.now();
+        box.innerHTML = `
+          <img src="/api/qr-image/${id}?t=${ts}"
+               width="240" height="240"
+               style="border-radius:8px;display:block;cursor:pointer"
+               alt="QR Code"
+               onclick="window.open('/api/qr-image/${id}?t=${ts}','_blank')"
+               onerror="_qrImgError(this)">`;
+        startCountdown(id, 55);
       }
 
+      info.innerHTML = `
+        <ul class="steps">
+          <li><span class="step-num">1</span> ${t('افتح واتساب على هاتفك','Ouvrez WhatsApp sur votre téléphone','Open WhatsApp on your phone')}</li>
+          <li><span class="step-num">2</span> ${t('⋮ ← الأجهزة المرتبطة','⋮ → Appareils connectés','⋮ → Linked Devices')}</li>
+          <li><span class="step-num">3</span> ${t('اضغط "ربط جهاز"','Touchez "Associer un appareil"','Tap "Link a Device"')}</li>
+          <li><span class="step-num">4</span> ${t('سكّن الكود بالكاميرا ⬆️','Scannez avec la caméra ⬆️','Scan the code with camera ⬆️')}</li>
+        </ul>
+        <button class="btn btn-red" style="margin-top:4px;font-size:0.8rem;padding:7px 14px"
+          onclick="restartBot('${id}')">🔄 ${t('توليد كود جديد','Nouveau QR','New QR code')}</button>`;
+
+    // ── WAITING / NO QR ─────────────────────────────────────
     } else {
-      box.innerHTML = `
-        <div>
-          <div class="spinner"></div>
-          <span class="status waiting"><span class="dot"></span> في انتظار QR...</span>
-        </div>`;
-      label.innerHTML = `
-        <p style="color:#666;font-size:0.82rem;margin:8px 0 10px;">البوت يتهيأ، انتظر لحظة أو اضغط زر التشغيل</p>
-        <button class="restart-btn" id="restart-${id}" onclick="restartBot('${id}')">🔄 تشغيل وتوليد QR</button>`;
+      stopCountdown(id);
       state[id].lastQr = null;
+      if (!state[id].waitingSince) state[id].waitingSince = Date.now();
+
+      const waitSecs = Math.floor((Date.now() - state[id].waitingSince) / 1000);
+      const stuck    = waitSecs > 60;
+
+      pill.className = "status-pill loading";
+      pill.innerHTML = `<span class="pill-dot pulse"></span> ${stuck ? t('⚠️ عالق','⚠️ Bloqué','⚠️ Stuck') : t('يتهيأ...','Démarrage...','Starting...')}`;
+
+      box.innerHTML = stuck
+        ? `<div style="text-align:center;padding:10px">
+            <div style="font-size:2.5rem;margin-bottom:8px">⚠️</div>
+            <p style="font-size:0.8rem;color:#e67e22;font-weight:600">${t('البوت عالق — اضغط إعادة تعيين','Bot bloqué — Cliquez réinitialiser','Bot stuck — Click reset')}</p>
+           </div>`
+        : `<div style="text-align:center">
+            <div class="spinner"></div>
+            <p style="margin-top:12px;font-size:0.8rem;color:#999">${t('يتهيأ...','Démarrage...','Starting...')} (${waitSecs}s)</p>
+           </div>`;
+
+      info.innerHTML = stuck
+        ? `<button class="btn btn-red" id="restart-${id}" onclick="restartBot('${id}')">
+             🗑️ ${t('حذف الجلسة وإعادة توليد QR','Supprimer session · générer QR','Delete session · generate QR')}
+           </button>`
+        : `<p style="font-size:0.82rem;color:#888;text-align:center;margin-bottom:12px">
+             ${t('البوت يتهيأ، انتظر قليلاً أو اضغط تشغيل','Le bot démarre, attendez ou cliquez démarrer','Bot starting, wait or click start')}
+           </p>
+           <button class="btn btn-green" id="restart-${id}" onclick="restartBot('${id}')">
+             🔄 ${t('تشغيل وتوليد QR','Démarrer · générer QR','Start · generate QR')}
+           </button>`;
     }
   }
 
+  // ── Restart bot ─────────────────────────────────────────────
   async function restartBot(id) {
     const btn = document.getElementById(`restart-${id}`);
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التشغيل...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = `⏳ ${t('جاري التشغيل...','Démarrage...','Starting...')}`; }
+
     const box = document.getElementById(`qr-box-${id}`);
-    if (box) box.innerHTML = `<div><div class="spinner"></div><span class="status loading"><span class="dot"></span> إعادة التشغيل...</span></div>`;
+    if (box) box.innerHTML = `
+      <div style="text-align:center">
+        <div class="spinner"></div>
+        <p style="margin-top:12px;font-size:0.8rem;color:#999">${t('إعادة التشغيل...','Redémarrage...','Restarting...')}</p>
+      </div>`;
+
+    stopCountdown(id);
+    state[id].lastQr      = null;
+    state[id].waitingSince = null;
+
     try {
-      await fetch(`/api/restart-bot/${id}`, { method: 'POST' });
-      state[id].lastQr = null;
+      await fetch(`/api/restart-bot/${id}`, { method: "POST" });
       setTimeout(refresh, 3000);
     } catch {
-      if (btn) { btn.disabled = false; btn.textContent = '🔄 تشغيل وتوليد QR'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = `🔄 ${t('تشغيل وتوليد QR','Démarrer · générer QR','Start · generate QR')}`; }
     }
   }
+
+  // ── Poll /api/qr ────────────────────────────────────────────
+  let _pollTimer = null;
 
   async function refresh() {
     try {
-      const res  = await fetch('/api/qr');
-      if (res.status === 401) { location.href = '/login'; return; }
+      const res = await fetch("/api/qr");
+      if (res.status === 401) { location.href = "/login"; return; }
       const data = await res.json();
+      let allConnected = true;
       for (const id of BOT_IDS) {
-        if (data[id]) updateCard(id, data[id]);
+        if (data[id]) {
+          updateCard(id, data[id]);
+          if (!data[id].connected) allConnected = false;
+        }
       }
-    } catch {}
+      // سرعة الـ polling: 2 ثانية إذا في انتظار QR، 8 ثواني إذا كل البوتات متصلة
+      clearTimeout(_pollTimer);
+      _pollTimer = setTimeout(refresh, allConnected ? 8000 : 2000);
+    } catch {
+      clearTimeout(_pollTimer);
+      _pollTimer = setTimeout(refresh, 4000);
+    }
   }
 
   buildCards();
   refresh();
-  setInterval(refresh, 5000);
 </script>
 <script src="/js/nav.js"></script>
 </body>

@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>أرشيف واتساب</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:    #075e54;
+      --light:    #128c7e;
+      --teal:     #25d366;
+      --bg:       #f0f2f5;
+      --side-w:   340px;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: #1a1a2e;
+      direction: rtl;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ───────────────────────────────── */
+    header {
+      background: var(--green);
+      color: white;
+      padding: 0 18px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      z-index: 50;
+    }
+    .h-left { display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.05rem; font-weight: 600; }
+    .h-right { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      color: rgba(255,255,255,.8);
+      text-decoration: none;
+      font-size: .8rem;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+    .nav-link:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .btn-sync {
+      background: var(--teal);
+      color: white;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 18px;
+      font-size: .83rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .2s;
+    }
+    .btn-sync:hover { opacity: .85; }
+    .btn-sync.stop { background: #e74c3c; }
+
+    /* ── Layout ───────────────────────────────── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ──────────────────────────────── */
+    .sidebar {
+      width: var(--side-w);
+      flex-shrink: 0;
+      background: white;
+      border-left: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sb-search {
+      padding: 9px 12px;
+      background: #f6f6f6;
+      border-bottom: 1px solid #eee;
+    }
+    .sb-search input {
+      width: 100%;
+      border: none;
+      background: white;
+      padding: 8px 14px;
+      border-radius: 18px;
+      font-size: .86rem;
+      font-family: inherit;
+      outline: none;
+      color: #333;
+    }
+    .sb-stats {
+      padding: 7px 14px;
+      background: #f0f7f5;
+      border-bottom: 1px solid #e4eeec;
+      font-size: .76rem;
+      color: #666;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sb-stats b { color: var(--green); }
+    .contact-list { flex: 1; overflow-y: auto; }
+
+    .ci {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background .12s;
+    }
+    .ci:hover { background: #f5f5f5; }
+    .ci.active { background: #e4f0ee; }
+    .ci-av {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: #ddd;
+      object-fit: cover;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: #888;
+      overflow: hidden;
+    }
+    .ci-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .ci-body { flex: 1; min-width: 0; }
+    .ci-name {
+      font-size: .88rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ci-prev {
+      font-size: .76rem;
+      color: #888;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ci-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .ci-time { font-size: .7rem; color: #aaa; }
+    .ci-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+    .badge {
+      font-size: .62rem;
+      padding: 1px 5px;
+      border-radius: 9px;
+      color: white;
+      font-weight: 600;
+    }
+    .badge.msg { background: var(--teal); }
+    .badge.img { background: #3498db; }
+    .badge.aud { background: #9b59b6; }
+    .badge.vid { background: #e74c3c; }
+
+    /* ── Chat panel ───────────────────────────── */
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #e5ddd5;
+      background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c4bfba' fill-opacity='0.25' fill-rule='evenodd'%3E%3Cpath d='M0 0h4v4H0zm8 0h4v4H8zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zM4 4h4v4H4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4zm8 0h4v4h-4z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    .chat-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #888;
+    }
+    .chat-empty .ico { font-size: 3.5rem; opacity: .35; }
+    .chat-empty p { font-size: .9rem; }
+    .chat-empty small { font-size: .78rem; color: #aaa; }
+
+    /* chat header */
+    .chat-hdr {
+      background: #f0f0f0;
+      padding: 9px 16px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      border-bottom: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+    .chat-hdr .av {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #ddd;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .95rem; color: #888;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .chat-hdr .av img { width:100%; height:100%; object-fit:cover; }
+    .chat-hdr-info { flex:1; }
+    .chat-hdr-name { font-weight: 700; font-size: .92rem; }
+    .chat-hdr-sub  { font-size: .73rem; color: #666; margin-top: 1px; }
+    .chat-hdr-btns { display: flex; gap: 7px; align-items: center; }
+    .chat-hdr-btns button {
+      background: none;
+      border: 1px solid #ccc;
+      padding: 4px 11px;
+      border-radius: 12px;
+      font-size: .73rem;
+      cursor: pointer;
+      font-family: inherit;
+      color: #444;
+    }
+    .chat-hdr-btns button:hover { background: #e8e8e8; }
+    .btn-dl-imgs {
+      background: #25d366 !important;
+      color: #fff !important;
+      border-color: #25d366 !important;
+      font-weight: 600 !important;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: opacity .15s !important;
+    }
+    .btn-dl-imgs:hover { opacity: .85; background: #25d366 !important; }
+    .btn-dl-imgs:disabled { opacity: .5; cursor: not-allowed !important; }
+    /* toast de téléchargement */
+    #dlToast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: #fff; padding: 9px 20px; border-radius: 10px;
+      font-size: .84rem; opacity: 0; transition: opacity .3s;
+      pointer-events: none; z-index: 900; white-space: nowrap;
+    }
+    #dlToast.show { opacity: 1; }
+
+    /* messages area */
+    .msgs-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .load-earlier {
+      text-align: center;
+      padding: 8px 0 6px;
+    }
+    .load-earlier button {
+      background: rgba(255,255,255,.75);
+      border: none;
+      padding: 6px 18px;
+      border-radius: 14px;
+      font-size: .78rem;
+      cursor: pointer;
+      font-family: inherit;
+      color: #555;
+    }
+    .load-earlier button:hover { background: rgba(255,255,255,.95); }
+
+    /* bubbles */
+    .msg-row { display: flex; align-items: flex-end; gap: 7px; margin-bottom: 4px; }
+    .msg-row.out { justify-content: flex-end; }
+    .msg-row.in  { justify-content: flex-start; }
+
+    .msg-av {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: #ddd;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem;
+      color: #888;
+      align-self: flex-end;
+    }
+    .msg-av img { width:100%; height:100%; object-fit:cover; }
+    .msg-row.out .msg-av { display: none; }
+
+    .bubble {
+      max-width: 60%;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: .86rem;
+      line-height: 1.45;
+      word-break: break-word;
+      box-shadow: 0 1px 2px rgba(0,0,0,.1);
+    }
+    .msg-row.out .bubble { background: #dcf8c6; border-bottom-right-radius: 2px; }
+    .msg-row.in  .bubble { background: white;   border-bottom-left-radius: 2px; }
+    .msg-time { font-size: .67rem; color: #aaa; margin-top: 3px; text-align: left; }
+    .msg-row.out .msg-time { color: #7fb87f; }
+
+    /* download buttons */
+    .media-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .dl-btn {
+      position: absolute;
+      bottom: 8px; left: 8px;
+      background: rgba(0,0,0,.55);
+      color: white;
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity .18s;
+    }
+    div:hover > .dl-btn { opacity: 1; }
+    .dl-btn-row {
+      position: static;
+      border-radius: 10px;
+      width: auto;
+      height: auto;
+      padding: 3px 10px;
+      font-size: .74rem;
+      background: rgba(0,0,0,.12);
+      color: #444;
+      opacity: 1;
+      align-self: flex-start;
+    }
+    .msg-row.out .dl-btn-row { color: #2d6a2d; }
+
+    .bubble img.mimg {
+      max-width: 100%;
+      max-height: 240px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: block;
+      margin-bottom: 4px;
+      object-fit: cover;
+    }
+    .bubble audio { width: 210px; display: block; margin-bottom: 4px; }
+    .bubble video  { max-width:100%; max-height:210px; border-radius:6px; display:block; margin-bottom:4px; }
+    .expired-media {
+      background: #f0f0f0;
+      color: #999;
+      padding: 7px 11px;
+      border-radius: 6px;
+      font-size: .8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .date-sep { text-align:center; margin: 10px 0 6px; }
+    .date-sep span {
+      background: rgba(225,245,254,.88);
+      color: #555;
+      padding: 3px 12px;
+      border-radius: 10px;
+      font-size: .73rem;
+    }
+
+    /* ── Sync modal ───────────────────────────── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 18px;
+      padding: 30px 28px;
+      width: 470px;
+      max-width: calc(100vw - 32px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+    .modal h2 { font-size: 1.1rem; color: var(--green); margin-bottom: 6px; }
+    .modal-desc { font-size: .83rem; color: #666; line-height: 1.55; margin-bottom: 18px; }
+    .limit-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .limit-row label { font-size: .83rem; color: #555; white-space: nowrap; }
+    .limit-row select {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #ddd;
+      font-size: .83rem;
+      font-family: inherit;
+    }
+    .prog-wrap {
+      background: #e8e8e8; border-radius: 8px;
+      height: 11px; overflow: hidden;
+      margin-bottom: 8px; display: none;
+    }
+    .prog-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--light));
+      transition: width .4s; width: 0;
+    }
+    .sync-status { font-size: .8rem; color: #555; min-height: 17px; margin-bottom: 4px; }
+    .sync-curr   { font-size: .75rem; color: #999; font-style: italic; min-height: 16px; margin-bottom: 16px; }
+    .sync-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .sg-item { background: #f8f9fa; border-radius: 10px; padding: 9px; text-align: center; }
+    .sg-item .n { font-size: 1.35rem; font-weight: 700; color: var(--green); }
+    .sg-item .l { font-size: .68rem; color: #999; margin-top: 2px; }
+    .modal-btns { display: flex; gap: 9px; }
+    .modal-btns button {
+      flex: 1; padding: 10px;
+      border: none; border-radius: 10px;
+      font-size: .88rem; font-family: inherit;
+      font-weight: 600; cursor: pointer;
+    }
+    #mStartBtn  { background: var(--teal); color: white; }
+    #mStartBtn:hover { background: #1eab57; }
+    #mStopBtn   { background: #e74c3c; color: white; display: none; }
+    #mStopBtn:hover  { background: #c0392b; }
+    #mCloseBtn  { background: #f0f0f0; color: #444; }
+    #mCloseBtn:hover { background: #e4e4e4; }
+
+    /* ── Lightbox ─────────────────────────────── */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.93);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 4px; }
+    .lb-close {
+      position: absolute; top: 18px; right: 20px;
+      color: white; font-size: 2rem;
+      background: none; border: none; cursor: pointer; line-height: 1;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+    /* ── Emoji picker ─────────────────────────────── */
+    .emoji-wrap { position: relative; }
+    .emoji-popup {
+      position: absolute;
+      bottom: 48px;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+      display: none;
+      z-index: 100;
+      width: 252px;
+    }
+    .emoji-popup.open { display: block; }
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+    }
+    .emoji-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 4px 2px;
+      border-radius: 6px;
+      text-align: center;
+      transition: background .1s;
+      line-height: 1.3;
+    }
+    .emoji-btn:hover { background: #f0f0f0; }
+
+    /* ── Recording state ─────────────────────────── */
+    .reply-icon-btn.recording {
+      background: #fee;
+      color: #e74c3c;
+      animation: pulse-rec .9s ease-in-out infinite;
+    }
+    @keyframes pulse-rec {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(231,76,60,0); }
+    }
+
+    /* ── Recording active bar (WhatsApp style) ───── */
+    .rec-active-bar {
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      padding: 9px 14px;
+      display: none;
+      align-items: center;
+      gap: 11px;
+      flex-shrink: 0;
+    }
+    .rec-active-bar.show { display: flex; }
+    .rec-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      background: #e74c3c;
+      flex-shrink: 0;
+      animation: blink-dot .75s ease-in-out infinite;
+    }
+    @keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:.15} }
+    .rec-timer-lbl {
+      font-size: .88rem; font-weight: 700;
+      color: #e74c3c; min-width: 38px; letter-spacing: .04em;
+    }
+    .rec-slide-hint {
+      flex: 1; font-size: .8rem; color: #bbb;
+      text-align: center; user-select: none;
+    }
+    .rec-stop-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--teal);
+      border: none; color: white;
+      font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .rec-stop-btn:hover { background: var(--green); }
+
+    /* ── Recording preview bar (WhatsApp style) ─── */
+    .rec-preview-bar {
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      padding: 8px 12px;
+      display: none;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .rec-preview-bar.show { display: flex; }
+    .rec-action-btn {
+      width: 38px; height: 38px;
+      border: none; border-radius: 50%;
+      font-size: 1.05rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .rec-action-btn.del { background: #f5e6e6; color: #c0392b; }
+    .rec-action-btn.del:hover { background: #f0cccc; }
+    .rec-action-btn.snd { background: var(--teal); color: white; }
+    .rec-action-btn.snd:hover { background: var(--green); }
+    .rec-play-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--teal); border: none;
+      color: white; font-size: .95rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .rec-play-btn:hover { background: var(--green); }
+    .waveform {
+      flex: 1; display: flex; align-items: center;
+      gap: 2px; height: 36px; overflow: hidden; cursor: pointer;
+    }
+    .wf-bar {
+      width: 3px; border-radius: 2px;
+      background: #c5c5c5; flex-shrink: 0;
+      transition: background .15s;
+    }
+    .wf-bar.played { background: var(--teal); }
+    .rec-dur-lbl { font-size: .78rem; color: #888; min-width: 34px; text-align: center; }
+
+    .spin {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid #eee;
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: sp .7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    .empty-list { padding: 36px; text-align: center; color: #bbb; font-size: .85rem; }
+
+    /* ── Reply bar ────────────────────────────── */
+    .reply-bar {
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      padding: 8px 12px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .reply-attach {
+      position: relative;
+    }
+    .reply-attach input[type=file] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .reply-icon-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #666;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .reply-icon-btn:hover { background: #e0e0e0; }
+    .reply-input-wrap {
+      flex: 1;
+      background: white;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      display: flex;
+      align-items: flex-end;
+      padding: 6px 14px;
+      gap: 6px;
+      min-height: 38px;
+    }
+    .reply-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      font-size: .88rem;
+      line-height: 1.45;
+      max-height: 120px;
+      overflow-y: auto;
+      background: transparent;
+      color: #1a1a2e;
+    }
+    .reply-send {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: var(--teal);
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, transform .1s;
+    }
+    .reply-send:hover  { background: var(--green); }
+    .reply-send:active { transform: scale(.92); }
+    .reply-send:disabled { background: #ccc; cursor: default; }
+    .reply-preview {
+      background: #fff8e1;
+      border-right: 3px solid var(--teal);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: .78rem;
+      color: #555;
+      margin: 0 12px 4px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .reply-preview.show { display: flex; }
+    .reply-preview button {
+      background: none; border: none;
+      color: #999; cursor: pointer; font-size: .9rem; padding: 0 4px;
+    }
+
+    /* ── View tabs ────────────────────────────── */
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,.12);
+      border-radius: 20px;
+      padding: 3px;
+      margin-left: 10px;
+    }
+    .vtab {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.75);
+      padding: 5px 14px;
+      border-radius: 16px;
+      font-size: .82rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background .15s, color .15s;
+    }
+    .vtab.active { background: white; color: var(--green); font-weight: 700; }
+    .vtab:hover:not(.active) { color: white; background: rgba(255,255,255,.2); }
+
+    /* ── Dashboard ────────────────────────────── */
+    #dashView {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+      padding: 20px 24px;
+      display: none;
+    }
+    .dash-inner { max-width: 1100px; margin: 0 auto; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .stat-card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px 16px;
+      text-align: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+      border-top: 3px solid transparent;
+    }
+    .sc-icon { font-size: 1.6rem; margin-bottom: 6px; }
+    .sc-val  { font-size: 1.7rem; font-weight: 800; margin-bottom: 4px; }
+    .sc-lbl  { font-size: .76rem; color: #888; }
+
+    .chart-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+      margin-bottom: 18px;
+    }
+    .chart-title {
+      font-size: .92rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    /* bar chart */
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      height: 130px;
+      gap: 3px;
+      padding-bottom: 2px;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      position: relative;
+    }
+    .bar-col:hover .btip { display: block; }
+    .bar {
+      width: 100%;
+      background: linear-gradient(180deg, var(--teal), var(--light));
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: opacity .15s;
+      cursor: default;
+    }
+    .bar:hover { opacity: .75; }
+    .btip {
+      display: none;
+      position: absolute;
+      top: -28px;
+      background: rgba(0,0,0,.7);
+      color: white;
+      font-size: .68rem;
+      padding: 3px 7px;
+      border-radius: 5px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .bar-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: .7rem;
+      color: #aaa;
+    }
+
+    /* two column */
+    .dash-row { display: flex; gap: 18px; margin-bottom: 18px; }
+    .dash-row .chart-card { flex: 1; margin-bottom: 0; }
+
+    /* top contacts */
+    .top-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .top-item:last-child { border-bottom: none; }
+    .top-av {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #eee;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+      font-size: 1rem;
+    }
+    .top-av img { width:100%; height:100%; object-fit:cover; }
+    .top-body { flex: 1; min-width: 0; }
+    .top-name { font-size: .83rem; font-weight: 600; margin-bottom: 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .top-bar-wrap { height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .top-bar { height: 100%; background: linear-gradient(90deg, var(--teal), var(--light)); border-radius: 4px; transition: width .4s; }
+    .top-cnt { font-size: .8rem; font-weight: 700; color: var(--green); flex-shrink: 0; min-width: 40px; text-align: left; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <span style="font-size:1.3rem">🗄️</span>
+    <h1>أرشيف واتساب</h1>
+  </div>
+  <div class="h-right">
+    <div class="view-tabs">
+      <button class="vtab active" id="tabArch" onclick="showView('archive')">💬 الأرشيف</button>
+      <button class="vtab"        id="tabDash" onclick="showView('dash')">📊 الإحصائيات</button>
+    </div>
+    <a class="nav-link" href="/dashboard">الرئيسية</a>
+    <a class="nav-link" href="/sync">مزامنة</a>
+    <button class="btn-sync" id="hSyncBtn" onclick="openModal()">⬇️ مزامنة الأرشيف</button>
+  </div>
+</header>
+
+<div class="layout" id="mainLayout">
+
+  <!-- ── Sidebar ────────────────── -->
+  <aside class="sidebar">
+    <div class="sb-search">
+      <input id="sbSearch" type="search" placeholder="🔍  بحث في جهات الاتصال..." oninput="onSearch()">
+    </div>
+    <div class="sb-stats" id="sbStats">جارٍ التحميل…</div>
+    <div class="contact-list" id="contactList">
+      <div class="empty-list"><span class="spin"></span></div>
+    </div>
+  </aside>
+
+  <!-- ── Chat panel ─────────────── -->
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-empty" id="chatEmpty">
+      <div class="ico">💬</div>
+      <p>اختر محادثة لعرض الأرشيف</p>
+      <small>أو اضغط "مزامنة الأرشيف" لجلب التاريخ من واتساب</small>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Dashboard view ───────────────────── -->
+<div id="dashView">
+  <div class="dash-inner" id="dashInner">
+    <div class="empty-list"><span class="spin"></span></div>
+  </div>
+</div>
+
+<!-- ── Sync modal ────────────────────── -->
+<div class="overlay" id="overlay" onclick="if(event.target===this&&!syncing)closeModal()">
+  <div class="modal">
+    <h2>⬇️ مزامنة أرشيف واتساب</h2>
+    <p class="modal-desc">
+      يجلب جميع المحادثات القديمة (نصوص · صور · فيديو · صوت) ويحفظها في قاعدة البيانات.<br>
+      الرسائل المحفوظة مسبقاً <b>لن تتكرر</b>.
+    </p>
+    <div class="limit-row">
+      <label>الرسائل لكل محادثة:</label>
+      <select id="mLimit">
+        <option value="200">200 رسالة</option>
+        <option value="500">500 رسالة</option>
+        <option value="1000">1000 رسالة</option>
+        <option value="all" selected>📂 كل التاريخ (أبطأ)</option>
+      </select>
+    </div>
+    <div class="sync-status" id="mStatus">اضغط ابدأ للبدء</div>
+    <div class="sync-curr"   id="mCurr"></div>
+    <div class="prog-wrap"   id="mProgWrap"><div class="prog-bar" id="mProgBar"></div></div>
+    <div class="sync-grid"   id="mGrid">
+      <div class="sg-item"><div class="n" id="sg-t">0</div><div class="l">نصوص</div></div>
+      <div class="sg-item"><div class="n" id="sg-i">0</div><div class="l">صور</div></div>
+      <div class="sg-item"><div class="n" id="sg-a">0</div><div class="l">أصوات</div></div>
+      <div class="sg-item"><div class="n" id="sg-v">0</div><div class="l">فيديو</div></div>
+    </div>
+    <div class="modal-btns">
+      <button id="mStartBtn" onclick="startSync()">▶ ابدأ المزامنة</button>
+      <button id="mStopBtn"  onclick="stopSync()">⏹ إيقاف</button>
+      <button id="mCloseBtn" onclick="closeModal()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Lightbox ──────────────────────── -->
+<div class="lightbox" id="lb" onclick="closeLb()">
+  <button class="lb-close">✕</button>
+  <img id="lbImg" src="" alt="">
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════
+let activePh    = null;
+let activePhoto = null;
+let activeName  = null;
+let msgOff      = 0;
+let hasMore     = true;
+let loadingMsgs = false;
+let syncing     = false;
+let pollT       = null;
+let searchT     = null;
+const PG        = 50;
+
+// ═══════════════════════════════════════════════════
+// Boot
+// ═══════════════════════════════════════════════════
+(async () => {
+  await loadContacts();
+  checkSyncActive();
+})();
+
+// ═══════════════════════════════════════════════════
+// Contacts
+// ═══════════════════════════════════════════════════
+async function loadContacts(q = "") {
+  try {
+    const r    = await fetch(`/api/archive/contacts?limit=400&search=${encodeURIComponent(q)}`);
+    const data = await r.json();
+    if (!Array.isArray(data)) {
+      // الخادم أرجع خطأ
+      throw new Error(data.error || "استجابة غير متوقعة من الخادم");
+    }
+    renderContacts(data);
+  } catch (e) {
+    document.getElementById("contactList").innerHTML =
+      `<div class="empty-list" style="color:#e74c3c;font-size:.8rem">
+        ❌ فشل تحميل جهات الاتصال<br>
+        <span style="color:#aaa">${e.message}</span>
+      </div>`;
+  }
+}
+
+function renderContacts(list) {
+  const el = document.getElementById("contactList");
+  const st = document.getElementById("sbStats");
+  const totalMsgs = list.reduce((s, c) => s + (+c.msg_count || 0), 0);
+  st.innerHTML = `<b>${list.length}</b> جهة اتصال &nbsp;·&nbsp; <b>${totalMsgs.toLocaleString()}</b> رسالة محفوظة`;
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-list">لا توجد نتائج</div>`;
+    return;
+  }
+  el.innerHTML = list.map(c => {
+    const av   = c.photo
+      ? `<div class="ci-av"><img src="/uploads/photos/${c.photo}" onerror="this.outerHTML='👤'"></div>`
+      : `<div class="ci-av">${(c.name||c.phone||"?")[0]}</div>`;
+    const prev = previewBody(c.last_body || "");
+    const dir  = c.last_dir === "out" ? "↗ " : "";
+    const time = c.last_at ? fmtDate(new Date(c.last_at)) : "";
+    const bMsg = `<span class="badge msg">${(+c.msg_count||0).toLocaleString()}</span>`;
+    const bImg = +c.img_count   ? `<span class="badge img">📷${c.img_count}</span>` : "";
+    const bAud = +c.audio_count ? `<span class="badge aud">🎤${c.audio_count}</span>` : "";
+    const bVid = +c.video_count ? `<span class="badge vid">🎬${c.video_count}</span>` : "";
+    const ph   = c.phone.replace(/'/g, "\\'");
+    const nm   = (c.name || c.phone).replace(/'/g, "\\'");
+    const ph0  = c.photo || "";
+    return `
+      <div class="ci ${activePh===c.phone?'active':''}"
+           onclick="openChat('${ph}','${nm}','${ph0}',${+c.msg_count||0},${+c.img_count||0},${+c.audio_count||0},${+c.video_count||0})">
+        ${av}
+        <div class="ci-body">
+          <div class="ci-name">${esc(c.name||c.phone)}</div>
+          <div class="ci-prev">${dir}${esc(prev)}</div>
+        </div>
+        <div class="ci-meta">
+          <div class="ci-time">${time}</div>
+          <div class="ci-badges">${bMsg}${bImg}${bAud}${bVid}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function onSearch() {
+  clearTimeout(searchT);
+  searchT = setTimeout(() => loadContacts(document.getElementById("sbSearch").value.trim()), 350);
+}
+
+// ═══════════════════════════════════════════════════
+// Open chat
+// ═══════════════════════════════════════════════════
+function openChat(phone, name, photo, mCount, iCount, aCount, vCount) {
+  activePh    = phone;
+  activePhoto = photo || null;
+  activeName  = name  || phone;
+  msgOff      = 0;
+  hasMore     = true;
+
+  document.querySelectorAll(".ci").forEach(el => el.classList.remove("active"));
+  event?.currentTarget?.classList.add("active");
+
+  const avHtml = photo
+    ? `<div class="av"><img src="/uploads/photos/${photo}" onerror="this.parentElement.textContent='👤'"></div>`
+    : `<div class="av">👤</div>`;
+
+  const sub = `${mCount.toLocaleString()} رسالة`
+    + (iCount ? ` · 📷${iCount}` : "")
+    + (aCount ? ` · 🎤${aCount}` : "")
+    + (vCount ? ` · 🎬${vCount}` : "");
+
+  const safePhone = phone.replace(/'/g, "\\'");
+  document.getElementById("chatPanel").innerHTML = `
+    <div class="chat-hdr">
+      ${avHtml}
+      <div class="chat-hdr-info">
+        <div class="chat-hdr-name">${esc(name)}</div>
+        <div class="chat-hdr-sub">${sub}</div>
+      </div>
+      <div class="chat-hdr-btns">
+        ${iCount > 0 ? `<button class="btn-dl-imgs" id="btnDlImgs" onclick="downloadContactImages('${safePhone}','${(name||phone).replace(/'/g,"\\'")}',${iCount})">⬇ صور (${iCount})</button>` : ''}
+        <button onclick="exportChat('${safePhone}')">📥 تصدير CSV</button>
+      </div>
+    </div>
+    <div class="msgs-area" id="msgsArea">
+      <div class="load-earlier" id="loadEarlier" style="display:none">
+        <button onclick="loadMore()">⬆ رسائل أقدم</button>
+      </div>
+      <div id="msgsList"></div>
+    </div>
+    <div class="reply-preview" id="replyPreview">
+      <span id="replyPreviewTxt"></span>
+      <button onclick="cancelReply()">✕</button>
+    </div>
+    <div class="rec-active-bar" id="recActiveBar">
+      <button class="rec-action-btn del" onclick="cancelRecording()" title="إلغاء">🗑️</button>
+      <div class="rec-dot"></div>
+      <span class="rec-timer-lbl" id="recTimerLbl">00:00</span>
+      <span class="rec-slide-hint">← اسحب للإلغاء</span>
+      <button class="rec-stop-btn" onclick="stopRecording()" title="إيقاف">⏹</button>
+    </div>
+    <div class="rec-preview-bar" id="recPreview">
+      <button class="rec-action-btn del" onclick="deleteRecording()" title="حذف">🗑️</button>
+      <button class="rec-play-btn" id="recPlayBtn" onclick="togglePlayRec()">▶</button>
+      <div class="waveform" id="recWaveform"></div>
+      <span class="rec-dur-lbl" id="recDurLbl">00:00</span>
+      <audio id="recAudio" style="display:none"
+             onended="onRecEnd()"
+             ontimeupdate="onRecTimeUpdate()"></audio>
+      <button class="rec-action-btn snd" onclick="sendRecording()" title="إرسال">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="reply-bar" id="replyBarWrap">
+      <div class="emoji-wrap">
+        <button class="reply-icon-btn" id="emojiBtn" onclick="toggleEmoji()" title="إيموجي">😊</button>
+        <div class="emoji-popup" id="emojiPopup"><div class="emoji-grid" id="emojiGrid"></div></div>
+      </div>
+      <div class="reply-attach reply-icon-btn" title="إرفاق صورة/فيديو/صوت">
+        📎
+        <input type="file" accept="image/*,video/*,audio/*" onchange="sendFile(this)">
+      </div>
+      <button class="reply-icon-btn" id="micBtn" onclick="toggleRecording()" title="تسجيل رسالة صوتية">🎤</button>
+      <button class="reply-icon-btn" onclick="sendLocation()" title="مشاركة الموقع الجغرافي">📍</button>
+      <div class="reply-input-wrap">
+        <textarea id="replyInput" class="reply-input" rows="1"
+          placeholder="اكتب رسالة…"
+          oninput="autoResize(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply();}"></textarea>
+      </div>
+      <button class="reply-send" id="replySendBtn" onclick="sendReply()" title="إرسال">
+        ➤
+      </button>
+    </div>`;
+
+  const msgsAreaEl = document.getElementById("msgsArea");
+  msgsAreaEl.removeEventListener("scroll", onScroll);
+  msgsAreaEl.addEventListener("scroll", onScroll);
+  fetchMsgs(phone, true);
+}
+
+// ═══════════════════════════════════════════════════
+// Fetch messages
+// ═══════════════════════════════════════════════════
+async function fetchMsgs(phone, initial) {
+  if (loadingMsgs || !hasMore) return;
+  loadingMsgs = true;
+  try {
+    const r    = await fetch(`/api/messages?phone=${encodeURIComponent(phone)}&limit=${PG}&offset=${msgOff}`);
+    const msgs = await r.json();
+
+    if (!Array.isArray(msgs) || msgs.length < PG) hasMore = false;
+    const el = document.getElementById("loadEarlier");
+    if (el) el.style.display = hasMore ? "block" : "none";
+
+    if (!msgs.length) {
+      if (initial) {
+        const l = document.getElementById("msgsList");
+        if (l) l.innerHTML = `<div class="empty-list">لا توجد رسائل محفوظة</div>`;
+      }
+      return;
+    }
+
+    msgOff += msgs.length;
+    const sorted = [...msgs].reverse(); // API: newest first → reverse for chronological
+
+    if (initial) {
+      const l = document.getElementById("msgsList");
+      if (l) l.innerHTML = buildMsgsHtml(sorted);
+      setTimeout(() => {
+        const a = document.getElementById("msgsArea");
+        if (a) a.scrollTop = a.scrollHeight;
+      }, 30);
+    } else {
+      const a   = document.getElementById("msgsArea");
+      const l   = document.getElementById("msgsList");
+      const old = a ? a.scrollHeight : 0;
+      if (l) l.insertAdjacentHTML("afterbegin", buildMsgsHtml(sorted));
+      if (a) setTimeout(() => { a.scrollTop = a.scrollHeight - old; }, 0);
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    loadingMsgs = false;
+  }
+}
+
+function loadMore() { if (activePh) fetchMsgs(activePh, false); }
+
+function onScroll() {
+  const a = document.getElementById("msgsArea");
+  if (a && a.scrollTop < 80) loadMore();
+}
+
+// ═══════════════════════════════════════════════════
+// Render messages
+// ═══════════════════════════════════════════════════
+function buildMsgsHtml(msgs) {
+  let html = "", lastDay = null;
+  for (const m of msgs) {
+    const d   = new Date(m.created_at);
+    const day = d.toLocaleDateString("ar-SA", { year:"numeric", month:"long", day:"numeric" });
+    if (day !== lastDay) {
+      html    += `<div class="date-sep"><span>${day}</span></div>`;
+      lastDay  = day;
+    }
+    html += makeBubble(m);
+  }
+  return html;
+}
+
+function makeBubble(m) {
+  const dir  = m.direction === "out" ? "out" : "in";
+  const time = new Date(m.created_at).toLocaleTimeString("ar-SA", { hour:"2-digit", minute:"2-digit" });
+  let body;
+
+  if (m.media_type === "image" && m.media_url) {
+    const safe = m.media_url.replace(/'/g, "\\'");
+    const fname = m.media_url.split('/').pop();
+    body = `
+      <div style="position:relative;display:inline-block">
+        <img class="mimg" src="${m.media_url}" loading="lazy"
+             onclick="openLb('${safe}')"
+             onerror="this.closest('div').outerHTML='<div class=\\'expired-media\\'>📷 الصورة غير متوفرة</div>'">
+        <a class="dl-btn" href="${m.media_url}" download="${fname}" title="تحميل الصورة">⬇</a>
+      </div>`;
+  } else if (m.media_type === "audio" && m.media_url) {
+    const fname = m.media_url.split('/').pop();
+    body = `
+      <div class="media-wrap">
+        <audio controls preload="none" src="${m.media_url}"
+               onerror="this.closest('div').outerHTML='<div class=\\'expired-media\\'>🎤 الصوت غير متوفر</div>'"></audio>
+        <a class="dl-btn dl-btn-row" href="${m.media_url}" download="${fname}" title="تحميل الصوت">⬇ تحميل</a>
+      </div>`;
+  } else if (m.media_type === "video" && m.media_url) {
+    const fname = m.media_url.split('/').pop();
+    body = `
+      <div class="media-wrap">
+        <video controls preload="none" src="${m.media_url}"
+               onerror="this.closest('div').outerHTML='<div class=\\'expired-media\\'>🎬 الفيديو غير متوفر</div>'"></video>
+        <a class="dl-btn dl-btn-row" href="${m.media_url}" download="${fname}" title="تحميل الفيديو">⬇ تحميل</a>
+      </div>`;
+  } else {
+    const t = String(m.body || "");
+    body = /^[📷🎤🎬📎]/.test(t)
+      ? `<div class="expired-media">${esc(t)}</div>`
+      : `<div>${esc(t).replace(/\n/g, "<br>")}</div>`;
+  }
+
+  // صورة العميل — تظهر فقط بجانب الرسائل الواردة
+  const initial = (activeName || "?")[0];
+  const avHtml  = activePhoto
+    ? `<div class="msg-av"><img src="/uploads/photos/${activePhoto}"
+          onerror="this.parentElement.textContent='${initial}'"></div>`
+    : `<div class="msg-av">${initial}</div>`;
+
+  return `<div class="msg-row ${dir}">
+    ${dir === "in" ? avHtml : ""}
+    <div class="bubble">${body}<div class="msg-time">${time}</div></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// Sync modal
+// ═══════════════════════════════════════════════════
+function openModal() {
+  document.getElementById("overlay").classList.add("open");
+}
+function closeModal() {
+  if (syncing) return;
+  document.getElementById("overlay").classList.remove("open");
+}
+
+async function startSync() {
+  const limit = document.getElementById("mLimit").value;
+  try {
+    const r = await fetch("/api/wa-sync-full", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ msgLimit: limit === "all" ? "all" : +limit }),
+    });
+    const d = await r.json();
+    if (!d.ok && !(d.message||"").includes("جارية")) {
+      alert("خطأ: " + (d.error || "غير معروف")); return;
+    }
+    setSyncing(true);
+    pollT = setInterval(pollSync, 1500);
+  } catch { alert("فشل الاتصال بالسيرفر"); }
+}
+
+async function stopSync() {
+  await fetch("/api/wa-sync-full-stop", { method: "POST" });
+  setSyncing(false);
+  clearInterval(pollT);
+  document.getElementById("mStatus").textContent = "تم الإيقاف";
+  document.getElementById("mCurr").textContent   = "";
+  await loadContacts(document.getElementById("sbSearch").value);
+}
+
+async function pollSync() {
+  try {
+    const d = await fetch("/api/wa-sync-full-status").then(r => r.json());
+    const pct = d.total > 0 ? Math.round(d.done / d.total * 100) : 0;
+    document.getElementById("mProgBar").style.width = pct + "%";
+    document.getElementById("mStatus").textContent  = d.running
+      ? `⬇ ${d.done} / ${d.total} محادثة  (${pct}%)`
+      : `✅ اكتملت — ${d.done} محادثة`;
+    document.getElementById("mCurr").textContent = d.currentChat || "";
+    document.getElementById("sg-t").textContent  = d.savedText   || 0;
+    document.getElementById("sg-i").textContent  = d.savedImages || 0;
+    document.getElementById("sg-a").textContent  = d.savedVoices || 0;
+    document.getElementById("sg-v").textContent  = d.savedVideos || 0;
+
+    if (!d.running) {
+      setSyncing(false);
+      clearInterval(pollT);
+      await loadContacts(document.getElementById("sbSearch").value);
+      if (activePh) { msgOff = 0; hasMore = true; fetchMsgs(activePh, true); }
+    }
+  } catch {}
+}
+
+async function checkSyncActive() {
+  try {
+    const d = await fetch("/api/wa-sync-full-status").then(r => r.json());
+    if (!d.running) return;
+    openModal();
+    setSyncing(true);
+    pollT = setInterval(pollSync, 1500);
+  } catch {}
+}
+
+function setSyncing(on) {
+  syncing = on;
+  document.getElementById("mStartBtn").style.display = on ? "none"  : "block";
+  document.getElementById("mStopBtn").style.display  = on ? "block" : "none";
+  document.getElementById("mProgWrap").style.display = on ? "block" : "none";
+  document.getElementById("mGrid").style.display     = on ? "grid"  : "none";
+  const hb = document.getElementById("hSyncBtn");
+  if (on) {
+    hb.textContent = "⏹ إيقاف المزامنة";
+    hb.classList.add("stop");
+    hb.onclick = stopSync;
+  } else {
+    hb.textContent = "⬇️ مزامنة الأرشيف";
+    hb.classList.remove("stop");
+    hb.onclick = openModal;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// Lightbox
+// ═══════════════════════════════════════════════════
+function openLb(src) {
+  document.getElementById("lbImg").src = src;
+  document.getElementById("lb").classList.add("open");
+}
+function closeLb() { document.getElementById("lb").classList.remove("open"); }
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLb(); });
+
+// ═══════════════════════════════════════════════════
+// Export CSV
+// ═══════════════════════════════════════════════════
+async function exportChat(phone) {
+  try {
+    const r    = await fetch(`/api/messages?phone=${encodeURIComponent(phone)}&limit=5000`);
+    const msgs = (await r.json()).reverse();
+    let csv = "﻿الوقت,الاتجاه,النوع,المحتوى\n";
+    for (const m of msgs) {
+      const t   = new Date(m.created_at).toLocaleString("ar-SA");
+      const dir = m.direction === "out" ? "صادر" : "وارد";
+      const typ = m.media_type || "نص";
+      const bod = (m.body || "").replace(/"/g, "''");
+      csv += `"${t}","${dir}","${typ}","${bod}"\n`;
+    }
+    const a    = document.createElement("a");
+    a.href     = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `archive_${phone}.csv`;
+    a.click();
+  } catch { alert("فشل التصدير"); }
+}
+
+// ═══════════════════════════════════════════════════
+// Reply
+// ═══════════════════════════════════════════════════
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+async function sendReply() {
+  if (!activePh) return;
+  const inp = document.getElementById('replyInput');
+  const txt = (inp?.value || '').trim();
+  if (!txt) return;
+
+  const btn = document.getElementById('replySendBtn');
+  btn.disabled = true;
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  // فقاعة متفائلة فورية
+  const now = new Date();
+  appendBubble({ direction:'out', body:txt, media_type:null, media_url:null, created_at:now.toISOString() });
+  scrollBottom();
+
+  try {
+    const r = await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ phone: activePh, message: txt }),
+    });
+    const d = await r.json();
+    if (!d.ok && !d.sent) showSendError('فشل الإرسال: ' + (d.error || ''));
+  } catch(e) {
+    showSendError('خطأ في الاتصال');
+  } finally {
+    btn.disabled = false;
+    inp?.focus();
+  }
+}
+
+async function sendFile(input) {
+  if (!activePh || !input.files[0]) return;
+  const file = input.files[0];
+  input.value = '';
+
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+  const isAudio = file.type.startsWith('audio/');
+
+  const preview = isImage ? '📷 ' + file.name
+                : isVideo ? '🎬 ' + file.name
+                : isAudio ? '🎤 ' + file.name
+                : '📎 ' + file.name;
+
+  // فقاعة انتظار
+  appendBubble({ direction:'out', body:preview, media_type:null, media_url:null, created_at:new Date().toISOString() });
+  scrollBottom();
+
+  try {
+    const fd = new FormData();
+    fd.append('phone', activePh);
+    fd.append('file', file);
+    const endpoint = isAudio ? '/api/send-voice' : '/api/send-media';
+    const r = await fetch(endpoint, { method:'POST', body: fd });
+    const d = await r.json();
+    if (!d.ok) showSendError('فشل إرسال الملف');
+  } catch(e) {
+    showSendError('خطأ في رفع الملف');
+  }
+}
+
+function cancelReply() {
+  document.getElementById('replyPreview')?.classList.remove('show');
+}
+
+function appendBubble(msg) {
+  const list = document.getElementById('msgsList');
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend', makeBubble(msg));
+}
+
+function scrollBottom() {
+  const a = document.getElementById('msgsArea');
+  if (a) a.scrollTop = a.scrollHeight;
+}
+
+function showSendError(msg) {
+  const bar = document.getElementById('replyInput');
+  if (bar) bar.placeholder = msg;
+  setTimeout(() => { if (bar) bar.placeholder = 'اكتب رسالة…'; }, 3000);
+}
+
+// ═══════════════════════════════════════════════════
+// View toggle
+// ═══════════════════════════════════════════════════
+let dashLoaded = false;
+
+function showView(v) {
+  const isArch = v === 'archive';
+  document.getElementById('mainLayout').style.display = isArch ? 'flex' : 'none';
+  document.getElementById('dashView').style.display   = isArch ? 'none' : 'flex';
+  document.getElementById('tabArch').classList.toggle('active', isArch);
+  document.getElementById('tabDash').classList.toggle('active', !isArch);
+  if (!isArch && !dashLoaded) { dashLoaded = true; loadDash(); }
+}
+
+// ═══════════════════════════════════════════════════
+// Dashboard
+// ═══════════════════════════════════════════════════
+async function loadDash() {
+  const inner = document.getElementById('dashInner');
+  inner.innerHTML = `<div style="text-align:center;padding:60px"><span class="spin"></span> جارٍ تحميل الإحصائيات…</div>`;
+  try {
+    const d = await fetch('/api/archive/stats').then(r => r.json());
+    if (d.error) throw new Error(d.error);
+    renderDash(d);
+  } catch(e) {
+    inner.innerHTML = `<div class="empty-list" style="color:#e74c3c">❌ ${e.message}</div>`;
+  }
+}
+
+function renderDash(d) {
+  const t = d.totals;
+
+  // ── إحصائيات البطاقات ──────────────────────────
+  const cards = [
+    { icon:'💬', val:t.total_msgs,     lbl:'إجمالي الرسائل', color:'#075e54' },
+    { icon:'👥', val:t.total_contacts, lbl:'جهات الاتصال',   color:'#2980b9' },
+    { icon:'📷', val:t.total_images,   lbl:'صور',            color:'#e67e22' },
+    { icon:'🎤', val:t.total_audio,    lbl:'رسائل صوتية',    color:'#8e44ad' },
+    { icon:'🎬', val:t.total_video,    lbl:'فيديو',          color:'#c0392b' },
+    { icon:'📤', val:t.total_out,      lbl:'رسائل صادرة',    color:'#27ae60' },
+    { icon:'📥', val:t.total_in,       lbl:'رسائل واردة',    color:'#16a085' },
+    { icon:'📅', val:t.today,          lbl:'رسائل اليوم',    color:'#d35400' },
+  ];
+
+  const cardsHtml = cards.map(c => `
+    <div class="stat-card" style="border-top-color:${c.color}">
+      <div class="sc-icon">${c.icon}</div>
+      <div class="sc-val" style="color:${c.color}">${fmtN(c.val)}</div>
+      <div class="sc-lbl">${c.lbl}</div>
+    </div>`).join('');
+
+  // ── رسم بياني آخر 30 يوم ────────────────────────
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const dt = new Date();
+    dt.setDate(dt.getDate() - i);
+    days.push(dt.toISOString().slice(0, 10));
+  }
+  const dayMap = {};
+  for (const r of d.daily) dayMap[String(r.day).slice(0,10)] = +r.cnt;
+  const vals  = days.map(k => dayMap[k] || 0);
+  const maxV  = Math.max(...vals, 1);
+  const barsH = days.map((k, i) => {
+    const h   = Math.max(Math.round(vals[i] / maxV * 96), vals[i] > 0 ? 4 : 1);
+    const lbl = k.slice(5);
+    return `<div class="bar-col">
+      <div class="btip">${lbl}: ${fmtN(vals[i])}</div>
+      <div class="bar" style="height:${h}%"></div>
+    </div>`;
+  }).join('');
+  const chartHtml = `
+    <div class="bar-chart">${barsH}</div>
+    <div class="bar-axis">
+      <span>${days[0].slice(5)}</span>
+      <span>${days[14].slice(5)}</span>
+      <span>${days[29].slice(5)}</span>
+    </div>`;
+
+  // ── أكثر جهات الاتصال ────────────────────────────
+  const maxC   = Math.max(...d.topContacts.map(c => +c.msg_count), 1);
+  const topHtml = d.topContacts.map((c, idx) => {
+    const pct = Math.round(+c.msg_count / maxC * 100);
+    const av  = c.photo
+      ? `<img src="/uploads/photos/${c.photo}" onerror="this.outerHTML='#${idx+1}'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : `<span style="font-size:.75rem;font-weight:700;color:#888">#${idx+1}</span>`;
+    return `<div class="top-item">
+      <div class="top-av">${av}</div>
+      <div class="top-body">
+        <div class="top-name">${esc(c.name||c.phone)}</div>
+        <div class="top-bar-wrap"><div class="top-bar" style="width:${pct}%"></div></div>
+      </div>
+      <div class="top-cnt">${fmtN(c.msg_count)}</div>
+    </div>`;
+  }).join('') || '<div class="empty-list">لا توجد بيانات</div>';
+
+  // ── دائرة توزيع أنواع الوسائط ────────────────────
+  const textOnly = Math.max(0, +t.total_msgs - +t.total_images - +t.total_audio - +t.total_video);
+  const segments = [
+    { lbl:'نص',   val:textOnly,        color:'#25d366' },
+    { lbl:'صور',  val:+t.total_images, color:'#3498db' },
+    { lbl:'صوت',  val:+t.total_audio,  color:'#9b59b6' },
+    { lbl:'فيديو',val:+t.total_video,  color:'#e74c3c' },
+  ].filter(s => s.val > 0);
+  const donutHtml = makeDonut(segments);
+
+  // ── تجميع الصفحة ─────────────────────────────────
+  document.getElementById('dashInner').innerHTML = `
+    <div class="stats-grid">${cardsHtml}</div>
+
+    <div class="chart-card">
+      <div class="chart-title">📈 الرسائل خلال آخر 30 يوماً</div>
+      ${chartHtml}
+    </div>
+
+    <div class="dash-row">
+      <div class="chart-card">
+        <div class="chart-title">🏆 أكثر جهات الاتصال نشاطاً</div>
+        ${topHtml}
+      </div>
+      <div class="chart-card" style="max-width:320px">
+        <div class="chart-title">🎨 توزيع أنواع الرسائل</div>
+        ${donutHtml}
+      </div>
+    </div>`;
+}
+
+function makeDonut(segments) {
+  const total = segments.reduce((s, i) => s + i.val, 0) || 1;
+  const r = 58, cx = 80, cy = 80, sw = 26;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const arcs = segments.map(seg => {
+    const pct  = seg.val / total;
+    const dash = pct * circ;
+    const rot  = -0.25 + offset;
+    const s    = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+                    stroke="${seg.color}" stroke-width="${sw}"
+                    stroke-dasharray="${dash} ${circ - dash}"
+                    stroke-dashoffset="${-rot * circ}"
+                    transform="rotate(0 ${cx} ${cy})"/>`;
+    offset += pct;
+    return s;
+  }).join('');
+
+  const legend = segments.map(seg => {
+    const pct = Math.round(seg.val / total * 100);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f5f5f5">
+      <div style="width:12px;height:12px;border-radius:3px;background:${seg.color};flex-shrink:0"></div>
+      <span style="font-size:.82rem;color:#444;flex:1">${seg.lbl}</span>
+      <span style="font-size:.82rem;font-weight:700;color:#555">${fmtN(seg.val)}</span>
+      <span style="font-size:.75rem;color:#aaa;min-width:32px;text-align:left">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <svg width="160" height="160" style="flex-shrink:0">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f0f0f0" stroke-width="${sw}"/>
+      ${arcs}
+      <text x="${cx}" y="${cy+6}" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">${fmtN(total)}</text>
+    </svg>
+    <div style="flex:1;min-width:120px">${legend}</div>
+  </div>`;
+}
+
+function fmtN(n) {
+  return Number(n||0).toLocaleString('ar-SA');
+}
+
+// ═══════════════════════════════════════════════════
+// Emoji picker
+// ═══════════════════════════════════════════════════
+const EMOJIS = [
+  '😊','😂','❤️','👍','😍','🎉','😢','😮','🔥','✨',
+  '😁','😅','🥰','😎','🤔','😬','😴','🤩','🥳','😇',
+  '👋','🤝','🙏','💪','👏','🙌','☑️','✅','💯','⭐',
+  '🌟','💥','💎','🎯','🎵','🎶','📱','💻','🏆','🌙',
+  '☀️','🌈','🍕','🎂','🥂','🍀','🐕','🦋','💐','🕊️',
+  '😏','😤','😠','😡','😭','😱','😰','😓','🤗','🤣',
+  '😆','😋','😛','😜','🤪','😶','😐','😑','🫡','🫂',
+];
+
+function buildEmojiGrid() {
+  const g = document.getElementById('emojiGrid');
+  if (!g || g.innerHTML) return;
+  g.innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+
+function toggleEmoji() {
+  buildEmojiGrid();
+  document.getElementById('emojiPopup')?.classList.toggle('open');
+}
+
+function insertEmoji(e) {
+  const inp = document.getElementById('replyInput');
+  if (!inp) return;
+  const s = inp.selectionStart, en = inp.selectionEnd;
+  inp.value = inp.value.slice(0, s) + e + inp.value.slice(en);
+  inp.selectionStart = inp.selectionEnd = s + e.length;
+  autoResize(inp);
+  inp.focus();
+  document.getElementById('emojiPopup')?.classList.remove('open');
+}
+
+document.addEventListener('click', ev => {
+  const pop = document.getElementById('emojiPopup');
+  const btn = document.getElementById('emojiBtn');
+  if (pop && btn && !pop.contains(ev.target) && ev.target !== btn) {
+    pop.classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Audio recorder  — WhatsApp-style flow
+// record → preview (play/pause + waveform) → send or delete
+// ═══════════════════════════════════════════════════
+let mediaRec = null, recStream = null, recChunks = [], recBlob = null;
+let recTimerInt = null, recSecs = 0;
+
+function fmtRecTime(s) {
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+function startRecTimer() {
+  recSecs = 0;
+  recTimerInt = setInterval(() => {
+    recSecs++;
+    const el = document.getElementById('recTimerLbl');
+    if (el) el.textContent = fmtRecTime(recSecs);
+  }, 1000);
+}
+function stopRecTimer() { clearInterval(recTimerInt); recTimerInt = null; }
+
+async function toggleRecording() {
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recChunks = []; recBlob = null;
+    mediaRec  = new MediaRecorder(recStream);
+    mediaRec.ondataavailable = ev => { if (ev.data.size > 0) recChunks.push(ev.data); };
+    mediaRec.onstop = _onRecStop;
+    mediaRec.start();
+    startRecTimer();
+    document.getElementById('replyBarWrap').style.display = 'none';
+    document.getElementById('recActiveBar')?.classList.add('show');
+  } catch {
+    alert('لم يتم منح إذن الميكروفون');
+  }
+}
+
+function stopRecording() {
+  if (mediaRec && mediaRec.state === 'recording') mediaRec.stop();
+}
+
+function cancelRecording() {
+  if (mediaRec) { mediaRec.onstop = null; if (mediaRec.state === 'recording') mediaRec.stop(); }
+  if (recStream) recStream.getTracks().forEach(t => t.stop());
+  stopRecTimer();
+  recBlob = null; recChunks = [];
+  document.getElementById('recActiveBar')?.classList.remove('show');
+  document.getElementById('replyBarWrap').style.display = '';
+}
+
+function _onRecStop() {
+  if (recStream) recStream.getTracks().forEach(t => t.stop());
+  stopRecTimer();
+  if (!recChunks.length) return;
+  recBlob = new Blob(recChunks, { type: 'audio/ogg; codecs=opus' });
+  const audioEl = document.getElementById('recAudio');
+  if (audioEl) audioEl.src = URL.createObjectURL(recBlob);
+  document.getElementById('recDurLbl').textContent = fmtRecTime(recSecs);
+  _buildWaveform(40);
+  document.getElementById('recActiveBar')?.classList.remove('show');
+  document.getElementById('recPreview')?.classList.add('show');
+}
+
+function _buildWaveform(n) {
+  const wf = document.getElementById('recWaveform');
+  if (!wf) return;
+  wf.innerHTML = Array.from({ length: n }, () => {
+    const h = Math.max(18, Math.round(Math.random() * 100));
+    return `<div class="wf-bar" style="height:${h}%"></div>`;
+  }).join('');
+}
+
+function togglePlayRec() {
+  const audio = document.getElementById('recAudio');
+  const btn   = document.getElementById('recPlayBtn');
+  if (!audio) return;
+  if (audio.paused) { audio.play(); btn.textContent = '⏸'; }
+  else              { audio.pause(); btn.textContent = '▶'; }
+}
+
+function onRecEnd() {
+  const btn = document.getElementById('recPlayBtn');
+  if (btn) btn.textContent = '▶';
+  document.getElementById('recDurLbl').textContent = fmtRecTime(recSecs);
+  document.querySelectorAll('#recWaveform .wf-bar').forEach(b => b.classList.remove('played'));
+}
+
+function onRecTimeUpdate() {
+  const audio = document.getElementById('recAudio');
+  if (!audio || !audio.duration) return;
+  const pct  = audio.currentTime / audio.duration;
+  const bars = document.querySelectorAll('#recWaveform .wf-bar');
+  const done = Math.floor(pct * bars.length);
+  bars.forEach((b, i) => b.classList.toggle('played', i < done));
+  document.getElementById('recDurLbl').textContent = fmtRecTime(Math.floor(audio.currentTime));
+}
+
+function deleteRecording() {
+  const audioEl = document.getElementById('recAudio');
+  if (audioEl) { audioEl.pause(); audioEl.src = ''; }
+  recBlob = null;
+  document.getElementById('recPreview')?.classList.remove('show');
+  document.getElementById('replyBarWrap').style.display = '';
+}
+
+async function sendRecording() {
+  if (!activePh || !recBlob) return;
+  const blob = recBlob;
+  deleteRecording();
+  appendBubble({ direction:'out', body:'🎤 رسالة صوتية', media_type:null, media_url:null, created_at:new Date().toISOString() });
+  scrollBottom();
+  const fd = new FormData();
+  fd.append('phone', activePh);
+  fd.append('file', new File([blob], 'voice_' + Date.now() + '.ogg', { type: 'audio/ogg' }));
+  try {
+    const r = await fetch('/api/send-voice', { method:'POST', body: fd });
+    const d = await r.json();
+    if (!d.ok) showSendError('فشل إرسال الصوت');
+  } catch { showSendError('خطأ في رفع الصوت'); }
+}
+
+// ═══════════════════════════════════════════════════
+// Location sharing
+// ═══════════════════════════════════════════════════
+function sendLocation() {
+  if (!activePh) return;
+  if (!navigator.geolocation) { alert('المتصفح لا يدعم خاصية الموقع الجغرافي'); return; }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const mapUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    appendBubble({ direction:'out', body:'📍 ' + mapUrl, media_type:null, media_url:null, created_at:new Date().toISOString() });
+    scrollBottom();
+    try {
+      const r = await fetch('/api/send', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone: activePh, message: mapUrl }),
+      });
+      const d = await r.json();
+      if (!d.ok && !d.sent) showSendError('فشل إرسال الموقع');
+    } catch { showSendError('خطأ في إرسال الموقع'); }
+  }, () => {
+    alert('تعذّر الحصول على الموقع — تأكد من منح الإذن للمتصفح');
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// Utils
+// ═══════════════════════════════════════════════════
+function esc(s) {
+  return String(s||"")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function previewBody(s) {
+  const t = String(s||"").trim();
+  if (t.startsWith("/uploads/images/"))  return "📷 صورة";
+  if (t.startsWith("/uploads/voices/"))  return "🎤 رسالة صوتية";
+  if (t.startsWith("/uploads/videos/"))  return "🎬 فيديو";
+  return t.slice(0, 42) + (t.length > 42 ? "…" : "");
+}
+function fmtDate(d) {
+  const now = new Date(), diff = (now - d) / 1000;
+  if (diff < 86400 && now.getDate() === d.getDate())
+    return d.toLocaleTimeString("ar-SA", { hour:"2-digit", minute:"2-digit" });
+  if (diff < 604800) return d.toLocaleDateString("ar-SA", { weekday:"short" });
+  return d.toLocaleDateString("ar-SA", { month:"short", day:"numeric" });
+}
+
+// ═══════════════════════════════════════════════════
+// Download all images for a contact as ZIP
+// ═══════════════════════════════════════════════════
+let _dlToastT;
+function dlToast(msg, dur = 3000) {
+  const el = document.getElementById("dlToast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(_dlToastT);
+  _dlToastT = setTimeout(() => el.classList.remove("show"), dur);
+}
+
+function _crc32(data) {
+  if (!_crc32._t) {
+    _crc32._t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crc32._t[i] = c;
+    }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) crc = _crc32._t[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function _buildZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], cds = [];
+  let off = 0;
+  for (const { name, data } of files) {
+    const nb = enc.encode(name), crc = _crc32(data), sz = data.length;
+    const lh = new Uint8Array(30 + nb.length + sz);
+    const v  = new DataView(lh.buffer);
+    v.setUint32(0,  0x04034b50, true); v.setUint16(4,  20, true);
+    v.setUint16(6,  0,          true); v.setUint16(8,  0,  true);
+    v.setUint16(10, 0,          true); v.setUint16(12, 0,  true);
+    v.setUint32(14, crc,        true); v.setUint32(18, sz, true);
+    v.setUint32(22, sz,         true); v.setUint16(26, nb.length, true);
+    v.setUint16(28, 0,          true);
+    lh.set(nb, 30); lh.set(data, 30 + nb.length);
+    const cd = new Uint8Array(46 + nb.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0,  0x02014b50, true); cv.setUint16(4,  20, true);
+    cv.setUint16(6,  20,         true); cv.setUint16(8,  0,  true);
+    cv.setUint16(10, 0,          true); cv.setUint16(12, 0,  true);
+    cv.setUint16(14, 0,          true); cv.setUint32(16, crc, true);
+    cv.setUint32(20, sz,         true); cv.setUint32(24, sz,  true);
+    cv.setUint16(28, nb.length,  true); cv.setUint16(30, 0,   true);
+    cv.setUint16(32, 0,          true); cv.setUint16(34, 0,   true);
+    cv.setUint16(36, 0,          true); cv.setUint32(38, 0,   true);
+    cv.setUint32(42, off,        true); cd.set(nb, 46);
+    parts.push(lh); cds.push(cd); off += lh.length;
+  }
+  const cdSz = cds.reduce((s, c) => s + c.length, 0);
+  const eo   = new Uint8Array(22);
+  const ev   = new DataView(eo.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(4,  0,           true);
+  ev.setUint16(6, 0,          true); ev.setUint16(8,  cds.length,  true);
+  ev.setUint16(10, cds.length, true); ev.setUint32(12, cdSz,        true);
+  ev.setUint32(16, off,        true); ev.setUint16(20, 0,           true);
+  return new Blob([...parts, ...cds, eo], { type: "application/zip" });
+}
+
+async function downloadContactImages(phone, name, count) {
+  dlToast(`⏳ جارٍ تجهيز الصور…`, 60000);
+  try {
+    const rows = await fetch(`/api/images?phone=${encodeURIComponent(phone)}&limit=500`).then(r => r.json());
+    if (!rows.length) { dlToast("❌ لا توجد صور"); return; }
+    const files = [];
+    for (let i = 0; i < rows.length; i++) {
+      dlToast(`⏳ ${i + 1} / ${rows.length}`);
+      const resp = await fetch(`/uploads/images/${rows[i].filename}`);
+      if (!resp.ok) continue;
+      files.push({ name: rows[i].filename, data: new Uint8Array(await resp.arrayBuffer()) });
+    }
+    if (!files.length) { dlToast("❌ لم يتم العثور على الصور"); return; }
+    const blob = _buildZip(files);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `images_${(name || phone).replace(/\s+/g,"_")}_${Date.now()}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    dlToast(`✅ تم تحميل ${files.length} صورة`);
+  } catch(e) {
+    dlToast("❌ خطأ: " + e.message);
+  }
+}
+</script>
+
+<div id="dlToast"></div>
+</body>
+</html>

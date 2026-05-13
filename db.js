@@ -146,6 +146,30 @@ async function initDb() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
+  // ── Migration: note column on images/voices/videos ──────────────────────
+  await pool.query(`ALTER TABLE images  ADD COLUMN note TEXT DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE voices  ADD COLUMN note TEXT DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE videos  ADD COLUMN note TEXT DEFAULT NULL`).catch(()=>{});
+
+  // ── Migration: content_hash + per-phone dedup sur images ────────────────
+  await pool.query(`ALTER TABLE images ADD COLUMN content_hash VARCHAR(64) DEFAULT NULL`).catch(()=>{});
+  try {
+    await pool.query(`ALTER TABLE images ADD UNIQUE KEY uq_images_phone_hash (phone, content_hash)`);
+  } catch(_) { /* déjà présent */ }
+
+  // ── Migration: تأكيد UNIQUE KEY على contacts.phone ──────────────────────
+  // في حال الـ DB القديم لا يملك الـ constraint بعد
+  try {
+    // حذف الصفوف المكررة — الاحتفاظ بأقدم id لكل هاتف
+    await pool.query(`
+      DELETE c1 FROM contacts c1
+      INNER JOIN contacts c2
+             ON c1.phone = c2.phone AND c1.id > c2.id
+    `);
+    await pool.query(`ALTER TABLE contacts ADD UNIQUE KEY uq_contacts_phone (phone)`);
+    console.log("✅ Migration: UNIQUE KEY uq_contacts_phone أُضيف");
+  } catch (_) { /* الـ constraint موجود مسبقاً */ }
+
   // ── Migration: إضافة index (contact, id) لتسريع آخر رسالة ──
   try {
     await pool.query(`ALTER TABLE messages ADD INDEX idx_messages_contact_id (contact, id)`);
@@ -222,5 +246,38 @@ async function initDb() {
 }
 
 initDb().catch(err => console.error("❌ خطأ في إعداد DB:", err.message));
+
+// ─── findOrCreate(phone, defaults?) ──────────────────────────────────────────
+// Returns [contact_row, created_bool]
+// Uses INSERT … ON DUPLICATE KEY UPDATE so it's atomic — no race condition.
+// If the contact already exists:
+//   - last_seen   → updated to NOW()
+//   - name        → updated only when it's still the default "غير معروف"
+//                   and the caller supplied a real name
+async function findOrCreate(phone, defaults = {}) {
+  const name = (defaults.name && String(defaults.name).trim()) || "غير معروف";
+
+  const [result] = await pool.query(
+    `INSERT INTO contacts (phone, name, first_seen, last_seen)
+     VALUES (?, ?, NOW(), NOW())
+     ON DUPLICATE KEY UPDATE
+       last_seen = NOW(),
+       name      = IF(name = 'غير معروف' AND ? <> 'غير معروف', ?, name)`,
+    [phone, name, name, name]
+  );
+
+  // affectedRows: 1 = new row inserted, 2 = existing row updated, 0 = no change
+  const created = result.affectedRows === 1;
+
+  const [[contact]] = await pool.query(
+    "SELECT * FROM contacts WHERE phone = ? LIMIT 1",
+    [phone]
+  );
+
+  return [contact, created];
+}
+
+// Attach to pool so callers can do:  pool.findOrCreate(phone, {name})
+pool.findOrCreate = findOrCreate;
 
 module.exports = pool;

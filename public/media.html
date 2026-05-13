@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Toutes les photos — WhatsApp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#075e54;--teal:#128c7e;--g:#25d366;
+  --bg:#f0f2f5;--bd:#e0e0e0;--card:#fff;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+  background:var(--bg);color:#111b21;direction:ltr}
+
+/* ─── Header ─── */
+header{
+  background:var(--green);color:#fff;
+  height:56px;display:flex;align-items:center;gap:12px;padding:0 20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);position:sticky;top:0;z-index:50;flex-shrink:0;
+}
+.h-title{font-size:1.05rem;font-weight:700;flex:1}
+.h-stat{font-size:.78rem;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:11px;white-space:nowrap}
+.h-stat b{font-weight:800}
+.nav-link{color:rgba(255,255,255,.85);text-decoration:none;font-size:.8rem;
+  padding:5px 11px;border-radius:8px;white-space:nowrap}
+.nav-link:hover{background:rgba(255,255,255,.18);color:#fff}
+
+/* ─── Toolbar ─── */
+.toolbar{
+  background:#fff;border-bottom:1px solid var(--bd);
+  padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.srch{
+  flex:1;min-width:200px;padding:8px 14px 8px 38px;
+  border:1px solid #ddd;border-radius:20px;font-size:.86rem;
+  outline:none;background:#f6f6f6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23999' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10'/%3E%3C/svg%3E") 12px center no-repeat;
+}
+.srch:focus{border-color:var(--teal);background-color:#fff}
+.filter-btn{
+  padding:7px 14px;border:1px solid #ddd;border-radius:20px;
+  background:#fff;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap;
+  color:#555;font-family:inherit;
+}
+.filter-btn:hover,.filter-btn.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.sort-sel{
+  padding:7px 12px;border:1px solid #ddd;border-radius:20px;
+  background:#fff;font-size:.8rem;outline:none;cursor:pointer;color:#555;
+  font-family:inherit;
+}
+.count-badge{
+  font-size:.78rem;color:#888;white-space:nowrap;
+}
+
+/* ─── Grid ─── */
+.grid-wrap{padding:16px 20px 40px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:14px;
+}
+
+/* ─── Card ─── */
+.card{
+  background:var(--card);border-radius:12px;overflow:hidden;
+  box-shadow:0 1px 6px rgba(0,0,0,.1);
+  transition:transform .15s,box-shadow .15s;cursor:pointer;
+  display:flex;flex-direction:column;
+}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.card-img{
+  width:100%;aspect-ratio:1;overflow:hidden;background:#f0f0f0;position:relative;
+}
+.card-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.card:hover .card-img img{transform:scale(1.04)}
+.card-img .no-img{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:2.5rem;color:#ccc;
+}
+
+/* ─── Info ─── */
+.card-info{padding:10px 12px 12px;flex:1;display:flex;flex-direction:column;gap:5px}
+.card-phone{
+  font-family:monospace;font-size:.82rem;font-weight:700;
+  color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card-name{
+  font-size:.78rem;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.chip{
+  padding:2px 8px;border-radius:10px;font-size:.69rem;font-weight:600;white-space:nowrap;
+}
+.chip-mime{background:#f3e5f5;color:#7b1fa2}
+.chip-size{background:#e3f2fd;color:#1565c0}
+.card-date{font-size:.7rem;color:#aaa;margin-top:auto;padding-top:4px}
+
+/* ─── Actions overlay ─── */
+.card-ov{
+  position:absolute;inset:0;background:rgba(0,0,0,0);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .2s;
+}
+.card:hover .card-ov{background:rgba(0,0,0,.35)}
+.ov-btn{
+  background:rgba(255,255,255,.92);border:none;border-radius:50%;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;cursor:pointer;
+  opacity:0;transform:scale(.7);transition:opacity .2s,transform .2s;
+  text-decoration:none;
+}
+.card:hover .ov-btn{opacity:1;transform:scale(1)}
+.ov-btn:hover{background:#fff;transform:scale(1.1)!important}
+.ov-btn.del:hover{background:#ffebee}
+
+/* ─── Empty / Loading ─── */
+.state-msg{
+  grid-column:1/-1;padding:60px 20px;text-align:center;
+  color:#bbb;font-size:.9rem;display:flex;flex-direction:column;
+  align-items:center;gap:12px;
+}
+.state-msg .ico{font-size:3rem;opacity:.3}
+.spin{
+  display:inline-block;width:28px;height:28px;
+  border:3px solid #ddd;border-top-color:var(--teal);
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ─── Load more ─── */
+.lm-wrap{text-align:center;padding:20px}
+.lm-btn{
+  background:#fff;border:1px solid #ddd;padding:9px 28px;
+  border-radius:20px;font-size:.83rem;cursor:pointer;color:#555;
+  font-family:inherit;transition:background .15s;
+}
+.lm-btn:hover{background:#f0f0f0;border-color:var(--teal);color:var(--teal)}
+
+/* ─── Lightbox ─── */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:200;
+  display:none;flex-direction:column}
+#lb.open{display:flex}
+.lb-head{
+  display:flex;align-items:center;gap:12px;padding:12px 18px;
+  background:rgba(0,0,0,.45);flex-shrink:0;
+}
+.lb-av{
+  width:40px;height:40px;border-radius:50%;background:#444;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:1rem;flex-shrink:0;
+}
+.lb-av img{width:100%;height:100%;object-fit:cover}
+.lb-meta{flex:1;color:#fff;min-width:0}
+.lb-phone{font-family:monospace;font-size:.9rem;font-weight:700}
+.lb-name{font-size:.75rem;color:rgba(255,255,255,.6);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.lb-chip{
+  background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);
+  border-radius:12px;padding:2px 10px;font-size:.72rem;
+}
+.lb-chip b{color:#fff}
+.lb-acts{display:flex;gap:7px;flex-shrink:0}
+.lb-btn{
+  background:rgba(255,255,255,.13);border:none;color:#fff;
+  padding:7px 14px;border-radius:9px;cursor:pointer;
+  font-size:.78rem;font-family:inherit;transition:background .15s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:5px;
+}
+.lb-btn:hover{background:rgba(255,255,255,.25)}
+.lb-btn.red{background:rgba(231,76,60,.4)}
+.lb-btn.red:hover{background:rgba(231,76,60,.85)}
+.lb-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:12px;overflow:hidden;position:relative;
+}
+.lb-body img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.lb-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.13);border:none;color:#fff;
+  width:46px;height:46px;border-radius:50%;font-size:1.2rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s;
+}
+.lb-nav:hover{background:rgba(255,255,255,.28)}
+.lb-prev{left:14px}.lb-next{right:14px}
+.lb-counter{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.55);color:rgba(255,255,255,.75);
+  font-size:.73rem;padding:3px 10px;border-radius:10px;pointer-events:none;
+}
+
+/* ─── Toast ─── */
+#toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:#1a1a2e;color:#fff;padding:9px 22px;border-radius:10px;
+  font-size:.84rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:300;
+}
+#toast.show{opacity:1}
+
+/* ─── Responsive ─── */
+@media(max-width:600px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .grid-wrap{padding:12px}
+  header{padding:0 12px}
+  .toolbar{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.3rem">📸</span>
+  <span class="h-title">Toutes les photos</span>
+  <span class="h-stat" id="hStat"><span class="spin" style="width:14px;height:14px;border-width:2px"></span></span>
+  <a class="nav-link" href="/images">🖼️ Photos</a>
+  <a class="nav-link" href="/gallery">🗂 Galerie</a>
+  <a class="nav-link" href="/dashboard">🏠 Accueil</a>
+</header>
+
+<div class="toolbar">
+  <input class="srch" id="srch" type="search" placeholder="Rechercher par numéro ou nom…" oninput="applyFilter()">
+  <button class="filter-btn on" id="fAll"  onclick="setMime('all')">Tous</button>
+  <button class="filter-btn"   id="fJpeg" onclick="setMime('jpeg')">JPEG</button>
+  <button class="filter-btn"   id="fPng"  onclick="setMime('png')">PNG</button>
+  <button class="filter-btn"   id="fOther"onclick="setMime('other')">Autres</button>
+  <select class="sort-sel" id="sortSel" onchange="applyFilter()">
+    <option value="date_desc">Plus récentes</option>
+    <option value="date_asc">Plus anciennes</option>
+    <option value="size_desc">Plus grandes</option>
+    <option value="phone">Par numéro</option>
+  </select>
+  <span class="count-badge" id="countBadge"></span>
+</div>
+
+<div class="grid-wrap">
+  <div class="grid" id="grid">
+    <div class="state-msg"><span class="spin"></span> Chargement…</div>
+  </div>
+  <div id="lmWrap" class="lm-wrap" style="display:none">
+    <button class="lm-btn" onclick="loadMore()">⬇ Charger plus</button>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lb">
+  <div class="lb-head">
+    <div class="lb-av" id="lbAv"></div>
+    <div class="lb-meta">
+      <div class="lb-phone" id="lbPhone"></div>
+      <div class="lb-name"  id="lbName"></div>
+      <div class="lb-chips" id="lbChips"></div>
+    </div>
+    <div class="lb-acts">
+      <a  class="lb-btn" id="lbDl" href="#" download>⬇ Télécharger</a>
+      <button class="lb-btn red" onclick="deleteLbImg()">🗑 Supprimer</button>
+      <button class="lb-btn" onclick="closeLb()">✕ Fermer</button>
+    </div>
+  </div>
+  <div class="lb-body">
+    <img id="lbImg" src="" alt="">
+    <button class="lb-nav lb-prev" onclick="navLb(-1)">❮</button>
+    <button class="lb-nav lb-next" onclick="navLb(1)">❯</button>
+    <span class="lb-counter" id="lbCnt"></span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════
+// State
+// ══════════════════════════════
+const COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
+const PAGE   = 80;
+
+let allImgs    = [];   // all from API
+let filtered   = [];   // after filter/sort
+let displayed  = 0;    // how many rendered
+let lbIdx      = 0;
+let mimeFilter = "all";
+
+// ══════════════════════════════
+// Boot
+// ══════════════════════════════
+(async () => {
+  await Promise.all([loadStats(), loadAll()]);
+})();
+
+// ══════════════════════════════
+// Load data
+// ══════════════════════════════
+async function loadStats() {
+  try {
+    const d = await fetch("/api/images/stats").then(r => r.json());
+    document.getElementById("hStat").innerHTML =
+      `<b>${fmt(d.total)}</b> photo${d.total!==1?"s":""} &nbsp;·&nbsp; Aujourd'hui : <b>${fmt(d.today)}</b>`;
+  } catch { document.getElementById("hStat").textContent = ""; }
+}
+
+async function loadAll() {
+  try {
+    const data = await fetch("/api/images?limit=5000").then(r => r.json());
+    allImgs = Array.isArray(data) ? data : [];
+    applyFilter();
+  } catch(e) {
+    document.getElementById("grid").innerHTML =
+      `<div class="state-msg"><div class="ico">⚠️</div><span>Erreur : ${e.message}</span></div>`;
+  }
+}
+
+// ══════════════════════════════
+// Filter / Sort
+// ══════════════════════════════
+function setMime(v) {
+  mimeFilter = v;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("on"));
+  document.getElementById({all:"fAll",jpeg:"fJpeg",png:"fPng",other:"fOther"}[v])
+    ?.classList.add("on");
+  applyFilter();
+}
+
+function applyFilter() {
+  const q    = document.getElementById("srch").value.trim().toLowerCase();
+  const sort = document.getElementById("sortSel").value;
+
+  filtered = allImgs.filter(img => {
+    // MIME filter
+    const mime = (img.mimetype || "").toLowerCase();
+    if (mimeFilter === "jpeg" && !mime.includes("jpeg") && !mime.includes("jpg")) return false;
+    if (mimeFilter === "png"  && !mime.includes("png"))  return false;
+    if (mimeFilter === "other" && (mime.includes("jpeg")||mime.includes("jpg")||mime.includes("png"))) return false;
+    // text search
+    if (q) {
+      const phone = String(img.phone || "");
+      const name  = (img.name  || "").toLowerCase();
+      if (!phone.includes(q) && !name.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a,b) => {
+    if (sort === "date_desc") return new Date(b.created_at) - new Date(a.created_at);
+    if (sort === "date_asc")  return new Date(a.created_at) - new Date(b.created_at);
+    if (sort === "size_desc") return (b.filesize||0) - (a.filesize||0);
+    if (sort === "phone")     return String(a.phone||"").localeCompare(String(b.phone||""));
+    return 0;
+  });
+
+  document.getElementById("countBadge").textContent = `${fmt(filtered.length)} résultat(s)`;
+  displayed = 0;
+  document.getElementById("grid").innerHTML = "";
+  renderBatch();
+}
+
+// ══════════════════════════════
+// Render
+// ══════════════════════════════
+function renderBatch() {
+  const batch = filtered.slice(displayed, displayed + PAGE);
+  if (!batch.length && displayed === 0) {
+    document.getElementById("grid").innerHTML =
+      `<div class="state-msg"><div class="ico">🖼️</div><span>Aucune photo trouvée</span></div>`;
+    document.getElementById("lmWrap").style.display = "none";
+    return;
+  }
+  batch.forEach((img, i) => {
+    document.getElementById("grid").insertAdjacentHTML("beforeend", cardHTML(img, displayed + i));
+  });
+  displayed += batch.length;
+  document.getElementById("lmWrap").style.display =
+    displayed < filtered.length ? "block" : "none";
+
+  // lazy-load images
+  lazyLoad();
+}
+
+function loadMore() { renderBatch(); }
+
+function cardHTML(img, idx) {
+  const url   = `/uploads/images/${esc(img.filename)}`;
+  const mime  = img.mimetype || "";
+  const mimeShort = mime.replace("image/","");
+  const size  = fmtSize(img.filesize);
+  const date  = img.created_at ? new Date(img.created_at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+  const phone = img.phone ? "+"+img.phone : "—";
+  const name  = img.name && img.name !== img.phone ? img.name : "";
+  const col   = colorOf(img.phone);
+  const ini   = String(img.phone||"").slice(-2)||"?";
+
+  return `<div class="card" onclick="openLb(${idx})">
+    <div class="card-img">
+      <img src="" data-src="${url}" class="lz" alt=""
+           onload="this.classList.add('loaded')"
+           onerror="this.parentElement.innerHTML='<div class=no-img>🖼️</div>'">
+      <div class="card-ov">
+        <a class="ov-btn" href="${url}" download="${esc(img.filename)}" onclick="event.stopPropagation()" title="Télécharger">⬇</a>
+        <button class="ov-btn del" onclick="event.stopPropagation();deleteImg(${img.id},${idx})" title="Supprimer">🗑</button>
+      </div>
+    </div>
+    <div class="card-info">
+      <div class="card-phone">${phone}</div>
+      ${name ? `<div class="card-name">${esc(name)}</div>` : ""}
+      <div class="card-chips">
+        ${mime   ? `<span class="chip chip-mime">${esc(mime)}</span>` : ""}
+        ${size   ? `<span class="chip chip-size">${size}</span>` : ""}
+      </div>
+      <div class="card-date">${date}</div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+// Lazy load
+// ══════════════════════════════
+function lazyLoad() {
+  const imgs = document.querySelectorAll("img.lz[data-src]");
+  if (!("IntersectionObserver" in window)) {
+    imgs.forEach(img => { img.src = img.dataset.src; img.removeAttribute("data-src"); });
+    return;
+  }
+  const obs = new IntersectionObserver((entries, ob) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const img = e.target;
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+      ob.unobserve(img);
+    });
+  }, { rootMargin: "300px" });
+  imgs.forEach(img => obs.observe(img));
+}
+
+// ══════════════════════════════
+// Lightbox
+// ══════════════════════════════
+function openLb(idx) {
+  lbIdx = idx;
+  renderLb();
+  document.getElementById("lb").classList.add("open");
+}
+
+function renderLb() {
+  const img = filtered[lbIdx];
+  if (!img) return;
+
+  const url  = `/uploads/images/${img.filename}`;
+  const mime = img.mimetype || "";
+  const size = fmtSize(img.filesize);
+  const date = img.created_at ? new Date(img.created_at).toLocaleString("fr-FR") : "";
+  const phone = img.phone ? "+"+img.phone : "—";
+  const name  = img.name && img.name !== img.phone ? img.name : "";
+  const col   = colorOf(img.phone);
+  const ini   = String(img.phone||"").slice(-2)||"?";
+
+  // avatar
+  const lbAv = document.getElementById("lbAv");
+  lbAv.style.background = col;
+  lbAv.textContent = ini;
+
+  document.getElementById("lbPhone").textContent = phone;
+  document.getElementById("lbName").textContent  = name;
+
+  const chips = [
+    date  ? `<span class="lb-chip">📅 ${date}</span>` : "",
+    mime  ? `<span class="lb-chip">🗂 <b>${esc(mime)}</b></span>` : "",
+    size  ? `<span class="lb-chip">📦 ${size}</span>` : "",
+    img.filename ? `<span class="lb-chip">📄 ${esc(img.filename)}</span>` : "",
+  ].join("");
+  document.getElementById("lbChips").innerHTML = chips;
+
+  document.getElementById("lbImg").src    = url;
+  document.getElementById("lbDl").href    = url;
+  document.getElementById("lbDl").download = img.filename;
+  document.getElementById("lbCnt").textContent = `${lbIdx+1} / ${filtered.length}`;
+}
+
+function navLb(dir) {
+  lbIdx = (lbIdx + dir + filtered.length) % filtered.length;
+  renderLb();
+}
+
+function closeLb() {
+  document.getElementById("lb").classList.remove("open");
+  document.getElementById("lbImg").src = "";
+}
+
+document.addEventListener("keydown", e => {
+  const open = document.getElementById("lb").classList.contains("open");
+  if (e.key === "Escape")      closeLb();
+  if (open && e.key === "ArrowLeft")  navLb(-1);
+  if (open && e.key === "ArrowRight") navLb(1);
+});
+
+// ══════════════════════════════
+// Delete
+// ══════════════════════════════
+async function deleteImg(id, idx) {
+  if (!confirm("Supprimer cette photo définitivement ?")) return;
+  try {
+    const d = await fetch(`/api/images/${id}`, { method:"DELETE" }).then(r=>r.json());
+    if (!d.ok) { toast("❌ Échec de la suppression"); return; }
+    allImgs = allImgs.filter(i => i.id !== id);
+    toast("✅ Photo supprimée");
+    applyFilter();
+    loadStats();
+  } catch { toast("❌ Erreur lors de la suppression"); }
+}
+
+async function deleteLbImg() {
+  const img = filtered[lbIdx];
+  if (!img) return;
+  closeLb();
+  await deleteImg(img.id, lbIdx);
+}
+
+// ══════════════════════════════
+// Utils
+// ══════════════════════════════
+function esc(s) {
+  return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function fmt(n) { return Number(n||0).toLocaleString("fr-FR"); }
+function fmtSize(b) {
+  if (!b) return "";
+  if (b >= 1024*1024) return (b/1024/1024).toFixed(1)+" Mo";
+  return Math.round(b/1024)+" Ko";
+}
+function colorOf(p) {
+  let n=0; for(const c of String(p||"")) n+=c.charCodeAt(0);
+  return COLORS[n%COLORS.length];
+}
+
+let _toastT;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+// ══════════════════════════════
+// Real-time new photo
+// ══════════════════════════════
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const _sock = io();
+_sock.on("new_media", data => {
+  if (data.type !== "image") return;
+  toast(`📸 Nouvelle photo de ${data.name || data.phone}`);
+  loadAll().then(loadStats);
+});
+</script>
+
+<script src="/js/nav.js"></script>
+</body>
+</html>

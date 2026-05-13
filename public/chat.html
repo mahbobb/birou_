@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>الشات — واتساب بوت</title>
+  <title>Chat — WhatsApp Bot</title>
+  <script>document.documentElement.dataset.lang=localStorage.getItem('navLang')||'fr'</script>
   <link rel="stylesheet" href="/css/nav.css">
   <link rel="stylesheet" href="/css/chat.css">
 </head>
@@ -21,10 +22,13 @@
       <div class="wa-sidebar-header">
         <div class="wa-logo">
           <svg viewBox="0 0 35 35" width="28" height="28" fill="#00a884"><path d="M17.5 0C7.835 0 0 7.835 0 17.5c0 3.093.811 6.001 2.232 8.528L0 35l9.197-2.41A17.457 17.457 0 0 0 17.5 35C27.165 35 35 27.165 35 17.5S27.165 0 17.5 0z"/><path d="M26.07 21.677c-.355-.178-2.1-1.036-2.424-1.154-.323-.118-.559-.178-.794.178-.236.355-.914 1.154-1.12 1.389-.206.236-.413.266-.768.089-2.071-1.036-3.43-1.848-4.79-4.191-.362-.622.362-.578.931-1.733a.652.652 0 0 0-.03-.614c-.089-.178-.794-1.912-1.087-2.615-.286-.687-.577-.591-.794-.603-.206-.012-.443-.015-.679-.015-.236 0-.62.089-.944.443-.324.355-1.238 1.21-1.238 2.95s1.267 3.42 1.443 3.657c.178.236 2.49 3.797 6.033 5.328 2.243.968 3.12 1.05 4.242.883.682-.103 2.1-.859 2.396-1.69.295-.83.295-1.543.207-1.69-.087-.158-.323-.247-.678-.425z" fill="#fff"/></svg>
-          <span>واتساب بوت</span>
+          <span>WhatsApp Bot</span>
         </div>
         <div class="wa-header-actions">
-          <button class="wa-icon-btn" title="محادثة جديدة" onclick="toggleNewChat()">
+          <button class="wa-icon-btn" id="scanQrBtn" title="Scanner QR / État de connexion" onclick="toggleScanModal()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h-2v2h-2v-2h-2v2h2v2h-2v2h2v-2h2v2h2v-2h-2v-2h2v-2zm0 6h-2v-2h2v2z"/></svg>
+          </button>
+          <button class="wa-icon-btn" title="Nouvelle conversation" onclick="toggleNewChat()">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9.53277 12.9911H11.5086V14.9671C11.5086 15.3999 11.7634 15.8175 12.1762 15.9488C12.8608 16.1661 13.4909 15.6613 13.4909 15.009V12.9911H15.4672C15.9005 12.9911 16.3181 12.7358 16.449 12.3226C16.6659 11.6381 16.1606 11.0089 15.5086 11.0089H13.4909V9.03332C13.4909 8.60007 13.2361 8.18252 12.8233 8.05119C12.1391 7.83391 11.5086 8.33872 11.5086 8.991V11.0089H9.49088C8.83941 11.0089 8.33411 11.6381 8.55097 12.3226C8.68144 12.7358 9.09947 12.9911 9.53277 12.9911Z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M0.944298 5.52617L2.99998 8.84848V17.3333C2.99998 18.8061 4.19389 20 5.66665 20H19.3333C20.8061 20 22 18.8061 22 17.3333V6.66667C22 5.19391 20.8061 4 19.3333 4H1.79468C1.01126 4 0.532088 4.85997 0.944298 5.52617ZM4.99998 8.27977V17.3333C4.99998 17.7015 5.29845 18 5.66665 18H19.3333C19.7015 18 20 17.7015 20 17.3333V6.66667C20 6.29848 19.7015 6 19.3333 6H3.58937L4.99998 8.27977Z"/></svg>
           </button>
         </div>
@@ -34,17 +38,17 @@
         <span class="search-icon">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M4.367 4.366c1-1 2.214-1.5 3.637-1.5s2.637.5 3.634 1.497c.997.997 1.497 2.212 1.497 3.637a5.33 5.33 0 0 1-.338 1.867 5.35 5.35 0 0 1-.815 1.45l4.38 4.381a.877.877 0 0 1-1.242 1.237l-4.38-4.385a5.36 5.36 0 0 1-1.45.815A5.33 5.33 0 0 1 8.004 13.13c-1.423 0-2.637-.5-3.637-1.497C3.367 10.633 2.87 9.42 2.87 8c0-1.423.498-2.637 1.497-3.634ZM8 4.63c-.938 0-1.731.327-2.387.982C4.957 6.27 4.63 7.062 4.63 8s.327 1.731.983 2.387c.656.656 1.449.983 2.387.983s1.731-.327 2.387-.983C11.043 9.731 11.37 8.938 11.37 8s-.327-1.73-.983-2.388C9.731 4.957 8.938 4.63 8 4.63Z"/></svg>
         </span>
-        <input class="search-box" id="searchContact" type="text" placeholder="بحث أو بدء محادثة جديدة">
+        <input class="search-box" id="searchContact" type="text" placeholder="Rechercher par nom ou numéro...">
       </div>
       <!-- Filter tabs -->
       <div class="wa-filters">
-        <button class="wf-tab active" id="tabAll" onclick="setTab('all')">الكل <span class="tab-badge" id="badgeAll">0</span></button>
-        <button class="wf-tab" id="tabUnread" onclick="setTab('unread')">غير مقروء <span class="tab-badge" id="badgeUnread">0</span></button>
+        <button class="wf-tab active" id="tabAll" onclick="setTab('all')"><span data-lv="ar">الكل</span><span data-lv="fr">Tous</span><span data-lv="en">All</span> <span class="tab-badge" id="badgeAll">0</span></button>
+        <button class="wf-tab" id="tabUnread" onclick="setTab('unread')"><span data-lv="ar">غير مقروء</span><span data-lv="fr">Non lus</span><span data-lv="en">Unread</span> <span class="tab-badge" id="badgeUnread">0</span></button>
       </div>
       <!-- Preload Progress Bar -->
       <div id="preloadProgress" style="display:none;padding:8px;background:#f5f5f5;border-bottom:1px solid #e0e0e0">
         <div style="font-size:0.75rem;color:#667;margin-bottom:4px;display:flex;justify-content:space-between">
-          <span>📦 تحميل البيانات...</span>
+          <span>📦 Chargement des données...</span>
           <span id="preloadPercent">0%</span>
         </div>
         <div style="background:#ddd;height:4px;border-radius:2px;overflow:hidden">
@@ -53,15 +57,32 @@
       </div>
     </div>
     <div class="new-chat-bar" id="newChatBar">
-      <input type="tel" id="newChatPhone" placeholder="أدخل رقم الهاتف مثلاً: 212600123456"
-        onkeydown="if(event.key==='Enter') openByPhone()">
-      <button class="nc-go"  onclick="openByPhone()">فتح</button>
-      <button class="nc-can" onclick="toggleNewChat()">✕</button>
+      <div class="nc-row">
+        <input type="tel" id="newChatPhone" placeholder="212600123456…"
+          oninput="ncDebounce()" onkeydown="if(event.key==='Enter') ncCheck()">
+        <button class="nc-check" id="ncCheckBtn" onclick="ncCheck()">🔍</button>
+        <button class="nc-can"   onclick="toggleNewChat()">✕</button>
+      </div>
+      <div class="nc-preview" id="ncPreview">
+        <div class="nc-av"   id="ncAv"></div>
+        <div class="nc-info">
+          <div class="nc-pname"   id="ncPName"></div>
+          <div class="nc-pstatus" id="ncPStatus"></div>
+        </div>
+        <button class="nc-go" id="ncOpenBtn" onclick="ncOpen()" disabled>💬 Ouvrir</button>
+      </div>
     </div>
     <div class="contacts-list" id="contactsList">
-      <div class="empty-contacts">جاري التحميل...</div>
+      <div class="empty-contacts">Chargement...</div>
     </div>
   </div>
+
+  <!-- FAB — Mobile new chat button -->
+  <button class="wa-fab" id="waFab" onclick="toggleNewChat()" title="Nouvelle conversation">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+    </svg>
+  </button>
 
   <!-- ══ CHAT PANEL ══ -->
   <div class="chat-panel" id="chatPanel">
@@ -97,11 +118,11 @@
             <circle cx="155" cy="155" r="6"  fill="#00a884" opacity="0.6"/>
           </svg>
         </div>
-        <h2 class="ns-title">ابدأ محادثة مع زبائنك</h2>
-        <p class="ns-sub">اختر محادثة من القائمة أو استخدم ✏️ لفتح محادثة جديدة</p>
+        <h2 class="ns-title"><span data-lv="ar">ابدأ محادثة مع زبائنك</span><span data-lv="fr">Commencez une conversation</span><span data-lv="en">Start a conversation</span></h2>
+        <p class="ns-sub"><span data-lv="ar">اختر محادثة من القائمة أو استخدم ✏️ لفتح محادثة جديدة</span><span data-lv="fr">Choisissez une conversation ou utilisez ✏️ pour en ouvrir une nouvelle</span><span data-lv="en">Select a conversation or use ✏️ to open a new one</span></p>
         <div class="ns-enc">
           <svg viewBox="0 0 12 12" width="12" height="12" fill="#8696a0"><path d="M6 1a2.5 2.5 0 0 0-2.5 2.5V5H2.5A.5.5 0 0 0 2 5.5v5a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5v-5A.5.5 0 0 0 9.5 5H8.5V3.5A2.5 2.5 0 0 0 6 1zm1.5 4H4.5V3.5a1.5 1.5 0 0 1 3 0V5z"/></svg>
-          <span>مشفر من طرف إلى طرف</span>
+          <span data-lv="ar">مشفر من طرف إلى طرف</span><span data-lv="fr">Chiffrement de bout en bout</span><span data-lv="en">End-to-end encrypted</span>
         </div>
       </div>
     </div>
@@ -109,7 +130,7 @@
     <!-- Chat view -->
     <div id="chatView">
       <div class="chat-header">
-        <button class="back-btn" onclick="backToList()" title="رجوع">‹</button>
+        <button class="back-btn" onclick="backToList()" title="Retour">‹</button>
         <div class="avatar" id="chatAvatar">?</div>
         <div class="info">
           <div class="name"  id="chatName">—</div>
@@ -117,21 +138,22 @@
           <div class="bot-via" id="chatBotVia" style="display:none"></div>
         </div>
         <div class="header-actions">
-          <button class="header-call-btn voice-call" id="voiceCallBtn" onclick="startCall('voice')" title="مكالمة صوتية">📞</button>
-          <button class="header-call-btn video-call" id="videoCallBtn" onclick="startCall('video')" title="مكالمة فيديو">📹</button>
-          <button class="header-resp-btn" onclick="syncWaHistory()" id="syncWaBtn" title="مزامنة من واتساب">🔄</button>
-          <button class="header-resp-btn" onclick="openResponseModal()" title="إضافة رد مبرمج جديد">➕ رد مبرمج</button>
-          <button class="header-block-btn" id="blockBtn" onclick="toggleBlock()" title="حجب المستخدم">🚫</button>
-          <button class="header-del-btn" onclick="deleteChat()" title="حذف المحادثة">🗑</button>
+          <button class="header-call-btn voice-call" id="voiceCallBtn" onclick="startCall('voice')" title="Appel vocal">📞</button>
+          <button class="header-call-btn video-call" id="videoCallBtn" onclick="startCall('video')" title="Appel vidéo">📹</button>
+          <button class="header-resp-btn" onclick="syncWaHistory()" id="syncWaBtn" title="Synchroniser depuis WhatsApp">🔄</button>
+          <button class="header-resp-btn" onclick="openResponseModal()" title="Ajouter une réponse programmée">➕ Réponse</button>
+          <button class="header-resp-btn" onclick="captureChat()" title="Capture d'écran">📸</button>
+          <button class="header-block-btn" id="blockBtn" onclick="toggleBlock()" title="Bloquer l'utilisateur">🚫</button>
+          <button class="header-del-btn" onclick="deleteChat()" title="Supprimer la conversation">🗑</button>
         </div>
       </div>
       <div class="chat-tabs" id="chatTabs">
-        <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 الكل</button>
-        <button class="chat-tab-btn" onclick="setViewTab('msgs-in')">📩 رسائل</button>
-        <button class="chat-tab-btn" onclick="setViewTab('msgs-out')">🤖 ردود</button>
-        <button class="chat-tab-btn" onclick="setViewTab('imgs')">📸 صور</button>
-        <button class="chat-tab-btn" onclick="setViewTab('vids')">🎬 فيديو</button>
-        <button class="chat-tab-btn" onclick="setViewTab('auds')">🎤 صوت</button>
+        <button class="chat-tab-btn active" onclick="setViewTab('msgs')">💬 <span data-lv="ar">الكل</span><span data-lv="fr">Tous</span><span data-lv="en">All</span></button>
+        <button class="chat-tab-btn" onclick="setViewTab('msgs-in')">📩 <span data-lv="ar">رسائل</span><span data-lv="fr">Reçus</span><span data-lv="en">Inbox</span></button>
+        <button class="chat-tab-btn" onclick="setViewTab('msgs-out')">🤖 <span data-lv="ar">ردود</span><span data-lv="fr">Réponses</span><span data-lv="en">Replies</span></button>
+        <button class="chat-tab-btn" onclick="setViewTab('imgs')">📸 <span data-lv="ar">صور</span><span data-lv="fr">Photos</span><span data-lv="en">Photos</span></button>
+        <button class="chat-tab-btn" onclick="setViewTab('vids')">🎬 <span data-lv="ar">فيديو</span><span data-lv="fr">Vidéos</span><span data-lv="en">Videos</span></button>
+        <button class="chat-tab-btn" onclick="setViewTab('auds')">🎤 <span data-lv="ar">صوت</span><span data-lv="fr">Audio</span><span data-lv="en">Audio</span></button>
       </div>
 
       <div class="messages-wrap" id="messagesWrap"></div>
@@ -150,59 +172,59 @@
 
       <div class="chat-input-bar" id="chatInputBar">
 
-        <!-- زر الحجب -->
-        <button class="wa-input-btn wa-block-btn" id="blockBtnBottom" title="حجب المستخدم" onclick="toggleBlock()">
+        <!-- Bouton blocage -->
+        <button class="wa-input-btn wa-block-btn" id="blockBtnBottom" title="Bloquer" onclick="toggleBlock()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
         </button>
 
-        <!-- زر الردود السريعة -->
-        <button class="wa-input-btn" id="qrToggleBtn" title="الردود المحفوظة" onclick="toggleQuickReplies(event)">
+        <!-- Bouton réponses rapides -->
+        <button class="wa-input-btn" id="qrToggleBtn" title="Réponses rapides" onclick="toggleQuickReplies(event)">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 10H7v-2h10v2zm0-3H7V7h10v2z"/></svg>
         </button>
 
-        <!-- زر + للإرفاق (WhatsApp Web style) -->
-        <button class="wa-input-btn" id="attachBtn" title="إرسال ملفات" onclick="openMediaModal()">
+        <!-- Bouton pièce jointe -->
+        <button class="wa-input-btn" id="attachBtn" title="Envoyer des fichiers" onclick="openMediaModal()">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none"><path d="M11 13H5.5C4.948 13 4.5 12.552 4.5 12S4.948 11 5.5 11H11V5.5C11 4.948 11.448 4.5 12 4.5S13 4.948 13 5.5V11H18.5C19.052 11 19.5 11.448 19.5 12S19.052 13 18.5 13H13V18.5C13 19.052 12.552 19.5 12 19.5S11 19.052 11 18.5V13Z" fill="currentColor"/></svg>
         </button>
 
         <!-- منطقة النص المركزية -->
         <div class="wa-input-center">
-          <!-- زر إيموجي -->
-          <button class="wa-emoji-btn" title="إيموجي" onclick="toggleEmojiPicker(this)">
+          <!-- Bouton emoji -->
+          <button class="wa-emoji-btn" title="Emoji" onclick="toggleEmojiPicker(this)">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8.5 10.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM17 8.75a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM7.35 13.25a.75.75 0 0 0-1.2.9C7.415 15.694 9.538 17 12 17s4.585-1.306 5.85-2.85a.75.75 0 1 0-1.2-.9C15.665 14.556 13.962 15.5 12 15.5s-3.665-.944-4.65-2.25ZM12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2Zm-8.5 10a8.5 8.5 0 1 1 17 0 8.5 8.5 0 0 1-17 0Z"/></svg>
           </button>
 
           <!-- textarea -->
-          <textarea id="msgInput" rows="1" placeholder="اكتب رسالة..."
+          <textarea id="msgInput" rows="1" placeholder="Écrire un message..."
             oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
 
           <!-- rec bar داخل المنطقة -->
           <div class="rec-bar" id="recBar">
             <div class="rec-dot"></div>
-            <span class="rec-label">جاري التسجيل...</span>
+            <span class="rec-label"><span data-lv="ar">جاري التسجيل...</span><span data-lv="fr">Enregistrement...</span><span data-lv="en">Recording...</span></span>
             <span class="rec-timer" id="recTimer">0:00</span>
           </div>
         </div>
 
-        <!-- اختيار البوت -->
-        <select id="botSelect" class="bot-select" title="اختر الرقم للإرسال">
-          <option value="">تلقائي</option>
+        <!-- Sélection du bot -->
+        <select id="botSelect" class="bot-select" title="Choisir le numéro d'envoi">
+          <option value="">Auto</option>
           <option value="bot1">1</option>
           <option value="bot2">2</option>
           <option value="bot3">3</option>
         </select>
 
         <!-- زر إرسال / ميكروفون (يتبادلان) -->
-        <button class="wa-send-btn" id="sendTextBtn" onclick="sendText()" title="إرسال" style="display:none">
+        <button class="wa-send-btn" id="sendTextBtn" onclick="sendText()" title="Envoyer" style="display:none">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/></svg>
         </button>
-        <button class="wa-send-btn mic-active" id="micBtn" title="تسجيل صوتي" onclick="toggleInlineRecord()">
+        <button class="wa-send-btn mic-active" id="micBtn" title="Message vocal" onclick="toggleInlineRecord()">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M12 14c-.833 0-1.542-.292-2.125-.875S9 11.833 9 11V5c0-.833.292-1.542.875-2.125S11.167 2 12 2s1.542.292 2.125.875S15 4.167 15 5v6c0 .833-.292 1.542-.875 2.125S12.833 14 12 14Zm0 7c-.552 0-1-.448-1-1v-2.075C9.267 17.692 7.833 16.917 6.7 15.6 5.787 14.54 5.242 13.34 5.064 11.997 4.992 11.45 5.448 11 6 11s.988.452 1.09.995c.183.963.63 1.81 1.363 2.543C9.438 15.512 10.617 16 12 16s2.563-.488 3.538-1.462c.732-.733 1.18-1.58 1.362-2.543C17.012 11.452 17.448 11 18 11s1.008.45.936.997c-.178 1.34-.723 2.542-1.636 3.603C16.167 16.917 14.733 17.692 13 17.925V20c0 .552-.448 1-1 1Zm0-9c.283 0 .521-.096.713-.288.191-.191.287-.429.287-.712V5c0-.283-.096-.521-.287-.713A.968.968 0 0 0 12 4a.968.968 0 0 0-.713.287A.968.968 0 0 0 11 5v6c0 .283.096.521.287.712.192.192.43.288.713.288Z"/></svg>
         </button>
 
-        <!-- أزرار التسجيل -->
-        <button class="rec-cancel-btn" id="recCancelBtn" style="display:none" onclick="cancelInlineRecord()" title="إلغاء">✕</button>
-        <button class="rec-send-btn"   id="recSendBtn"   style="display:none" onclick="stopAndSendRecord()" title="إرسال">✓</button>
+        <!-- Boutons enregistrement -->
+        <button class="rec-cancel-btn" id="recCancelBtn" style="display:none" onclick="cancelInlineRecord()" title="Annuler">✕</button>
+        <button class="rec-send-btn"   id="recSendBtn"   style="display:none" onclick="stopAndSendRecord()" title="Envoyer">✓</button>
       </div>
     </div>
 
@@ -212,14 +234,14 @@
 <!-- ══ Quick Replies Panel ══ -->
 <div id="quickRepliesPanel" class="qr-panel">
   <div class="qr-panel-header">
-    <span>💬 الردود المحفوظة</span>
+    <span>💬 <span data-lv="ar">الردود المحفوظة</span><span data-lv="fr">Réponses rapides</span><span data-lv="en">Quick replies</span></span>
     <div style="display:flex;gap:6px;align-items:center">
-      <button class="qr-add-btn" onclick="openAddReplyModal()">+ جديد</button>
+      <button class="qr-add-btn" onclick="openAddReplyModal()">+ <span data-lv="ar">جديد</span><span data-lv="fr">Nouveau</span><span data-lv="en">New</span></button>
       <button class="qr-close-btn" onclick="closeQuickReplies()">✕</button>
     </div>
   </div>
   <div class="qr-search-wrap">
-    <input id="qrSearch" class="qr-search" type="text" placeholder="🔍 بحث..." oninput="filterQuickReplies()">
+    <input id="qrSearch" class="qr-search" type="text" placeholder="🔍 Rechercher..." oninput="filterQuickReplies()">
   </div>
   <div id="qrList" class="qr-list"></div>
 </div>
@@ -227,18 +249,18 @@
 <!-- ══ Add Reply Modal ══ -->
 <div class="overlay" id="addReplyOverlay" style="display:none">
   <div class="modal" style="max-width:420px">
-    <h3>➕ رد جديد</h3>
+    <h3>➕ Nouvelle réponse</h3>
     <div class="form-group" style="margin-top:14px">
-      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">الكلمات المفتاحية</label>
-      <input id="arKeywords" type="text" class="modal-input" placeholder="سلام, مرحبا, hello">
+      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">Mots-clés</label>
+      <input id="arKeywords" type="text" class="modal-input" placeholder="bonjour, merci, help">
     </div>
     <div class="form-group" style="margin-top:10px">
-      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">نص الرد *</label>
-      <textarea id="arReply" class="modal-textarea" rows="4" placeholder="اكتب الرد هنا..."></textarea>
+      <label style="font-size:0.8rem;color:#8696a0;margin-bottom:4px;display:block">Texte de la réponse *</label>
+      <textarea id="arReply" class="modal-textarea" rows="4" placeholder="Écrivez la réponse ici..."></textarea>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
-      <button class="modal-btn cancel" onclick="closeAddReplyModal()">إلغاء</button>
-      <button class="modal-btn save" onclick="saveQuickReply()">💾 حفظ</button>
+      <button class="modal-btn cancel" onclick="closeAddReplyModal()">Annuler</button>
+      <button class="modal-btn save" onclick="saveQuickReply()">💾 Sauvegarder</button>
     </div>
   </div>
 </div>
@@ -246,28 +268,28 @@
 <!-- ══ Media Modal ══ -->
 <div class="overlay" id="mediaOverlay">
   <div class="modal" id="mediaModal">
-    <h3>📎 إرسال ملفات</h3>
+    <h3>📎 Envoyer des fichiers</h3>
     <div class="to-info" id="mediaTo"></div>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('mediaFileInput').click()">
       <div class="dz-icon">📁</div>
-      <p>اسحب الملفات هنا أو اضغط للاختيار</p>
-      <small>صور · فيديوهات · PDF · Word · Excel · وغيرها</small>
+      <p>Glissez des fichiers ici ou cliquez pour choisir</p>
+      <small>Images · Vidéos · PDF · Word · Excel · et plus</small>
     </div>
     <input type="file" id="mediaFileInput" accept="*/*" multiple>
     <div class="file-grid" id="fileGrid" style="display:none"></div>
     <div id="captionRow" style="display:none;margin-top:8px;">
-      <input type="text" id="mediaCaption" placeholder="أضف تعليقاً (اختياري)..."
+      <input type="text" id="mediaCaption" placeholder="Ajouter une légende (optionnel)..."
         style="width:100%;background:#2a3942;border:none;border-radius:8px;padding:9px 12px;
-               color:#e9edef;font-size:0.88rem;outline:none;direction:rtl;font-family:inherit;">
+               color:#e9edef;font-size:0.88rem;outline:none;direction:ltr;font-family:inherit;">
     </div>
     <div class="send-progress" id="sendProgress">
-      <span id="progressText">جاري الإرسال...</span>
+      <span id="progressText">Envoi en cours...</span>
       <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
     </div>
     <div class="modal-actions" style="margin-top:12px;">
-      <button class="btn btn-cancel" onclick="closeMediaModal()">إلغاء</button>
+      <button class="btn btn-cancel" onclick="closeMediaModal()">Annuler</button>
       <button class="btn btn-green"  id="mediaSendBtn" onclick="sendMedia()">
-        إرسال ✉️ (<span id="fileCount">0</span>)
+        Envoyer ✉️ (<span id="fileCount">0</span>)
       </button>
     </div>
   </div>
@@ -276,18 +298,18 @@
 <!-- ══ Quick Response Modal ══ -->
 <div class="qr-overlay" id="qrOverlay">
   <div class="qr-modal">
-    <h3>➕ إضافة رد مبرمج</h3>
+    <h3>➕ Ajouter une réponse programmée</h3>
     <div class="qr-field">
-      <label>الكلمات المفتاحية (افصل بفاصلة)</label>
-      <input type="text" id="qrKeywords" placeholder="سلام, hello, مرحبا">
+      <label>Mots-clés (séparés par virgule)</label>
+      <input type="text" id="qrKeywords" placeholder="bonjour, merci, aide">
     </div>
     <div class="qr-field">
-      <label>نص الرد *</label>
-      <textarea id="qrReply" placeholder="اكتب الرد هنا..."></textarea>
+      <label>Texte de la réponse *</label>
+      <textarea id="qrReply" placeholder="Écrivez la réponse ici..."></textarea>
     </div>
     <div class="qr-actions">
-      <button class="qr-btn-cancel" onclick="closeResponseModal()">إلغاء</button>
-      <button class="qr-btn-save"   onclick="saveQuickResponse()">💾 حفظ</button>
+      <button class="qr-btn-cancel" onclick="closeResponseModal()">Annuler</button>
+      <button class="qr-btn-save"   onclick="saveQuickResponse()">💾 Sauvegarder</button>
     </div>
   </div>
 </div>
@@ -310,7 +332,288 @@
   <div class="ep-grid" id="epGrid"></div>
 </div>
 
+<!-- ══ QR Scan Modal ══ -->
+<div class="overlay" id="scanOverlay" style="display:none" onclick="if(event.target===this)toggleScanModal()">
+  <div class="scan-modal" id="scanModal">
+    <div class="scan-modal-head">
+      <span class="scan-modal-title">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#00a884" style="vertical-align:middle;margin-left:6px"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h-2v2h-2v-2h-2v2h2v2h-2v2h2v-2h2v2h2v-2h-2v-2h2v-2zm0 6h-2v-2h2v2z"/></svg>
+        Connecter le bot à WhatsApp
+      </span>
+      <button class="scan-modal-close" onclick="toggleScanModal()">✕</button>
+    </div>
+    <div class="scan-cards" id="scanCards">
+      <div style="text-align:center;padding:32px;color:#8696a0">⏳ Chargement...</div>
+    </div>
+    <div class="scan-modal-foot">
+      <a href="/qr" target="_blank" style="color:#00a884;font-size:0.8rem;text-decoration:none">Ouvrir la page complète ›</a>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
+
+<script>
+// ── New-chat WhatsApp verification ────────────────────────────────────────
+let _ncTimer = null;
+let _ncData  = null;
+
+function ncDebounce() {
+  clearTimeout(_ncTimer);
+  document.getElementById("ncPreview").classList.remove("show");
+  _ncData = null;
+  document.getElementById("ncOpenBtn").disabled = true;
+  const v = document.getElementById("newChatPhone").value.replace(/\D/g,"");
+  if (v.length >= 7) _ncTimer = setTimeout(ncCheck, 700);
+}
+
+async function ncCheck() {
+  clearTimeout(_ncTimer);
+  const raw = document.getElementById("newChatPhone").value.trim();
+  if (!raw || raw.replace(/\D/g,"").length < 7) return;
+
+  const btn = document.getElementById("ncCheckBtn");
+  btn.textContent = "⏳"; btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/contacts/check-wa?phone=${encodeURIComponent(raw)}`);
+    const d   = await res.json();
+    _ncData   = d;
+
+    const avEl  = document.getElementById("ncAv");
+    const nmEl  = document.getElementById("ncPName");
+    const stEl  = document.getElementById("ncPStatus");
+    const openB = document.getElementById("ncOpenBtn");
+    const prev  = document.getElementById("ncPreview");
+
+    avEl.style.background = d.name ? avatarColor(d.name) : "#374045";
+    if (d.photo) {
+      avEl.innerHTML = `<img src="${d.photo}" onerror="this.parentElement.innerHTML='${(d.name||"?")[0].toUpperCase()}'">`;
+    } else {
+      avEl.innerHTML = (d.name || d.phone || "?")[0].toUpperCase();
+    }
+
+    if (d.registered) {
+      nmEl.textContent    = d.name || d.phone || raw;
+      stEl.textContent    = "✅ Inscrit sur WhatsApp — +" + (d.phone || raw.replace(/\D/g,""));
+      stEl.style.color    = "#25d366";
+      openB.disabled      = false;
+    } else if (d.error) {
+      nmEl.textContent    = raw;
+      stEl.textContent    = "⚠️ " + d.error;
+      stEl.style.color    = "#f0ad4e";
+      openB.disabled      = true;
+    } else {
+      nmEl.textContent    = d.phone || raw.replace(/\D/g,"");
+      stEl.textContent    = "❌ Non inscrit sur WhatsApp";
+      stEl.style.color    = "#e74c3c";
+      openB.disabled      = true;
+    }
+    prev.classList.add("show");
+  } catch(e) {
+    showToast("❌ " + e.message);
+  } finally {
+    btn.textContent = "🔍"; btn.disabled = false;
+  }
+}
+
+function ncOpen() {
+  if (!_ncData || !_ncData.registered) return;
+
+  const d    = _ncData;
+  const phone = d.phone || document.getElementById("newChatPhone").value.replace(/\D/g,"");
+  selectedPhone  = phone;
+  selectedCid    = d.cid ? String(d.cid) : "";
+  selectedName   = d.name || phone;
+  selectedColor  = avatarColor(selectedName);
+  selectedSource = "whatsapp";
+  selectedFbId   = "";
+
+  lastMessageId = 0; lastDateRendered = "";
+  socketSeenId.clear(); socketSeenSig.clear();
+  _ncData = null;
+
+  socket.emit("join", normalizeKey(phone));
+  document.getElementById("newChatBar").classList.remove("open");
+  document.getElementById("ncPreview").classList.remove("show");
+
+  setViewTab("msgs");
+  document.getElementById("noSelection").style.display = "none";
+  document.getElementById("chatView").classList.add("open");
+  showChatPanel();
+
+  const av = document.getElementById("chatAvatar");
+  av.style.background = selectedColor;
+  if (d.photo) {
+    av.innerHTML = `<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.innerHTML='${selectedName[0].toUpperCase()}'">`;
+  } else {
+    av.textContent = selectedName[0].toUpperCase();
+  }
+  document.getElementById("chatName").textContent  = selectedName;
+  document.getElementById("chatPhone").textContent = "+" + phone;
+
+  loadMessages(true);
+  loadBlockStatus(phone);
+}
+
+function captureChat() {
+  const wrap  = document.getElementById("messagesWrap");
+  if (!wrap) return;
+  const name  = document.getElementById("chatName")?.textContent?.trim()  || "—";
+  const phone = document.getElementById("chatPhone")?.textContent?.trim() || "";
+  const date  = new Date().toLocaleDateString("fr-FR", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  const origin = location.origin;
+  const html = wrap.innerHTML
+    .replace(/(src|href)="(\/uploads\/[^"]+)"/g, `$1="${origin}$2"`)
+    .replace(/(src|href)="(\/api\/[^"]+)"/g,     `$1="${origin}$2"`);
+
+  const w = window.open("", "_blank", "width=720,height=900,scrollbars=yes,resizable=yes");
+  w.document.write(`<!DOCTYPE html>
+<html lang="fr" dir="ltr"><head>
+<meta charset="UTF-8">
+<title>Conversation — ${name}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;background:#efeae2;direction:ltr;color:#111b21}
+.ph{background:#075e54;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.ph .av{width:40px;height:40px;border-radius:50%;background:#128c7e;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ph .nm{font-size:1rem;font-weight:700}.ph .sb{font-size:.77rem;opacity:.75;margin-top:2px}
+.ph .dt{margin-right:auto;font-size:.72rem;opacity:.65;padding-right:8px}
+.pa{padding:10px 16px;background:#f0f2f5;border-bottom:1px solid #ddd}
+.pa button{background:#25d366;color:#fff;border:none;padding:8px 22px;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600}
+.body{padding:12px 16px 24px;overflow:hidden}
+.msg-bubble{position:relative;margin:2px 0;padding:7px 10px 20px;border-radius:8px;max-width:72%;width:fit-content;font-size:.88rem;line-height:1.45;word-break:break-word;clear:both}
+.msg-bubble.in{background:#fff;float:right;border-top-right-radius:0}
+.msg-bubble.out{background:#d9fdd3;float:left;border-top-left-radius:0}
+.msg-meta{position:absolute;bottom:4px;left:8px;font-size:.67rem;color:#8696a0;white-space:nowrap}
+.msg-bubble.out .msg-meta{left:auto;right:8px}
+.msg-date-sep{clear:both;text-align:center;margin:14px 0 8px;font-size:.73rem;color:#636e7e;background:rgba(0,0,0,.08);padding:3px 12px;border-radius:10px;width:fit-content;margin-inline:auto}
+.msg-menu-btn,.msg-menu{display:none!important}
+.source-badge,.bot-phone-badge{font-size:.63rem;background:rgba(0,0,0,.1);padding:1px 5px;border-radius:5px;margin-left:3px}
+img{max-width:230px;max-height:200px;border-radius:6px;display:block;margin:4px 0}
+video,audio{max-width:240px;display:block;margin:4px 0;border-radius:6px}
+.img-wrap,.vid-wrap,.vid-container{max-width:240px}
+.wa-media-dl{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#555;padding:6px 0}
+.wa-media-icon{font-size:1.2rem}.wa-media-btn{display:none}
+.load-older-wrap,.load-older-btn,.img-meta{display:none}
+@media print{.pa{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head><body>
+<div class="ph">
+  <div class="av">👤</div>
+  <div><div class="nm">${name}</div><div class="sb">${phone}</div></div>
+  <div class="dt">${date}</div>
+</div>
+<div class="pa">
+  <button onclick="window.print()">🖨️ Imprimer / Sauvegarder PDF</button>
+</div>
+<div class="body">${html}</div>
+</body></html>`);
+  w.document.close();
+}
+</script>
+
+<script>
+// ══ QR Scan Modal ══════════════════════════════════════════════════════════
+let _scanPollTimer = null;
+const _scanBotState = {};
+
+function toggleScanModal() {
+  const ov = document.getElementById("scanOverlay");
+  const isOpen = ov.style.display !== "none";
+  if (isOpen) {
+    ov.style.display = "none";
+    clearTimeout(_scanPollTimer);
+  } else {
+    ov.style.display = "flex";
+    _buildScanCards();
+    _refreshScan();
+  }
+}
+
+function _buildScanCards() {
+  const BOT_IDS    = ["bot1", "bot2", "bot3"];
+  const BOT_LABELS = { bot1: "Bot 1", bot2: "Bot 2", bot3: "Bot 3" };
+  document.getElementById("scanCards").innerHTML = BOT_IDS.map(id => `
+    <div class="scan-card" id="sc-${id}">
+      <div class="sc-head">
+        <span class="sc-name">🤖 ${BOT_LABELS[id]}</span>
+        <span class="sc-pill" id="sc-pill-${id}">⏳</span>
+      </div>
+      <div class="sc-body" id="sc-body-${id}">
+        <div class="sc-spinner"></div>
+      </div>
+      <div class="sc-foot" id="sc-foot-${id}"></div>
+    </div>`).join("");
+}
+
+async function _refreshScan() {
+  clearTimeout(_scanPollTimer);
+  if (document.getElementById("scanOverlay")?.style.display === "none") return;
+  try {
+    const data = await fetch("/api/qr").then(r => r.ok ? r.json() : null);
+    if (!data) return;
+    let allConnected = true;
+    for (const id of ["bot1", "bot2", "bot3"]) {
+      if (data[id]) { _updateScanCard(id, data[id]); if (!data[id].connected) allConnected = false; }
+    }
+    _scanPollTimer = setTimeout(_refreshScan, allConnected ? 8000 : 2500);
+  } catch {
+    _scanPollTimer = setTimeout(_refreshScan, 4000);
+  }
+}
+
+function _updateScanCard(id, d) {
+  const pill = document.getElementById(`sc-pill-${id}`);
+  const body = document.getElementById(`sc-body-${id}`);
+  const foot = document.getElementById(`sc-foot-${id}`);
+  if (!pill || !body || !foot) return;
+
+  if (d.connected) {
+    pill.className = "sc-pill sc-connected"; pill.textContent = "✅ Connecté";
+    body.innerHTML = `<div class="sc-ok"><div class="sc-check">✅</div><span>Connecté et actif</span></div>`;
+    foot.innerHTML = d.phone
+      ? `<div class="sc-phone">📞 +${d.phone}</div>
+         <button class="sc-btn sc-btn-red" onclick="_scanRestart('${id}')">🔌 Déconnecter et générer QR</button>`
+      : `<button class="sc-btn sc-btn-red" onclick="_scanRestart('${id}')">🔌 Déconnecter</button>`;
+  } else if (d.qr) {
+    if (d.qr !== (_scanBotState[id] || {}).qr) {
+      _scanBotState[id] = { qr: d.qr };
+      const ts = Date.now();
+      body.innerHTML = `<img src="/api/qr-image/${id}?t=${ts}" width="180" height="180" style="border-radius:8px;display:block;margin:0 auto" alt="QR">`;
+    }
+    pill.className = "sc-pill sc-scanning"; pill.textContent = "📷 Scan";
+    foot.innerHTML = `
+      <ol class="sc-steps">
+        <li>Ouvrez WhatsApp sur votre téléphone</li>
+        <li>⋮ → Appareils liés → Associer un appareil</li>
+        <li>Scannez le code avec la caméra ⬆️</li>
+      </ol>
+      <button class="sc-btn" onclick="_scanRestart('${id}')">🔄 Nouveau code</button>`;
+  } else {
+    pill.className = "sc-pill sc-waiting"; pill.textContent = "⏳ En attente";
+    body.innerHTML = `<div style="text-align:center;padding:16px"><div class="sc-spinner"></div></div>`;
+    foot.innerHTML = `<button class="sc-btn" onclick="_scanRestart('${id}')">▶ Démarrer et générer QR</button>`;
+  }
+}
+
+async function _scanRestart(id) {
+  const foot = document.getElementById(`sc-foot-${id}`);
+  const body = document.getElementById(`sc-body-${id}`);
+  if (body) body.innerHTML = `<div style="text-align:center;padding:16px"><div class="sc-spinner"></div></div>`;
+  if (foot) foot.innerHTML = "";
+  _scanBotState[id] = {};
+  try {
+    await fetch(`/api/restart-bot/${id}`, { method: "POST" });
+    setTimeout(_refreshScan, 3000);
+  } catch { _refreshScan(); }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.getElementById("scanOverlay")?.style.display !== "none")
+    toggleScanModal();
+});
+</script>
 
 <script src="/js/nav.js"></script>
 <script src="/socket.io/socket.io.js"></script>

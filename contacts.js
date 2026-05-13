@@ -56,12 +56,15 @@ async function getStats() {
 
 async function getAllContacts({ limit = 1000, offset = 0, search = "" } = {}) {
   try {
-    const lim   = Math.min(parseInt(limit) || 1000, 2000);
+    const lim      = Math.min(parseInt(limit) || 1000, 2000);
+    const sd       = String(search || "").replace(/\D/g, "");
+    const phoneKey = sd.startsWith("00") ? sd.slice(2).slice(-9) : sd.length > 9 ? sd.slice(-9) : sd;
+    const usePhone = phoneKey.length >= 6;
     const where = search
-      ? `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0) AND (c.name LIKE ? OR c.phone LIKE ?)`
+      ? `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0) AND (c.name LIKE ? OR c.phone LIKE ?${usePhone ? " OR RIGHT(c.phone,9) = ?" : ""})`
       : `WHERE (c.is_deleted IS NULL OR c.is_deleted = 0)`;
     const params = search
-      ? [`%${search}%`, `%${search}%`, lim, offset]
+      ? (usePhone ? [`%${search}%`, `%${search}%`, phoneKey, lim, offset] : [`%${search}%`, `%${search}%`, lim, offset])
       : [lim, offset];
 
     const [rows] = await pool.query(`

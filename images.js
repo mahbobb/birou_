@@ -1,33 +1,51 @@
-const pool = require("./db");
-const fs   = require("fs");
-const path = require("path");
+const pool   = require("./db");
+const fs     = require("fs");
+const path   = require("path");
+const crypto = require("crypto");
 
 const IMAGES_DIR = path.join(__dirname, "public", "uploads", "images");
 if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
-// ─── حفظ صورة ─────────────────────────────────────────────────────────────
-
+// ─── حفظ صورة (مع dedup par contenu) ─────────────────────────────────────
 async function saveImage(phone, name, media, createdAt = null) {
   try {
+    const rawData = (media.data || "").includes(",") ? media.data.split(",")[1] : media.data;
+    const buffer  = Buffer.from(rawData, "base64");
+
+    // ── hash SHA-256 du contenu ───────────────────────────────────────────
+    const hash     = crypto.createHash("sha256").update(buffer).digest("hex");
+    const last9    = String(phone).replace(/\D/g, "").slice(-9);
+
+    // ── Vérifier si (phone, hash) existe déjà ────────────────────────────
+    const [[existing]] = await pool.query(
+      `SELECT filename FROM images
+       WHERE content_hash = ? AND RIGHT(phone, 9) = ? LIMIT 1`,
+      [hash, last9]
+    );
+    if (existing) {
+      console.log(`⚡ image déjà enregistrée pour ${phone}: ${existing.filename}`);
+      return existing.filename;
+    }
+
     const ext      = (media.mimetype || "image/jpeg").split("/")[1].split(";")[0] || "jpg";
     const ts       = createdAt ? new Date(createdAt).getTime() : Date.now();
     const filename = `${ts}_${phone}.${ext}`;
     const filepath = path.join(IMAGES_DIR, filename);
 
-    const rawData = (media.data || "").includes(",") ? media.data.split(",")[1] : media.data;
-    const buffer  = Buffer.from(rawData, "base64");
     fs.writeFileSync(filepath, buffer);
 
     const created = createdAt ? new Date(createdAt) : new Date();
 
-    // INSERT IGNORE: UNIQUE(filename) يمنع حفظ نفس الملف مرتين
+    // INSERT IGNORE: double garde — UNIQUE(filename) + UNIQUE(phone, content_hash)
     await pool.query(
-      `INSERT IGNORE INTO images (phone, name, filename, mimetype, filesize, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [phone, name || "غير معروف", filename, media.mimetype || "image/jpeg", buffer.length, created]
+      `INSERT IGNORE INTO images
+         (phone, name, filename, mimetype, filesize, content_hash, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [phone, name || "غير معروف", filename, media.mimetype || "image/jpeg",
+       buffer.length, hash, created]
     );
 
-    console.log(`📸 صورة محفوظة من ${name} (${phone}): ${filename}`);
+    console.log(`📸 image enregistrée — ${name} (${phone}): ${filename}`);
     return filename;
   } catch (err) {
     console.error("❌ خطأ في حفظ الصورة:", err.message);
@@ -84,4 +102,15 @@ async function deleteImage(id) {
   }
 }
 
-module.exports = { saveImage, getImages, getImageStats, deleteImage };
+// ─── Mettre à jour la note d'une image ────────────────────────────────────────
+async function updateImageNote(id, note) {
+  try {
+    await pool.query(`UPDATE images SET note = ? WHERE id = ?`, [note || null, id]);
+    return true;
+  } catch (err) {
+    console.error("❌ خطأ في حفظ الملاحظة:", err.message);
+    return false;
+  }
+}
+
+module.exports = { saveImage, getImages, getImageStats, deleteImage, updateImageNote };

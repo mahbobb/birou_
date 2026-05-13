@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Galerie photos — WhatsApp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#075e54;--teal:#128c7e;--g:#25d366;
+  --bg:#f0f2f5;--bd:#e0e0e0;--sw:268px;
+}
+html,body{height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;
+  background:var(--bg);color:#111b21;direction:ltr}
+body{display:flex;flex-direction:column}
+
+/* ─── Header ─── */
+header{
+  height:56px;background:var(--green);color:#fff;
+  display:flex;align-items:center;gap:12px;padding:0 18px;
+  flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:50;
+}
+.h-title{font-size:1.05rem;font-weight:700;flex:1}
+.h-stat{font-size:.78rem;background:rgba(255,255,255,.15);padding:4px 11px;border-radius:11px}
+.h-stat b{font-weight:800}
+.nav-link{color:rgba(255,255,255,.8);text-decoration:none;font-size:.8rem;padding:5px 10px;border-radius:8px}
+.nav-link:hover{background:rgba(255,255,255,.15);color:#fff}
+
+/* ─── Layout ─── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  width:var(--sw);flex-shrink:0;background:#fff;
+  border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;
+}
+.sb-search{padding:9px 12px;background:#f6f6f6;border-bottom:1px solid #eee}
+.sb-search input{
+  width:100%;border:none;background:#fff;padding:8px 14px;
+  border-radius:18px;font-size:.85rem;outline:none;color:#333;font-family:inherit;
+}
+.sb-info{
+  padding:6px 14px;background:#f0f7f5;border-bottom:1px solid #e4eeec;
+  font-size:.75rem;color:#666;
+}
+.sb-info b{color:var(--green)}
+.clist{flex:1;overflow-y:auto}
+.clist::-webkit-scrollbar{width:4px}
+.clist::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+
+.ci{
+  display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;
+  border-bottom:1px solid #f5f5f5;transition:background .12s;
+}
+.ci:hover{background:#f5f5f5}
+.ci.on{background:#e4f0ee;border-left:3px solid var(--teal)}
+.ci-thumb{
+  width:46px;height:46px;border-radius:8px;
+  overflow:hidden;flex-shrink:0;background:#ddd;position:relative;
+}
+.ci-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ci-thumb .cnt-badge{
+  position:absolute;bottom:2px;right:2px;
+  background:rgba(0,0,0,.6);color:#fff;
+  font-size:.55rem;font-weight:700;padding:1px 4px;border-radius:5px;
+}
+.ci-body{flex:1;min-width:0}
+.ci-name{font-size:.87rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-sub{font-size:.72rem;color:#aaa;margin-top:2px}
+.ci-cnt{
+  background:var(--teal);color:#fff;
+  font-size:.65rem;font-weight:700;
+  padding:2px 7px;border-radius:10px;flex-shrink:0;
+}
+
+/* ─── Main ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-head{
+  background:#fff;border-bottom:1px solid var(--bd);
+  padding:9px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.main-head h2{font-size:.93rem;font-weight:700;color:var(--green);flex:1}
+.view-cnt{font-size:.77rem;color:#999}
+.btn-back{
+  background:none;border:1px solid #ddd;padding:5px 13px;
+  border-radius:8px;font-size:.8rem;cursor:pointer;
+  color:var(--green);font-family:inherit;display:none;transition:background .15s;
+}
+.btn-back.show{display:block}
+.btn-back:hover{background:#f0f0f0}
+
+/* ─── Gallery wrap ─── */
+.gallery-wrap{flex:1;overflow-y:auto;padding:12px}
+.gallery-wrap::-webkit-scrollbar{width:5px}
+.gallery-wrap::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+
+/* ─── Contact cards (view=contacts) ─── */
+.contact-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:10px;
+}
+.ccard{
+  border-radius:12px;overflow:hidden;background:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,.1);cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+}
+.ccard:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.ccard-img{
+  width:100%;aspect-ratio:1;overflow:hidden;position:relative;background:#ddd;
+}
+.ccard-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.ccard:hover .ccard-img img{transform:scale(1.05)}
+.ccard-more{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.42);color:#fff;
+  font-size:1.4rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  letter-spacing:.5px;
+}
+.ccard-foot{
+  padding:9px 11px;display:flex;align-items:center;gap:8px;
+}
+.ccard-av{
+  width:30px;height:30px;border-radius:50%;
+  background:#ddd;flex-shrink:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;color:#888;
+}
+.ccard-av img{width:100%;height:100%;object-fit:cover}
+.ccard-info{flex:1;min-width:0}
+.ccard-name{font-size:.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccard-date{font-size:.66rem;color:#aaa;margin-top:1px}
+
+/* ─── Image grid (view=gallery) ─── */
+.img-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:8px;
+}
+.img-card{
+  border-radius:10px;overflow:hidden;background:#ddd;
+  cursor:pointer;position:relative;aspect-ratio:1;
+  box-shadow:0 1px 4px rgba(0,0,0,.1);
+  transition:transform .15s,box-shadow .15s;
+}
+.img-card:hover{transform:scale(1.025);box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.img-card img{width:100%;height:100%;object-fit:cover;display:block}
+.img-card img.lz{opacity:0;transition:opacity .25s}
+.img-card img.lz.loaded{opacity:1}
+.card-overlay{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.65));
+  padding:22px 8px 7px;
+  display:flex;justify-content:space-between;align-items:flex-end;
+}
+.card-date{font-size:.63rem;color:rgba(255,255,255,.8);flex-shrink:0}
+.card-sz{font-size:.6rem;color:rgba(255,255,255,.6)}
+.card-del{
+  position:absolute;top:6px;right:6px;
+  background:rgba(0,0,0,.55);color:#fff;border:none;
+  width:26px;height:26px;border-radius:50%;
+  font-size:.75rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;z-index:5;
+}
+.img-card:hover .card-del{opacity:1}
+.card-del:hover{background:rgba(231,76,60,.85)!important}
+
+/* ─── Load more ─── */
+.load-more-wrap{text-align:center;padding:16px}
+.btn-lm{
+  background:#fff;border:1px solid #ddd;padding:8px 26px;
+  border-radius:18px;font-size:.83rem;cursor:pointer;
+  color:#555;font-family:inherit;transition:background .15s;
+}
+.btn-lm:hover{background:#f0f0f0}
+
+/* ─── Empty / spin ─── */
+.empty-msg{
+  padding:60px 20px;text-align:center;color:#bbb;
+  font-size:.88rem;display:flex;flex-direction:column;
+  align-items:center;gap:12px;
+}
+.empty-msg .ico{font-size:3rem;opacity:.3}
+.spin{
+  display:inline-block;width:20px;height:20px;
+  border:3px solid #ddd;border-top-color:var(--teal);
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ─── Lightbox ─── */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:500;display:none;flex-direction:column}
+#lb.open{display:flex}
+.lb-top{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;
+  flex-shrink:0;background:rgba(0,0,0,.5);
+}
+.lb-av{
+  width:38px;height:38px;border-radius:50%;background:#555;
+  overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:.95rem;
+}
+.lb-av img{width:100%;height:100%;object-fit:cover}
+.lb-info{flex:1;color:#fff}
+.lb-name{font-size:.92rem;font-weight:700}
+.lb-date{font-size:.72rem;color:rgba(255,255,255,.55);margin-top:1px}
+.lb-acts{display:flex;gap:7px}
+.lb-btn{
+  background:rgba(255,255,255,.12);border:none;color:#fff;
+  padding:7px 14px;border-radius:9px;cursor:pointer;
+  font-size:.78rem;font-family:inherit;transition:background .15s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:5px;
+}
+.lb-btn:hover{background:rgba(255,255,255,.25)}
+.lb-btn.red{background:rgba(231,76,60,.4)}
+.lb-btn.red:hover{background:rgba(231,76,60,.8)}
+.lb-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:12px;position:relative;overflow:hidden;
+}
+.lb-body img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;user-select:none}
+.lb-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.13);border:none;color:#fff;
+  width:48px;height:48px;border-radius:50%;font-size:1.3rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s;
+}
+.lb-nav:hover{background:rgba(255,255,255,.28)}
+.lb-prev{left:14px}.lb-next{right:14px}
+.lb-strip{
+  display:flex;gap:5px;padding:8px 14px;overflow-x:auto;
+  background:rgba(0,0,0,.4);flex-shrink:0;
+}
+.lb-strip::-webkit-scrollbar{height:3px}
+.lb-strip::-webkit-scrollbar-thumb{background:#555}
+.lb-thumb{
+  width:52px;height:52px;border-radius:6px;
+  overflow:hidden;flex-shrink:0;cursor:pointer;
+  opacity:.55;transition:opacity .15s,outline .15s;outline:2px solid transparent;
+}
+.lb-thumb.on{opacity:1;outline-color:var(--g)}
+.lb-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lb-counter{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.55);color:rgba(255,255,255,.7);
+  font-size:.73rem;padding:3px 10px;border-radius:10px;pointer-events:none;
+}
+
+/* ─── Toast ─── */
+#toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:#1a1a2e;color:#fff;padding:9px 20px;border-radius:10px;
+  font-size:.84rem;opacity:0;transition:opacity .3s,bottom .3s;pointer-events:none;z-index:1100;
+}
+#toast.show{opacity:1}
+#selBar.show + #toast,
+#selBar.show ~ #toast{ bottom:70px }
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+
+/* ─── Select button (in main-head white bar) ─── */
+.btn-sel{
+  display:none;background:var(--teal);color:#fff;border:none;
+  padding:6px 15px;border-radius:9px;font-size:.8rem;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:background .15s,transform .1s;
+  white-space:nowrap;
+}
+.btn-sel:hover{background:var(--green)}
+.btn-sel.active{background:#e74c3c}
+.btn-sel.active:hover{background:#c0392b}
+.btn-sel:active{transform:scale(.95)}
+.btn-sel.show{display:block}
+
+/* ─── Selection mode on cards ─── */
+.sel-check{
+  position:absolute;top:6px;right:6px;
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(0,0,0,.35);border:2.5px solid #fff;
+  display:none;align-items:center;justify-content:center;
+  z-index:6;font-size:.8rem;pointer-events:none;transition:background .15s;
+}
+body.sel-mode .sel-check{display:flex}
+body.sel-mode .img-card{cursor:pointer}
+body.sel-mode .img-card.sel-on .sel-check{
+  background:var(--g);border-color:var(--g);color:#fff;
+}
+body.sel-mode .img-card.sel-on::after{
+  content:'';position:absolute;inset:0;
+  border:3px solid var(--g);border-radius:10px;pointer-events:none;z-index:4;
+}
+
+/* ─── Bottom selection bar ─── */
+#selBar{
+  position:fixed;bottom:-100px;left:0;right:0;
+  background:#fff;border-top:2px solid var(--teal);
+  padding:10px 18px;
+  display:flex;align-items:center;gap:8px;
+  direction:ltr;
+  z-index:1000;transition:bottom .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 -4px 24px rgba(0,0,0,.16);
+}
+#selBar.show{bottom:0}
+.sel-cnt{
+  font-size:.88rem;font-weight:700;flex:1;color:var(--green);
+  white-space:nowrap;
+}
+.sel-prog{
+  font-size:.72rem;color:#888;display:none;
+  white-space:nowrap;padding:0 6px;
+}
+.sbtn{
+  border:none;padding:8px 16px;border-radius:9px;
+  font-size:.81rem;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:background .15s,transform .1s;
+  white-space:nowrap;flex-shrink:0;
+}
+.sbtn:active{transform:scale(.95)}
+.sbtn-all{background:#eef6ff;color:#1976d2;border:1px solid #bbdefb}
+.sbtn-all:hover{background:#ddeeff}
+.sbtn-dl{
+  background:var(--g);color:#fff;
+  display:inline-flex;align-items:center;gap:5px;
+  box-shadow:0 2px 8px rgba(37,211,102,.35);
+}
+.sbtn-dl:hover{background:#1eb855}
+.sbtn-dl:disabled{background:#aaa;box-shadow:none;cursor:not-allowed}
+.sbtn-cancel{background:#fff0f0;color:#e74c3c;border:1px solid #f5c6cb}
+.sbtn-cancel:hover{background:#ffe0e0}
+
+/* push toast up when selBar is open */
+#selBar.show ~ #toast{ bottom:72px }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.3rem">🖼️</span>
+  <span class="h-title">Galerie photos</span>
+  <span class="h-stat" id="hStat"><span class="spin"></span></span>
+  <a class="nav-link" href="/dashboard">🏠 Tableau de bord</a>
+  <a class="nav-link" href="/archive">🗄️ Archive</a>
+</header>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-search">
+      <input id="sbSearch" type="search" placeholder="🔍  Rechercher un contact…" oninput="filterSidebar()">
+    </div>
+    <div class="sb-info" id="sbInfo">Chargement…</div>
+    <div class="clist" id="clist">
+      <div class="empty-msg"><span class="spin"></span></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="main-head">
+      <button class="btn-back" id="btnBack" onclick="backToContacts()">← Retour</button>
+      <h2 id="mainTitle">📷 Tous les contacts</h2>
+      <span class="view-cnt" id="viewCnt"></span>
+      <button class="btn-sel" id="btnSel" onclick="toggleSelMode()">☑ Sélectionner</button>
+    </div>
+    <div class="gallery-wrap" id="galleryWrap">
+      <div id="mainGrid"></div>
+      <div id="lmWrap" class="load-more-wrap" style="display:none">
+        <button class="btn-lm" onclick="loadMoreImgs()">⬇ Charger plus</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Lightbox -->
+<div id="lb">
+  <div class="lb-top">
+    <div class="lb-av" id="lbAv"></div>
+    <div class="lb-info">
+      <div class="lb-name" id="lbName"></div>
+      <div class="lb-date" id="lbDate"></div>
+    </div>
+    <div class="lb-acts">
+      <a class="lb-btn" id="lbDl" href="#" download>⬇ Télécharger</a>
+      <button class="lb-btn red" onclick="deleteLbImg()">🗑️ Supprimer</button>
+      <button class="lb-btn" onclick="closeLb()">✕</button>
+    </div>
+  </div>
+  <div class="lb-body">
+    <img id="lbImg" src="" alt="">
+    <button class="lb-nav lb-prev" onclick="navLb(1)">❯</button>
+    <button class="lb-nav lb-next" onclick="navLb(-1)">❮</button>
+    <span class="lb-counter" id="lbCounter"></span>
+  </div>
+  <div class="lb-strip" id="lbStrip"></div>
+</div>
+
+<!-- Bottom multi-select / download bar -->
+<div id="selBar">
+  <button class="sbtn sbtn-cancel" onclick="clearSel()">✕</button>
+  <span class="sel-cnt" id="selCnt">0 photo sélectionnée</span>
+  <span class="sel-prog" id="selProg"></span>
+  <button class="sbtn sbtn-all" onclick="selectAll()">☑ Tout sélectionner</button>
+  <button class="sbtn sbtn-dl" id="btnDl" onclick="downloadSelected()">⬇ Télécharger ZIP</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// Constants & State
+// ══════════════════════════════════════════════════
+const COLORS = ["#075e54","#128c7e","#1976d2","#7b1fa2","#e65100","#c62828","#00796b","#ad1457"];
+const LIMIT  = 60;
+
+let allContacts  = [];    // from /api/images/contacts
+let view         = "contacts";  // "contacts" | "gallery"
+let selContact   = null;  // current contact object
+let imgs         = [];    // images for current gallery view
+let imgOffset    = 0;
+let imgHasMore   = true;
+let lbIdx        = 0;
+
+// ─── Multi-select state ───────────────────────────────────────────────────
+let selMode  = false;
+const selSet = new Set(); // selected image IDs
+
+// ══════════════════════════════════════════════════
+// Boot
+// ══════════════════════════════════════════════════
+(async () => {
+  await Promise.all([ loadStats(), loadContacts() ]);
+})();
+
+// ══════════════════════════════════════════════════
+// Stats
+// ══════════════════════════════════════════════════
+async function loadStats() {
+  try {
+    const d = await fetch("/api/images/stats").then(r => r.json());
+    document.getElementById("hStat").innerHTML =
+      `<b>${fmtN(d.total)}</b> photo(s) &nbsp;·&nbsp; Aujourd'hui : <b>${fmtN(d.today)}</b>`;
+  } catch { document.getElementById("hStat").textContent = ""; }
+}
+
+// ══════════════════════════════════════════════════
+// Sidebar contacts
+// ══════════════════════════════════════════════════
+async function loadContacts() {
+  try {
+    const data  = await fetch("/api/images/contacts").then(r => r.json());
+    allContacts = Array.isArray(data) ? data : [];
+    renderSidebar(allContacts);
+    // default: show contact cards
+    renderContactCards(allContacts);
+  } catch {
+    document.getElementById("clist").innerHTML =
+      '<div class="empty-msg" style="color:#e74c3c">❌ Erreur de chargement des contacts</div>';
+  }
+}
+
+function renderSidebar(list) {
+  const totalImgs = list.reduce((s, c) => s + (+c.img_count || 0), 0);
+  document.getElementById("sbInfo").innerHTML =
+    `<b>${list.length}</b> contact(s) &nbsp;·&nbsp; <b>${fmtN(totalImgs)}</b> photo(s)`;
+
+  const allRow = `
+    <div class="ci ${!selContact ? 'on' : ''}" onclick="backToContacts()">
+      <div class="ci-thumb" style="background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.3rem">🖼️</div>
+      <div class="ci-body">
+        <div class="ci-name">Toutes les photos</div>
+        <div class="ci-sub">${list.length} contact(s)</div>
+      </div>
+      <span class="ci-cnt">${fmtN(totalImgs)}</span>
+    </div>`;
+
+  document.getElementById("clist").innerHTML = allRow + list.map(c => {
+    const col    = colorOf(c.phone);
+    const ini    = (c.name || c.phone || "?")[0];
+    const thumb  = c.latest_img
+      ? `<img src="/uploads/images/${esc(c.latest_img)}" loading="lazy" alt="">`
+      : `<div style="width:100%;height:100%;background:${col};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1rem">${esc(ini)}</div>`;
+    const active = selContact?.phone === c.phone ? ' on' : '';
+    const ph     = c.phone.replace(/'/g, "\\'");
+    return `
+      <div class="ci${active}" onclick="openContactGallery('${ph}')">
+        <div class="ci-thumb">
+          ${thumb}
+          ${+c.img_count > 1 ? `<span class="cnt-badge">${c.img_count}</span>` : ''}
+        </div>
+        <div class="ci-body">
+          <div class="ci-name">${esc(c.name || c.phone)}</div>
+          <div class="ci-sub">${fmtN(c.img_count)} photo(s)</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterSidebar() {
+  const q = document.getElementById("sbSearch").value.trim().toLowerCase();
+  const f = q ? allContacts.filter(c =>
+    (c.name || "").toLowerCase().includes(q) || (c.phone || "").includes(q))
+    : allContacts;
+  renderSidebar(f);
+}
+
+// ══════════════════════════════════════════════════
+// View: Contact cards (one per phone)
+// ══════════════════════════════════════════════════
+function renderContactCards(list) {
+  view = "contacts";
+  selContact = null;
+  document.getElementById("btnBack").classList.remove("show");
+  document.getElementById("mainTitle").textContent = "📷 Tous les contacts";
+  document.getElementById("viewCnt").textContent   = `${list.length} contact(s)`;
+  document.getElementById("lmWrap").style.display  = "none";
+
+  if (!list.length) {
+    document.getElementById("mainGrid").innerHTML =
+      '<div class="empty-msg"><div class="ico">🖼️</div><span>Aucune photo</span></div>';
+    return;
+  }
+
+  document.getElementById("mainGrid").innerHTML =
+    `<div class="contact-grid">${list.map(c => contactCardHTML(c)).join('')}</div>`;
+
+  lazyLoadAll();
+}
+
+function contactCardHTML(c) {
+  const col   = colorOf(c.phone);
+  const ini   = (c.name || c.phone || "?")[0];
+  const thumb = c.latest_img
+    ? `<img src="/uploads/images/${esc(c.latest_img)}" class="lz" alt="" onload="this.classList.add('loaded')">`
+    : `<div style="width:100%;height:100%;background:${col};display:flex;align-items:center;justify-content:center;color:#fff;font-size:2rem;font-weight:700">${esc(ini)}</div>`;
+  const more  = +c.img_count > 1 ? `<div class="ccard-more">+${c.img_count - 1}</div>` : '';
+  const avSrc = c.photo
+    ? `<img src="/uploads/photos/${esc(c.photo)}" onerror="this.outerHTML='${esc(ini)}';">`
+    : esc(ini);
+  const ph = c.phone.replace(/'/g, "\\'");
+  return `
+    <div class="ccard" onclick="openContactGallery('${ph}')">
+      <div class="ccard-img">${thumb}${more}</div>
+      <div class="ccard-foot">
+        <div class="ccard-av" style="background:${col}">${avSrc}</div>
+        <div class="ccard-info">
+          <div class="ccard-name">${esc(c.name || c.phone)}</div>
+          <div class="ccard-date">${fmtN(c.img_count)} photo(s) · ${fmtDate(new Date(c.last_at))}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════
+// View: Gallery for one contact
+// ══════════════════════════════════════════════════
+async function openContactGallery(phone) {
+  selContact  = allContacts.find(c => c.phone === phone) || { phone, name: phone };
+  view        = "gallery";
+  imgs        = [];
+  imgOffset   = 0;
+  imgHasMore  = true;
+  clearSel(true); // reset selection silently
+
+  document.getElementById("btnBack").classList.add("show");
+  document.getElementById("btnSel").classList.add("show");
+  document.getElementById("mainTitle").textContent =
+    `📷 ${esc(selContact.name || selContact.phone)}`;
+  document.getElementById("viewCnt").textContent = "";
+  document.getElementById("mainGrid").innerHTML  =
+    '<div class="empty-msg"><span class="spin"></span> Chargement…</div>';
+
+  // highlight sidebar
+  document.querySelectorAll(".ci").forEach(el => el.classList.remove("on"));
+  document.querySelector(`.ci[onclick="openContactGallery('${phone.replace(/'/g,"\\'")}')"]`)
+    ?.classList.add("on");
+
+  await fetchContactImgs();
+}
+
+async function fetchContactImgs() {
+  if (!imgHasMore || !selContact) return;
+  try {
+    const url  = `/api/images?phone=${encodeURIComponent(selContact.phone)}&limit=${LIMIT}&offset=${imgOffset}`;
+    const data = await fetch(url).then(r => r.json());
+    const rows = Array.isArray(data) ? data : [];
+    if (rows.length < LIMIT) imgHasMore = false;
+    document.getElementById("lmWrap").style.display = imgHasMore ? "block" : "none";
+
+    if (imgOffset === 0) {
+      imgs = rows;
+      if (!rows.length) {
+        document.getElementById("mainGrid").innerHTML =
+          '<div class="empty-msg"><div class="ico">🖼️</div><span>Aucune photo pour ce contact</span></div>';
+        return;
+      }
+      document.getElementById("mainGrid").innerHTML =
+        `<div class="img-grid">${rows.map((img, i) => imgCardHTML(img, i)).join('')}</div>`;
+    } else {
+      const start = imgs.length;
+      imgs.push(...rows);
+      rows.forEach((img, i) =>
+        document.querySelector(".img-grid")
+          .insertAdjacentHTML("beforeend", imgCardHTML(img, start + i)));
+    }
+
+    imgOffset += rows.length;
+    document.getElementById("viewCnt").textContent = `${fmtN(imgs.length)} photo(s)`;
+    lazyLoadAll();
+  } catch(e) {
+    document.getElementById("mainGrid").innerHTML =
+      `<div class="empty-msg" style="color:#e74c3c">❌ ${e.message}</div>`;
+  }
+}
+
+function loadMoreImgs() { fetchContactImgs(); }
+
+// scroll to load more
+document.getElementById("galleryWrap").addEventListener("scroll", function() {
+  if (view === "gallery" && this.scrollTop + this.clientHeight >= this.scrollHeight - 200)
+    loadMoreImgs();
+});
+
+function imgCardHTML(img, idx) {
+  const url  = `/uploads/images/${esc(img.filename)}`;
+  const date = img.created_at ? fmtShort(new Date(img.created_at)) : "";
+  const kb   = img.filesize   ? Math.round(img.filesize / 1024) + " KB" : "";
+  const on   = selSet.has(img.id) ? " sel-on" : "";
+  return `
+    <div class="img-card${on}" data-id="${img.id}"
+         onclick="selMode ? toggleSelect(${img.id},this) : openLb(${idx})">
+      <img src="" data-src="${url}" class="lz" alt=""
+           onload="this.classList.add('loaded')"
+           onerror="this.closest('.img-card').style.opacity='.4';this.style.display='none'">
+      <div class="card-overlay">
+        <span class="card-date">${date}</span>
+        <span class="card-sz">${kb}</span>
+      </div>
+      <div class="sel-check">✓</div>
+      <button class="card-del"
+              onclick="event.stopPropagation();deleteImg(${img.id},${idx})"
+              title="Supprimer">✕</button>
+    </div>`;
+}
+
+function backToContacts() {
+  clearSel(true);
+  selContact = null;
+  view       = "contacts";
+  document.getElementById("btnBack").classList.remove("show");
+  document.getElementById("btnSel").classList.remove("show");
+  renderSidebar(allContacts);
+  renderContactCards(allContacts);
+}
+
+// ══════════════════════════════════════════════════
+// Lightbox
+// ══════════════════════════════════════════════════
+function openLb(idx) {
+  lbIdx = idx;
+  renderLb();
+  buildStrip();
+  document.getElementById("lb").classList.add("open");
+}
+
+function renderLb() {
+  const img  = imgs[lbIdx];
+  if (!img) return;
+  const url  = `/uploads/images/${img.filename}`;
+  const name = selContact?.name || img.name || img.phone || "—";
+  const col  = colorOf(img.phone || "");
+  const ini  = name[0];
+  const c    = allContacts.find(x => x.phone === img.phone);
+
+  const lbAv = document.getElementById("lbAv");
+  lbAv.style.background = col;
+  lbAv.innerHTML = c?.photo
+    ? `<img src="/uploads/photos/${esc(c.photo)}" onerror="this.parentElement.textContent='${esc(ini)}';">`
+    : esc(ini);
+
+  document.getElementById("lbName").textContent  = name;
+  document.getElementById("lbDate").textContent  =
+    img.created_at ? new Date(img.created_at).toLocaleString("fr-FR") : "";
+  document.getElementById("lbImg").src           = url;
+  document.getElementById("lbDl").href           = url;
+  document.getElementById("lbDl").download       = img.filename;
+  document.getElementById("lbCounter").textContent = `${lbIdx + 1} / ${imgs.length}`;
+
+  // highlight strip thumb
+  document.querySelectorAll(".lb-thumb").forEach((t, i) =>
+    t.classList.toggle("on", i === lbIdx));
+  // scroll strip to active
+  const thumb = document.querySelectorAll(".lb-thumb")[lbIdx];
+  if (thumb) thumb.scrollIntoView({ inline: "center", block: "nearest" });
+}
+
+function buildStrip() {
+  document.getElementById("lbStrip").innerHTML = imgs.map((img, i) =>
+    `<div class="lb-thumb ${i === lbIdx ? 'on' : ''}" onclick="goLb(${i})">
+      <img src="/uploads/images/${esc(img.filename)}" loading="lazy" alt="">
+    </div>`
+  ).join('');
+}
+
+function navLb(dir) {
+  lbIdx = (lbIdx + dir + imgs.length) % imgs.length;
+  renderLb();
+}
+
+function goLb(idx) { lbIdx = idx; renderLb(); }
+
+function closeLb() { document.getElementById("lb").classList.remove("open"); }
+
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("lb").classList.contains("open")) return;
+  if (e.key === "Escape")     closeLb();
+  if (e.key === "ArrowRight") navLb(1);
+  if (e.key === "ArrowLeft")  navLb(-1);
+});
+
+// ══════════════════════════════════════════════════
+// Delete
+// ══════════════════════════════════════════════════
+async function deleteImg(id, idx) {
+  if (!confirm("Supprimer cette photo définitivement ?")) return;
+  try {
+    const d = await fetch(`/api/images/${id}`, { method: "DELETE" }).then(r => r.json());
+    if (!d.ok) { toast("❌ Échec de la suppression"); return; }
+    imgs.splice(idx, 1);
+
+    // rebuild the grid
+    const grid = document.querySelector(".img-grid");
+    if (grid) grid.innerHTML = imgs.map((img, i) => imgCardHTML(img, i)).join('');
+    document.getElementById("viewCnt").textContent = `${fmtN(imgs.length)} photo(s)`;
+    lazyLoadAll();
+    toast("✅ Photo supprimée");
+
+    // refresh stats + contacts
+    loadStats();
+    const data = await fetch("/api/images/contacts").then(r => r.json());
+    allContacts = Array.isArray(data) ? data : [];
+    renderSidebar(allContacts);
+    if (!allContacts.find(c => c.phone === selContact?.phone)) {
+      backToContacts(); return;
+    }
+
+    if (document.getElementById("lb").classList.contains("open")) {
+      if (!imgs.length) { closeLb(); return; }
+      lbIdx = Math.min(lbIdx, imgs.length - 1);
+      renderLb(); buildStrip();
+    }
+  } catch { toast("❌ Erreur lors de la suppression"); }
+}
+
+async function deleteLbImg() {
+  if (imgs[lbIdx]) await deleteImg(imgs[lbIdx].id, lbIdx);
+}
+
+// ══════════════════════════════════════════════════
+// Multi-select & ZIP download
+// ══════════════════════════════════════════════════
+function toggleSelMode() {
+  selMode = !selMode;
+  document.body.classList.toggle("sel-mode", selMode);
+  const btn = document.getElementById("btnSel");
+  btn.textContent = selMode ? "✕ Annuler" : "☑ Sélectionner";
+  btn.classList.toggle("active", selMode);
+  if (!selMode) {
+    selSet.clear();
+    document.querySelectorAll(".img-card.sel-on").forEach(c => c.classList.remove("sel-on"));
+  }
+  updateSelBar();
+}
+
+function toggleSelect(id, el) {
+  if (selSet.has(id)) {
+    selSet.delete(id);
+    el.classList.remove("sel-on");
+  } else {
+    selSet.add(id);
+    el.classList.add("sel-on");
+  }
+  updateSelBar();
+}
+
+function selectAll() {
+  imgs.forEach(img => selSet.add(img.id));
+  document.querySelectorAll(".img-card").forEach(c => c.classList.add("sel-on"));
+  updateSelBar();
+}
+
+function clearSel(silent = false) {
+  selMode = false;
+  selSet.clear();
+  document.body.classList.remove("sel-mode");
+  document.querySelectorAll(".img-card.sel-on").forEach(c => c.classList.remove("sel-on"));
+  const btn = document.getElementById("btnSel");
+  btn.textContent = "☑ Sélectionner";
+  btn.classList.remove("active");
+  if (!silent) updateSelBar();
+  document.getElementById("selBar").classList.remove("show");
+}
+
+function updateSelBar() {
+  const n   = selSet.size;
+  const bar = document.getElementById("selBar");
+  const cnt = document.getElementById("selCnt");
+  cnt.textContent = n ? `${n} photo(s) sélectionnée(s)` : "Aucune photo sélectionnée";
+  cnt.style.color = n ? "var(--green)" : "#aaa";
+  document.getElementById("btnDl").disabled = n === 0;
+  if (selMode) bar.classList.add("show");
+  else         bar.classList.remove("show");
+}
+
+function _crc32(data) {
+  if (!_crc32._t) {
+    _crc32._t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crc32._t[i] = c;
+    }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) crc = _crc32._t[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function _buildZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], cds = [];
+  let off = 0;
+  for (const { name, data } of files) {
+    const nb = enc.encode(name), crc = _crc32(data), sz = data.length;
+    const lh = new Uint8Array(30 + nb.length + sz);
+    const v  = new DataView(lh.buffer);
+    v.setUint32(0,  0x04034b50, true); v.setUint16(4,  20, true);
+    v.setUint16(6,  0,          true); v.setUint16(8,  0,  true);
+    v.setUint16(10, 0,          true); v.setUint16(12, 0,  true);
+    v.setUint32(14, crc,        true); v.setUint32(18, sz, true);
+    v.setUint32(22, sz,         true); v.setUint16(26, nb.length, true);
+    v.setUint16(28, 0,          true);
+    lh.set(nb, 30); lh.set(data, 30 + nb.length);
+    const cd = new Uint8Array(46 + nb.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0,  0x02014b50, true); cv.setUint16(4,  20, true);
+    cv.setUint16(6,  20,         true); cv.setUint16(8,  0,  true);
+    cv.setUint16(10, 0,          true); cv.setUint16(12, 0,  true);
+    cv.setUint16(14, 0,          true); cv.setUint32(16, crc, true);
+    cv.setUint32(20, sz,         true); cv.setUint32(24, sz,  true);
+    cv.setUint16(28, nb.length,  true); cv.setUint16(30, 0,   true);
+    cv.setUint16(32, 0,          true); cv.setUint16(34, 0,   true);
+    cv.setUint16(36, 0,          true); cv.setUint32(38, 0,   true);
+    cv.setUint32(42, off,        true); cd.set(nb, 46);
+    parts.push(lh); cds.push(cd); off += lh.length;
+  }
+  const cdSz = cds.reduce((s, c) => s + c.length, 0);
+  const eo   = new Uint8Array(22);
+  const ev   = new DataView(eo.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(4,  0,           true);
+  ev.setUint16(6, 0,          true); ev.setUint16(8,  cds.length,  true);
+  ev.setUint16(10, cds.length, true); ev.setUint32(12, cdSz,        true);
+  ev.setUint32(16, off,        true); ev.setUint16(20, 0,           true);
+  return new Blob([...parts, ...cds, eo], { type: "application/zip" });
+}
+
+async function downloadSelected() {
+  if (!selSet.size) { toast("Sélectionnez au moins une photo"); return; }
+  const ids = [...selSet];
+
+  if (ids.length === 1) {
+    const img = imgs.find(i => i.id === ids[0]);
+    if (img) {
+      const a = document.createElement("a");
+      a.href     = `/uploads/images/${img.filename}`;
+      a.download = img.filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      toast("✅ Téléchargement en cours…");
+      clearSel();
+    }
+    return;
+  }
+
+  const sel    = imgs.filter(i => ids.includes(i.id));
+  const progEl = document.getElementById("selProg");
+  progEl.style.display = "inline";
+  progEl.textContent   = `⏳ 0 / ${sel.length}`;
+
+  try {
+    const files = [];
+    for (let i = 0; i < sel.length; i++) {
+      progEl.textContent = `⏳ ${i + 1} / ${sel.length}`;
+      const resp = await fetch(`/uploads/images/${sel[i].filename}`);
+      if (!resp.ok) continue;
+      files.push({ name: sel[i].filename, data: new Uint8Array(await resp.arrayBuffer()) });
+    }
+    if (!files.length) { toast("❌ Aucune photo trouvée"); return; }
+    const blob = _buildZip(files);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `images_${Date.now()}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast(`✅ ${files.length} photo(s) téléchargée(s)`);
+    clearSel();
+  } catch(e) {
+    toast("❌ Erreur : " + e.message);
+  } finally {
+    progEl.style.display = "none";
+  }
+}
+
+// ══════════════════════════════════════════════════
+// Lazy loading
+// ══════════════════════════════════════════════════
+function lazyLoadAll() {
+  const imgs = document.querySelectorAll("img[data-src]");
+  if (!("IntersectionObserver" in window)) {
+    imgs.forEach(img => { img.src = img.dataset.src; img.removeAttribute("data-src"); });
+    return;
+  }
+  const obs = new IntersectionObserver((entries, ob) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const img = e.target;
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+      ob.unobserve(img);
+    });
+  }, { rootMargin: "200px" });
+  imgs.forEach(img => obs.observe(img));
+}
+
+// ══════════════════════════════════════════════════
+// Utils
+// ══════════════════════════════════════════════════
+function esc(s) {
+  return String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function fmtN(n) { return Number(n || 0).toLocaleString("fr-FR"); }
+function colorOf(p) {
+  let n = 0; for (const c of String(p || "")) n += c.charCodeAt(0);
+  return COLORS[n % COLORS.length];
+}
+function fmtDate(d) {
+  if (!(d instanceof Date) || isNaN(d)) return "";
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 86400 && new Date().getDate() === d.getDate())
+    return d.toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+  if (diff < 604800) return d.toLocaleDateString("fr-FR", { weekday:"short" });
+  return d.toLocaleDateString("fr-FR", { month:"short", day:"numeric" });
+}
+function fmtShort(d) {
+  if (!(d instanceof Date) || isNaN(d)) return "";
+  return d.toLocaleDateString("fr-FR", { month:"short", day:"numeric" });
+}
+let _toastT;
+function toast(msg, dur = 2800) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove("show"), dur);
+}
+</script>
+</body>
+</html>
