@@ -232,9 +232,9 @@ async function initDb() {
   // seed: أضف أدمن افتراضي إذا الجدول فارغ
   const [uRows] = await pool.query("SELECT COUNT(*) AS cnt FROM users");
   if (uRows[0].cnt === 0) {
-    const crypto = require("crypto");
+    const bcrypt  = require("bcrypt");
     const defPass = process.env.DASHBOARD_PASSWORD || "admin123";
-    const hash = crypto.createHash("sha256").update(defPass).digest("hex");
+    const hash    = await bcrypt.hash(defPass, 12);
     await pool.query(
       "INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, 'admin')",
       ["المدير", "admin", hash]

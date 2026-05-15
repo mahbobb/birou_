@@ -11,6 +11,7 @@ if (process.platform === "win32") {
 }
 
 const crypto     = require("crypto");
+const bcrypt     = require("bcrypt");
 const rateLimit    = require("express-rate-limit");
 const compression  = require("compression");
 const { exec }   = require("child_process");
@@ -1298,18 +1299,33 @@ app.post("/api/login", loginLimiter, async (req, res) => {
   // أولاً: تحقق من جدول users
   try {
     const db   = require("./db");
-    const hash = crypto.createHash("sha256").update(password).digest("hex");
     let query, params;
     if (username) {
       query  = "SELECT * FROM users WHERE username = ? AND active = 1 LIMIT 1";
       params = [username];
     } else {
-      // fallback: أي أدمن بهذه الكلمة
       query  = "SELECT * FROM users WHERE role = 'admin' AND active = 1 LIMIT 1";
       params = [];
     }
     const [rows] = await db.query(query, params);
-    if (rows.length && rows[0].password === hash) {
+    const user = rows[0];
+    // دعم bcrypt + SHA-256 القديم (migration تلقائي)
+    let passwordOk = false;
+    if (user) {
+      const stored = user.password || "";
+      if (stored.startsWith("$2b$") || stored.startsWith("$2a$")) {
+        passwordOk = await bcrypt.compare(password, stored);
+      } else {
+        // SHA-256 قديم — تحقق ثم migrate تلقائياً
+        const sha = crypto.createHash("sha256").update(password).digest("hex");
+        if (sha === stored) {
+          passwordOk = true;
+          const newHash = await bcrypt.hash(password, 12);
+          await db.query("UPDATE users SET password=? WHERE id=?", [newHash, user.id]);
+        }
+      }
+    }
+    if (user && passwordOk) {
       const token = crypto.randomBytes(32).toString("hex");
       validTokens.add(token);
       tokenRoles.set(token, { role: rows[0].role, name: rows[0].name });
@@ -1451,7 +1467,7 @@ app.post("/api/users", async (req, res) => {
   if (password.length < 4) return res.status(400).json({ error: "كلمة المرور يجب أن تكون 4 أحرف على الأقل" });
   try {
     const db   = require("./db");
-    const hash = crypto.createHash("sha256").update(password).digest("hex");
+    const hash = await bcrypt.hash(password, 12);
     const [r]  = await db.query(
       "INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)",
       [name.trim(), username.trim().toLowerCase(), hash, role]
@@ -1474,7 +1490,7 @@ app.put("/api/users/:id", async (req, res) => {
     if (role !== undefined)   { fields.push("role = ?");   vals.push(role); }
     if (active !== undefined) { fields.push("active = ?"); vals.push(active ? 1 : 0); }
     if (password) {
-      const hash = crypto.createHash("sha256").update(password).digest("hex");
+      const hash = await bcrypt.hash(password, 12);
       fields.push("password = ?"); vals.push(hash);
     }
     if (!fields.length) return res.status(400).json({ error: "لا توجد بيانات للتحديث" });
@@ -1804,7 +1820,8 @@ app.post("/api/ai-reply/disable", (_req, res) => {
   res.json({ ok: true, aiAutoReplyEnabled });
 });
 
-app.get("/api/qr", (_req, res) => {
+app.get("/api/qr", (req, res) => {
+  if (getRole(req) !== "admin") return res.status(403).json({ error: "غير مصرح" });
   const result = {};
   for (const [id, b] of bots) {
     result[id] = { qr: b.latestQr, connected: b.botConnected, phone: b.botPhone || null };
@@ -1814,6 +1831,7 @@ app.get("/api/qr", (_req, res) => {
 
 // ── QR كصورة PNG — بدون CDN خارجي ────────────────────────────
 app.get("/api/qr-image/:botId", async (req, res) => {
+  if (getRole(req) !== "admin") return res.status(403).end();
   const bot = bots.get(req.params.botId);
   if (!bot || !bot.latestQr) return res.status(204).end();
   try {
@@ -1832,6 +1850,7 @@ app.get("/api/qr-image/:botId", async (req, res) => {
 });
 
 app.post("/api/restart-bot/:id", async (req, res) => {
+  if (getRole(req) !== "admin") return res.status(403).json({ error: "غير مصرح" });
   const botId = req.params.id;
   if (!bots.has(botId)) return res.status(404).json({ error: "بوت غير موجود" });
   try {
