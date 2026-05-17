@@ -74,6 +74,9 @@ async function getAllContacts({ limit = 1000, offset = 0, search = "" } = {}) {
              c.total_messages    AS totalMessages,
              c.last_message      AS lastMessage,
              c.photo             AS photo,
+             c.category          AS category,
+             c.produit           AS produit,
+             c.ville_maroc       AS ville_maroc,
              m.direction         AS lastDirection,
              m.created_at        AS lastMessageAt
         FROM contacts c

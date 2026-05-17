@@ -136,6 +136,40 @@ html,body{
 }
 
 /* ─── Unanswered indicator ─── */
+/* ─── Category badges ─── */
+.cat-badge{
+  display:inline-block;font-size:.6rem;padding:1px 6px;border-radius:8px;
+  font-weight:600;flex-shrink:0;margin-right:2px;
+}
+.cat-location   {background:#e3f2fd;color:#1565c0}
+.cat-vacances   {background:#fff9c4;color:#f57f17}
+.cat-vente      {background:#e8f5e9;color:#2e7d32}
+.cat-ville      {background:#fce4ec;color:#c62828}
+.cat-demande      {background:#f3e5f5;color:#7b1fa2}
+.cat-achat        {background:#fff3e0;color:#e65100}
+.cat-reservation  {background:#e0f7fa;color:#00695c}
+.cat-appartement  {background:#e8eaf6;color:#283593}
+.cat-maison       {background:#e8f5e9;color:#1b5e20}
+.cat-villa        {background:#fffde7;color:#f57f00}
+.cat-terrain      {background:#efebe9;color:#4e342e}
+.cat-residence    {background:#fce4ec;color:#880e4f}
+.cat-chambre      {background:#e1f5fe;color:#01579b}
+.cat-magasin      {background:#f9fbe7;color:#558b2f}
+.cat-hammam       {background:#fbe9e7;color:#bf360c}
+.cat-hotel        {background:#f3e5f5;color:#4a148c}
+.ville-tag{
+  display:inline-block;font-size:.58rem;padding:1px 5px;border-radius:6px;
+  font-weight:600;background:#263238;color:#80cbc4;flex-shrink:0;
+}
+
+/* ─── Category dropdown ─── */
+.cat-select{
+  border:none;background:#2a3942;color:#e9edef;
+  border-radius:8px;padding:4px 8px;font-size:.78rem;cursor:pointer;
+  outline:none;
+}
+.cat-select:focus{outline:2px solid #00a884}
+
 .ci.unans{
   border-left:3px solid #e53935;
   background:linear-gradient(to right,rgba(229,57,53,.12) 0%,transparent 60%);
@@ -471,6 +505,59 @@ html,body{
   border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
 }
 
+/* ─── Media Panel ─── */
+#mediaPanel{
+  position:fixed;top:0;right:-420px;width:400px;height:100%;
+  background:#111b21;z-index:900;display:flex;flex-direction:column;
+  transition:right .28s cubic-bezier(.4,0,.2,1);
+  box-shadow:-4px 0 24px rgba(0,0,0,.5);
+}
+#mediaPanel.open{right:0}
+.mp-head{
+  height:59px;background:#202c33;display:flex;align-items:center;
+  gap:10px;padding:0 16px;flex-shrink:0;
+}
+.mp-title{flex:1;font-size:.97rem;font-weight:700;color:#e9edef}
+.mp-close{background:none;border:none;cursor:pointer;color:#aebac1;
+  padding:8px;border-radius:50%;font-size:1.1rem;line-height:1}
+.mp-close:hover{background:rgba(255,255,255,.1)}
+.mp-tabs{display:flex;gap:6px;padding:8px 12px;background:#202c33;flex-shrink:0}
+.mp-tab{padding:4px 14px;border-radius:14px;border:none;cursor:pointer;
+  font-size:.78rem;background:#2a3942;color:#8696a0;transition:all .15s}
+.mp-tab.on{background:#00a884;color:#fff;font-weight:600}
+.mp-count{font-size:.72rem;color:#8696a0;padding:4px 14px;flex-shrink:0}
+.mp-grid{flex:1;overflow-y:auto;padding:6px;display:grid;gap:3px;
+  grid-template-columns:repeat(3,1fr)}
+.mp-grid::-webkit-scrollbar{width:4px}
+.mp-grid::-webkit-scrollbar-thumb{background:#2a3942;border-radius:4px}
+.mp-item{position:relative;aspect-ratio:1;border-radius:4px;overflow:hidden;
+  cursor:pointer;background:#1a2733}
+.mp-item img,.mp-item video{width:100%;height:100%;object-fit:cover;display:block}
+.mp-item .mp-dl{
+  position:absolute;bottom:4px;right:4px;
+  background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;
+  width:26px;height:26px;cursor:pointer;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .15s;text-decoration:none;
+}
+.mp-item:hover .mp-dl{opacity:1}
+.mp-item .mp-type{
+  position:absolute;top:4px;left:4px;
+  background:rgba(0,0,0,.55);color:#fff;border-radius:4px;
+  font-size:.62rem;padding:1px 5px;
+}
+.mp-item .mp-time{
+  position:absolute;bottom:4px;left:4px;
+  font-size:.6rem;color:rgba(255,255,255,.8);
+  text-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.mp-empty{flex:1;display:flex;align-items:center;justify-content:center;
+  color:#8696a0;font-size:.88rem;flex-direction:column;gap:8px}
+.mp-spin{width:28px;height:28px;border:3px solid rgba(0,168,132,.2);
+  border-top-color:#00a884;border-radius:50%;animation:spin .7s linear infinite;margin:auto}
+#mpBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:899}
+#mpBackdrop.open{display:block}
+
 /* ─── Mobile ─── */
 @media(max-width:680px){
   :root{--sw:100%}
@@ -533,6 +620,10 @@ html,body{
   }
   #respModal .modal-box{width:calc(100vw - 20px);max-height:85vh}
 
+/* ─── Media Panel mobile ─── */
+  #mediaPanel{width:100vw!important}
+
+
   /* Contacts list */
   .ci{padding:10px 14px}
   .ci-av{width:44px;height:44px;font-size:.95rem}
@@ -588,6 +679,22 @@ html[data-lang="en"] [data-lv="en"]{display:revert!important}
       <button class="tab" id="tabUnread" onclick="setTab('unread')"><span data-lv="ar">غير مقروء</span><span data-lv="fr">Non lus</span><span data-lv="en">Unread</span> <span id="cntUnread" style="color:var(--g)"></span></button>
       <button class="tab" id="tabGroups" onclick="setTab('groups')">👥 <span data-lv="ar">مجموعات</span><span data-lv="fr">Groupes</span><span data-lv="en">Groups</span> <span id="cntGroups"></span></button>
       <button class="tab fav-tab" id="tabFav" onclick="setTab('fav')">⭐ <span data-lv="ar">المفضلة</span><span data-lv="fr">Favoris</span><span data-lv="en">Favorites</span> <span id="cntFav" style="color:#f59e0b"></span></button>
+      <button class="tab" id="tabLocation"    onclick="setTab('location')"    style="background:#1565c0;color:#e3f2fd">🔑 Location <span id="cntLocation"></span></button>
+      <button class="tab" id="tabVacances"    onclick="setTab('vacances')"    style="background:#f57f17;color:#fff9c4">🏖 Vacances <span id="cntVacances"></span></button>
+      <button class="tab" id="tabVente"       onclick="setTab('vente')"       style="background:#2e7d32;color:#e8f5e9">🏠 À vendre <span id="cntVente"></span></button>
+      <button class="tab" id="tabVille"       onclick="setTab('ville')"       style="background:#c62828;color:#fce4ec">🏙 Ville <span id="cntVille"></span></button>
+      <button class="tab" id="tabDemande"     onclick="setTab('demande')"     style="background:#7b1fa2;color:#f3e5f5">📋 Demande <span id="cntDemande"></span></button>
+      <button class="tab" id="tabAchat"       onclick="setTab('achat')"       style="background:#e65100;color:#fff3e0">🛒 Achat <span id="cntAchat"></span></button>
+      <button class="tab" id="tabReservation" onclick="setTab('reservation')" style="background:#00695c;color:#e0f7fa">📅 Réservation <span id="cntReservation"></span></button>
+      <button class="tab" id="tabAppartement" onclick="setTab('appartement')" style="background:#283593;color:#e8eaf6">🏢 Appartement <span id="cntAppartement"></span></button>
+      <button class="tab" id="tabMaison"      onclick="setTab('maison')"      style="background:#1b5e20;color:#e8f5e9">🏡 Maison <span id="cntMaison"></span></button>
+      <button class="tab" id="tabVilla"       onclick="setTab('villa')"       style="background:#f57f00;color:#fffde7">🏖 Villa <span id="cntVilla"></span></button>
+      <button class="tab" id="tabTerrain"     onclick="setTab('terrain')"     style="background:#4e342e;color:#efebe9">🌿 Terrain <span id="cntTerrain"></span></button>
+      <button class="tab" id="tabResidence"   onclick="setTab('residence')"   style="background:#880e4f;color:#fce4ec">🏨 Résidence <span id="cntResidence"></span></button>
+      <button class="tab" id="tabChambre"     onclick="setTab('chambre')"     style="background:#01579b;color:#e1f5fe">🛏 Chambre <span id="cntChambre"></span></button>
+      <button class="tab" id="tabMagasin"     onclick="setTab('magasin')"     style="background:#558b2f;color:#f9fbe7">🏪 Magasin <span id="cntMagasin"></span></button>
+      <button class="tab" id="tabHammam"      onclick="setTab('hammam')"      style="background:#bf360c;color:#fbe9e7">🛁 Hammam <span id="cntHammam"></span></button>
+      <button class="tab" id="tabHotel"       onclick="setTab('hotel')"       style="background:#4a148c;color:#f3e5f5">🏩 Hôtel <span id="cntHotel"></span></button>
     </div>
 
     <div id="clist">
@@ -616,8 +723,143 @@ html[data-lang="en"] [data-lv="en"]{display:revert!important}
         <div class="ch-info">
           <div class="ch-name" id="chName"></div>
           <div class="ch-sub"  id="chSub"></div>
+          <div style="margin-top:3px">
+            <select class="cat-select" id="catSelect" onchange="setCategoryContact(this.value)" title="Catégorie">
+              <option value="">— Catégorie —</option>
+              <option value="location">🔑 Location</option>
+              <option value="vacances">🏖 Vacances</option>
+              <option value="vente">🏠 À vendre</option>
+              <option value="ville">🏙 Ville</option>
+              <option value="demande">📋 Demande</option>
+              <option value="achat">🛒 Achat</option>
+              <option value="reservation">📅 Réservation</option>
+            </select>
+            <select class="cat-select" id="produitSelect" onchange="setProduitContact(this.value)" title="Type de produit" style="margin-top:3px">
+              <option value="">— Produit —</option>
+              <option value="appartement">🏢 Appartement</option>
+              <option value="maison">🏡 Maison</option>
+              <option value="villa">🏖 Villa</option>
+              <option value="terrain">🌿 Terrain</option>
+              <option value="residence">🏨 Résidence</option>
+              <option value="chambre">🛏 Chambre</option>
+              <option value="magasin">🏪 Magasin</option>
+              <option value="hammam">🛁 Hammam</option>
+              <option value="hotel">🏩 Hôtel</option>
+            </select>
+            <select class="cat-select" id="villeSelect" onchange="setVilleContact(this.value)" title="Ville du Maroc" style="margin-top:3px">
+              <option value="">🇲🇦 Ville...</option>
+              <optgroup label="── Grand Casablanca ──">
+              <option value="casablanca">Casablanca</option>
+              <option value="mohammedia">Mohammedia</option>
+              <option value="bouskoura">Bouskoura</option>
+              <option value="mediouna">Mediouna</option>
+              <option value="nouaceur">Nouaceur</option>
+              <option value="birjdid">Bir Jdid</option>
+              <option value="bouznika">Bouznika</option>
+              </optgroup>
+              <optgroup label="── Rabat-Salé ──">
+              <option value="rabat">Rabat</option>
+              <option value="sale">Salé</option>
+              <option value="temara">Temara</option>
+              <option value="tamesna">Tamesna</option>
+              <option value="skhirat">Skhirat</option>
+              <option value="khemisset">Khemisset</option>
+              </optgroup>
+              <optgroup label="── Marrakech ──">
+              <option value="marrakech">Marrakech</option>
+              <option value="tamansourt">Tamansourt</option>
+              <option value="chichaoua">Chichaoua</option>
+              <option value="essaouira">Essaouira</option>
+              </optgroup>
+              <optgroup label="── Fès-Meknès ──">
+              <option value="fes">Fès</option>
+              <option value="meknes">Meknès</option>
+              <option value="imouzzer">Imouzzer</option>
+              <option value="sefrou">Sefrou</option>
+              <option value="ifrane">Ifrane</option>
+              <option value="azrou">Azrou</option>
+              <option value="taza">Taza</option>
+              <option value="taounate">Taounate</option>
+              </optgroup>
+              <optgroup label="── Tanger-Tétouan ──">
+              <option value="tanger">Tanger</option>
+              <option value="tetouan">Tétouan</option>
+              <option value="larache">Larache</option>
+              <option value="asilah">Asilah</option>
+              <option value="fnideq">Fnideq</option>
+              <option value="mdiq">M'diq</option>
+              <option value="chefchaouen">Chefchaouen</option>
+              <option value="ksar">Ksar el-Kébir</option>
+              </optgroup>
+              <optgroup label="── Oriental ──">
+              <option value="oujda">Oujda</option>
+              <option value="nador">Nador</option>
+              <option value="berkane">Berkane</option>
+              <option value="taourirt">Taourirt</option>
+              <option value="alhoceima">Al Hoceima</option>
+              <option value="guercif">Guercif</option>
+              <option value="jerada">Jerada</option>
+              <option value="figuig">Figuig</option>
+              </optgroup>
+              <optgroup label="── Souss-Massa ──">
+              <option value="agadir">Agadir</option>
+              <option value="inezgane">Inezgane</option>
+              <option value="aitmeloul">Aït Melloul</option>
+              <option value="tiznit">Tiznit</option>
+              <option value="taroudant">Taroudant</option>
+              <option value="biougra">Biougra</option>
+              </optgroup>
+              <optgroup label="── Chaouia-Settat ──">
+              <option value="settat">Settat</option>
+              <option value="berrechid">Berrechid</option>
+              <option value="khouribga">Khouribga</option>
+              <option value="ouladzem">Oulad Zem</option>
+              <option value="youssoufia">Youssoufia</option>
+              <option value="beniguerd">Beni Guerd</option>
+              </optgroup>
+              <optgroup label="── Béni Mellal-Azilal ──">
+              <option value="benimelal">Béni Mellal</option>
+              <option value="azilal">Azilal</option>
+              <option value="fquihbensalah">Fquih Ben Salah</option>
+              <option value="khenifra">Khenifra</option>
+              <option value="kasbahtadla">Kasba Tadla</option>
+              </optgroup>
+              <optgroup label="── Kenitra-Gharb ──">
+              <option value="kenitra">Kénitra</option>
+              <option value="sidikacem">Sidi Kacem</option>
+              <option value="sidislimane">Sidi Slimane</option>
+              <option value="soukarbaa">Souk El Arbaa</option>
+              </optgroup>
+              <optgroup label="── El Jadida-Safi ──">
+              <option value="eljadida">El Jadida</option>
+              <option value="safi">Safi</option>
+              <option value="sidibennour">Sidi Bennour</option>
+              </optgroup>
+              <optgroup label="── Drâa-Tafilalet ──">
+              <option value="errachidia">Errachidia</option>
+              <option value="ouarzazate">Ouarzazate</option>
+              <option value="zagora">Zagora</option>
+              <option value="tinghir">Tinghir</option>
+              <option value="midelt">Midelt</option>
+              <option value="rich">Rich</option>
+              </optgroup>
+              <optgroup label="── Sud ──">
+              <option value="laayoune">Laâyoune</option>
+              <option value="dakhla">Dakhla</option>
+              <option value="guelmim">Guelmim</option>
+              <option value="tantan">Tan-Tan</option>
+              <option value="sidifni">Sidi Ifni</option>
+              <option value="tarfaya">Tarfaya</option>
+              <option value="boujdour">Boujdour</option>
+              <option value="smara">Smara</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
         <div class="ch-acts">
+          <button class="ch-btn" onclick="openMediaPanel()" title="Photos & Vidéos">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          </button>
           <button class="ch-btn" onclick="downloadLastMsg()" title="Télécharger dernier message">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h4.34v4h4.66V9h4.34L12 2z"/></svg>
           </button>
@@ -695,6 +937,23 @@ html[data-lang="en"] [data-lv="en"]{display:revert!important}
 </div>
 
 <!-- Upload progress -->
+<!-- Media Panel -->
+<div id="mpBackdrop" onclick="closeMediaPanel()"></div>
+<div id="mediaPanel">
+  <div class="mp-head">
+    <button class="mp-close" onclick="closeMediaPanel()">✕</button>
+    <div class="mp-title">📷 Photos & Vidéos</div>
+  </div>
+  <div class="mp-tabs">
+    <button class="mp-tab on" id="mpTabAll"    onclick="mpSetTab('all')">Tous</button>
+    <button class="mp-tab"    id="mpTabPhoto"  onclick="mpSetTab('photo')">📷 Photos</button>
+    <button class="mp-tab"    id="mpTabVideo"  onclick="mpSetTab('video')">🎬 Vidéos</button>
+    <button class="mp-tab"    id="mpTabAudio"  onclick="mpSetTab('audio')">🎤 Voix</button>
+  </div>
+  <div class="mp-count" id="mpCount"></div>
+  <div class="mp-grid" id="mpGrid"></div>
+</div>
+
 <div id="uploadBar"><div class="ubar-spin"></div><span id="uploadMsg"><span data-lv="ar">جاري الإرسال...</span><span data-lv="fr">Envoi en cours...</span><span data-lv="en">Sending...</span></span></div>
 
 <!-- Location modal -->
@@ -997,11 +1256,16 @@ async function loadContacts(show=true){
   } catch{ toast("❌ "+t("خطأ في تحميل الزبائن","Erreur de chargement","Load error")); }
 }
 
+const CAT_TABS = new Set(["location","vacances","vente","ville","demande","achat","reservation","appartement","maison","villa","terrain","residence","chambre","magasin","hammam","hotel"]);
+const PROD_TABS = new Set(["appartement","maison","villa","terrain","residence","chambre","magasin","hammam","hotel"]);
+
 function filterC(){
   const q = document.getElementById("srch").value.trim().toLowerCase();
   const list = contacts.filter(c=>{
     if(curTab==="unread" && !c._unread && !isUnanswered(c)) return false;
     if(curTab==="fav"    && !favorites.has(c.cid))           return false;
+    if(PROD_TABS.has(curTab) && (c.produit||"") !== curTab)  return false;
+    if(CAT_TABS.has(curTab) && !PROD_TABS.has(curTab) && (c.category||"") !== curTab) return false;
     if(!q) return true;
     const n = dname(c).toLowerCase();
     const qd = q.replace(/\D/g,"");
@@ -1014,11 +1278,22 @@ function filterC(){
 
 function setTab(t){
   curTab=t;
-  document.getElementById("tabAll").classList.toggle("on",    t==="all");
-  document.getElementById("tabUnread").classList.toggle("on", t==="unread");
-  document.getElementById("tabFav").classList.toggle("on",    t==="fav");
+  document.getElementById("tabAll").classList.toggle("on",      t==="all");
+  document.getElementById("tabUnread").classList.toggle("on",   t==="unread");
+  document.getElementById("tabFav").classList.toggle("on",      t==="fav");
   const grpEl = document.getElementById("tabGroups");
   if(grpEl) grpEl.classList.toggle("on", t==="groups");
+  ["location","vacances","vente","ville","demande","achat","reservation","appartement","maison","villa","terrain","residence"].forEach(cat=>{
+    const el = document.getElementById("tab"+cat.charAt(0).toUpperCase()+cat.slice(1));
+    if(el) el.classList.toggle("on", t===cat);
+  });
+  // vider la recherche + adapter le placeholder selon l'onglet
+  const srch = document.getElementById("srch");
+  if(srch){
+    srch.value = "";
+    const CAT_LABELS = {location:"🔑 Location",vacances:"🏖 Vacances",vente:"🏠 À vendre",ville:"🏙 Ville",demande:"📋 Demande",achat:"🛒 Achat",reservation:"📅 Réservation",appartement:"🏢 Appartement",maison:"🏡 Maison",villa:"🏖 Villa",terrain:"🌿 Terrain",residence:"🏨 Résidence",chambre:"🛏 Chambre",magasin:"🏪 Magasin",hammam:"🛁 Hammam",hotel:"🏩 Hôtel"};
+    srch.placeholder = CAT_LABELS[t] ? `Rechercher dans ${CAT_LABELS[t]}...` : "Rechercher...";
+  }
   filterC();
 }
 
@@ -1028,6 +1303,16 @@ function renderContacts(){
   document.getElementById("cntAll").textContent    = contacts.length||"";
   document.getElementById("cntUnread").textContent = unread||"";
   document.getElementById("cntFav").textContent    = favCnt||"";
+  ["location","vacances","vente","ville","demande","achat","reservation"].forEach(cat=>{
+    const n = contacts.filter(c=>(c.category||"")=== cat).length;
+    const el = document.getElementById("cnt"+cat.charAt(0).toUpperCase()+cat.slice(1));
+    if(el) el.textContent = n||"";
+  });
+  ["appartement","maison","villa","terrain","residence","chambre","magasin","hammam","hotel"].forEach(prod=>{
+    const n = contacts.filter(c=>(c.produit||"")=== prod).length;
+    const el = document.getElementById("cnt"+prod.charAt(0).toUpperCase()+prod.slice(1));
+    if(el) el.textContent = n||"";
+  });
   filterC();
 }
 
@@ -1083,15 +1368,25 @@ function ciHTML(c){
     ? `<img src="/uploads/photos/${esc(c.photo)}" alt="" onerror="this.parentElement.innerHTML='${esc(ini)}';">`
     : esc(ini);
   const isFav = favorites.has(c.cid);
+  const CAT_ICONS  = {location:"🔑",vacances:"🏖",vente:"🏠",ville:"🏙",demande:"📋",achat:"🛒",reservation:"📅"};
+  const PROD_ICONS = {appartement:"🏢",maison:"🏡",villa:"🏖",terrain:"🌿",residence:"🏨",chambre:"🛏",magasin:"🏪",hammam:"🛁",hotel:"🏩"};
+  const catBadge  = c.category && CAT_ICONS[c.category]
+    ? `<span class="cat-badge cat-${c.category}">${CAT_ICONS[c.category]} ${c.category}</span>`
+    : "";
+  const prodBadge = c.produit && PROD_ICONS[c.produit]
+    ? `<span class="cat-badge cat-${c.produit}">${PROD_ICONS[c.produit]} ${c.produit}</span>`
+    : "";
+  const VILLE_NAMES = {casablanca:"Casa",mohammedia:"Mohamm.",bouskoura:"Bouskoura",mediouna:"Mediouna",nouaceur:"Nouaceur",birjdid:"Bir Jdid",bouznika:"Bouznika",imouzzer:"Imouzzer",rabat:"Rabat",sale:"Salé",temara:"Temara",tamesna:"Tamesna",skhirat:"Skhirat",khemisset:"Khemisset",marrakech:"Marrakech",tamansourt:"Tamansourt",chichaoua:"Chichaoua",essaouira:"Essaouira",fes:"Fès",meknes:"Meknès",sefrou:"Sefrou",ifrane:"Ifrane",azrou:"Azrou",taza:"Taza",taounate:"Taounate",tanger:"Tanger",tetouan:"Tétouan",larache:"Larache",asilah:"Asilah",fnideq:"Fnideq",mdiq:"M'diq",chefchaouen:"Chefchaouen",ksar:"Ksar",oujda:"Oujda",nador:"Nador",berkane:"Berkane",taourirt:"Taourirt",alhoceima:"Al Hoceima",guercif:"Guercif",jerada:"Jerada",figuig:"Figuig",agadir:"Agadir",inezgane:"Inezgane",aitmeloul:"Aït Melloul",tiznit:"Tiznit",taroudant:"Taroudant",biougra:"Biougra",settat:"Settat",berrechid:"Berrechid",khouribga:"Khouribga",ouladzem:"Oulad Zem",youssoufia:"Youssoufia",beniguerd:"Beni Guerd",benimelal:"Béni Mellal",azilal:"Azilal",fquihbensalah:"Fquih B.S.",khenifra:"Khenifra",kasbahtadla:"Kasba Tadla",kenitra:"Kénitra",sidikacem:"Sidi Kacem",sidislimane:"Sidi Slimane",soukarbaa:"Souk Arbaa",eljadida:"El Jadida",safi:"Safi",sidibennour:"Sidi Bennour",errachidia:"Errachidia",ouarzazate:"Ouarzazate",zagora:"Zagora",tinghir:"Tinghir",midelt:"Midelt",rich:"Rich",laayoune:"Laâyoune",dakhla:"Dakhla",guelmim:"Guelmim",tantan:"Tan-Tan",sidifni:"Sidi Ifni",tarfaya:"Tarfaya",boujdour:"Boujdour",smara:"Smara"};
+  const villeBadge = c.ville_maroc ? `<span class="ville-tag">🇲🇦 ${VILLE_NAMES[c.ville_maroc]||c.ville_maroc}</span>` : "";
   return `<div class="ci${act?" on":""}${unan?" unans":""}" data-cid="${c.cid}" onclick="openChat(${c.cid},'${esc(nm)}')">
     <div class="ci-av" style="background:${col}">${avContent}</div>
     <div class="ci-body">
       <div class="ci-top">
-        <div class="ci-name is-phone">${esc(nm)}</div>
+        <div class="ci-name is-phone">${catBadge}${prodBadge}${esc(nm)}</div>
         <div class="ci-time${unrd?" unread":""}">${tm}</div>
       </div>
       ${realName?`<div class="ci-realname">${esc(realName)}</div>`:""}
-      <div class="ci-prev${unan?" style='color:#c62828;font-weight:500'":""}">${unan?"⚠ ":""} ${esc(prv)}</div>
+      <div class="ci-prev${unan?" style='color:#c62828;font-weight:500'":""}">${unan?"⚠ ":""} ${esc(prv)} ${villeBadge}</div>
     </div>
     <div class="ci-right" style="display:flex;align-items:center;gap:4px">
       <button class="fav-btn${isFav?" on":""}" onclick="toggleFav(${c.cid},event)" title="${isFav?t("إزالة من المفضلة","Retirer des favoris","Remove favorite"):t("إضافة للمفضلة","Ajouter aux favoris","Add favorite")}">${isFav?"⭐":"☆"}</button>
@@ -1124,6 +1419,12 @@ function openChat(cid, name){
   selRealName = (c?.name && !isPhone(c.name)) ? c.name : "";
   document.getElementById("chName").textContent = lbl;        // phone
   document.getElementById("chSub").textContent  = selRealName; // real name (if any)
+  const catSel = document.getElementById("catSelect");
+  if(catSel) catSel.value = c?.category || "";
+  const prodSel = document.getElementById("produitSelect");
+  if(prodSel) prodSel.value = c?.produit || "";
+  const villeSel = document.getElementById("villeSelect");
+  if(villeSel) villeSel.value = c?.ville_maroc || "";
 
   document.getElementById("empty").style.display = "none";
   document.getElementById("chat").style.display  = "flex";
@@ -1145,6 +1446,64 @@ function backToList(){
   document.getElementById("lp").classList.remove("hide");
   document.getElementById("chat").style.display  = "none";
   document.getElementById("empty").style.display = "flex";
+}
+
+async function setCategoryContact(cat){
+  if(!selCid) return;
+  const c = contacts.find(x=>x.cid===selCid);
+  if(!c) return;
+  const phone = (c.phone||"").replace(/\D/g,"");
+  try {
+    const r = await fetch(`/api/contacts/${encodeURIComponent(phone)}/category`,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category:cat})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    c.category = cat || null;
+    filterC();
+    toast(cat ? `✅ ${cat}` : t("✅ تصنيف محذوف","✅ Catégorie supprimée","✅ Category removed"));
+  } catch(e){
+    toast("❌ "+e.message);
+  }
+}
+
+async function setProduitContact(prod){
+  if(!selCid) return;
+  const c = contacts.find(x=>x.cid===selCid);
+  if(!c) return;
+  const phone = (c.phone||"").replace(/\D/g,"");
+  try {
+    const r = await fetch(`/api/contacts/${encodeURIComponent(phone)}/produit`,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({produit:prod})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    c.produit = prod || null;
+    filterC();
+    toast(prod ? `🏠 ${prod}` : t("✅ منتج محذوف","✅ Produit supprimé","✅ Product removed"));
+  } catch(e){ toast("❌ "+e.message); }
+}
+
+async function setVilleContact(ville){
+  if(!selCid) return;
+  const c = contacts.find(x=>x.cid===selCid);
+  if(!c) return;
+  const phone = (c.phone||"").replace(/\D/g,"");
+  try {
+    const r = await fetch(`/api/contacts/${encodeURIComponent(phone)}/ville`,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ville})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    c.ville_maroc = ville || null;
+    filterC();
+    toast(ville ? `🇲🇦 ${ville}` : t("✅ مدينة محذوفة","✅ Ville supprimée","✅ City removed"));
+  } catch(e){
+    toast("❌ "+e.message);
+  }
 }
 
 function refreshChat(){
@@ -2233,8 +2592,136 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,sans-serif;b
 document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){
     ["locModal","respModal"].forEach(id=>closeModal(id));
+    closeMediaPanel();
   }
 });
+
+// ══════════════════════════════════════════════
+//  MEDIA PANEL — Photos, Vidéos, Voix
+// ══════════════════════════════════════════════
+let _mpTab = "all", _mpAllMedia = [];
+
+function openMediaPanel(){
+  if(!selCid){ showToast("Sélectionnez un contact d'abord"); return; }
+  document.getElementById("mediaPanel").classList.add("open");
+  document.getElementById("mpBackdrop").classList.add("open");
+  mpLoad();
+}
+function closeMediaPanel(){
+  document.getElementById("mediaPanel").classList.remove("open");
+  document.getElementById("mpBackdrop").classList.remove("open");
+}
+function mpSetTab(tab){
+  _mpTab = tab;
+  ["all","photo","video","audio"].forEach(t=>{
+    document.getElementById("mpTab"+t.charAt(0).toUpperCase()+t.slice(1))
+      .classList.toggle("on", t===tab);
+  });
+  mpRender();
+}
+
+async function mpLoad(){
+  const grid  = document.getElementById("mpGrid");
+  const count = document.getElementById("mpCount");
+  grid.innerHTML = '<div class="mp-spin"></div>';
+  count.textContent = "";
+
+  // Charger TOUS les messages (pagination 500/batch)
+  let all = [], offset = 0;
+  try {
+    while(true){
+      const r = await fetch(`/api/messages?cid=${encodeURIComponent(selCid)}&limit=500&offset=${offset}`);
+      const batch = await r.json();
+      const rows = Array.isArray(batch) ? batch : [];
+      all = all.concat(rows);
+      if(rows.length < 500) break;
+      offset += 500;
+    }
+  } catch(e){ grid.innerHTML='<div class="mp-empty">❌ Erreur chargement</div>'; return; }
+
+  // Filtrer les médias uniquement
+  _mpAllMedia = all.filter(m => {
+    const b = m.media_url || m.body || "";
+    return m.media_url ||
+      /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm|avi|mp3|ogg|opus|m4a)(\?.*)?$/i.test(b);
+  }).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  mpRender();
+}
+
+function mpRender(){
+  const grid  = document.getElementById("mpGrid");
+  const count = document.getElementById("mpCount");
+
+  let items = _mpAllMedia;
+  if(_mpTab === "photo") items = items.filter(m => {
+    const b = m.media_url || m.body || "";
+    return m.media_type==="image" || /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(b);
+  });
+  else if(_mpTab === "video") items = items.filter(m => {
+    const b = m.media_url || m.body || "";
+    return m.media_type==="video" || /\.(mp4|mov|webm|avi)(\?.*)?$/i.test(b);
+  });
+  else if(_mpTab === "audio") items = items.filter(m => {
+    const b = m.media_url || m.body || "";
+    return m.media_type==="audio" || /\.(mp3|ogg|opus|m4a)(\?.*)?$/i.test(b);
+  });
+
+  count.textContent = `${items.length} fichier(s)`;
+
+  if(!items.length){
+    grid.innerHTML = '<div class="mp-empty">Aucun média dans cette conversation</div>';
+    return;
+  }
+
+  grid.innerHTML = items.map(m => {
+    const url   = m.media_url || m.body || "";
+    const fname = url.split("/").pop().split("?")[0] || "fichier";
+    const tm    = m.created_at
+      ? new Date(m.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})
+      : "";
+    const isImg   = m.media_type==="image" || /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+    const isVideo = m.media_type==="video" || /\.(mp4|mov|webm|avi)(\?.*)?$/i.test(url);
+    const isAudio = m.media_type==="audio" || /\.(mp3|ogg|opus|m4a)(\?.*)?$/i.test(url);
+    const dir = m.direction === "out" ? "↗" : "↙";
+
+    if(isImg) return `<div class="mp-item">
+      <img data-src="${esc(url)}" class="mp-lz" alt="" loading="lazy"
+           onerror="this.parentElement.style.background='#1a2733'">
+      <span class="mp-type">${dir}</span>
+      <span class="mp-time">${tm}</span>
+      <a class="mp-dl" href="${esc(url)}" download="${esc(fname)}" title="Télécharger">⬇</a>
+    </div>`;
+
+    if(isVideo) return `<div class="mp-item" onclick="window.open('${esc(url)}','_blank')">
+      <video src="${esc(url)}" muted preload="none"
+             style="pointer-events:none"></video>
+      <span class="mp-type">🎬 ${dir}</span>
+      <span class="mp-time">${tm}</span>
+      <a class="mp-dl" href="${esc(url)}" download="${esc(fname)}" title="Télécharger" onclick="event.stopPropagation()">⬇</a>
+    </div>`;
+
+    if(isAudio) return `<div class="mp-item" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px">
+      <div style="font-size:1.6rem">🎤</div>
+      <div style="font-size:.65rem;color:#8696a0">${tm} ${dir}</div>
+      <a class="mp-dl" href="${esc(url)}" download="${esc(fname)}" title="Télécharger"
+         style="opacity:1;position:relative;bottom:auto;right:auto;background:#00a884;margin-top:4px">⬇</a>
+    </div>`;
+
+    return "";
+  }).join("");
+
+  // Lazy load images
+  const obs = new IntersectionObserver((entries, ob) => {
+    entries.forEach(e => {
+      if(!e.isIntersecting) return;
+      const img = e.target;
+      if(img.dataset.src){ img.src = img.dataset.src; img.removeAttribute("data-src"); }
+      ob.unobserve(img);
+    });
+  }, { rootMargin:"300px" });
+  grid.querySelectorAll("img.mp-lz[data-src]").forEach(img => obs.observe(img));
+}
 </script>
 </body>
 </html>

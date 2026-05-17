@@ -153,6 +153,16 @@ async function initDb() {
 
   // ── Migration: content_hash + per-phone dedup sur images ────────────────
   await pool.query(`ALTER TABLE images ADD COLUMN content_hash VARCHAR(64) DEFAULT NULL`).catch(()=>{});
+
+  // ── Migration: category على contacts ────────────────────────────────────
+  await pool.query(`ALTER TABLE contacts ADD COLUMN category VARCHAR(50) DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE contacts ADD INDEX idx_contacts_category (category)`).catch(()=>{});
+  // ── Migration: ville_maroc على contacts ──────────────────────────────────
+  await pool.query(`ALTER TABLE contacts ADD COLUMN ville_maroc VARCHAR(50) DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE contacts ADD INDEX idx_contacts_ville (ville_maroc)`).catch(()=>{});
+  // ── Migration: produit على contacts ──────────────────────────────────────
+  await pool.query(`ALTER TABLE contacts ADD COLUMN produit VARCHAR(50) DEFAULT NULL`).catch(()=>{});
+  await pool.query(`ALTER TABLE contacts ADD INDEX idx_contacts_produit (produit)`).catch(()=>{});
   try {
     await pool.query(`ALTER TABLE images ADD UNIQUE KEY uq_images_phone_hash (phone, content_hash)`);
   } catch(_) { /* déjà présent */ }

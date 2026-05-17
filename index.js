@@ -2045,6 +2045,48 @@ app.post("/api/contacts/sync-photos", async (req, res) => {
   })();
 });
 
+// ── تحديث تصنيف جهة الاتصال ─────────────────────────────────────────────
+const VALID_CATEGORIES = new Set(["location","vacances","vente","ville","demande","achat","reservation",""]);
+app.patch("/api/contacts/:phone/category", async (req, res) => {
+  const pool  = require("./db");
+  const phone = req.params.phone.replace(/\D/g,"");
+  const key   = phone.length > 9 ? phone.slice(-9) : phone;
+  const cat   = (req.body.category || "").toLowerCase().trim();
+  if (!VALID_CATEGORIES.has(cat)) return res.status(400).json({ error: "تصنيف غير صالح" });
+  try {
+    await pool.query("UPDATE contacts SET category=? WHERE phone=?", [cat||null, key]);
+    res.json({ ok: true, category: cat||null });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+// ── تحديث نوع المنتج / العقار ─────────────────────────────────────────────
+const VALID_PRODUITS = new Set(["appartement","maison","villa","terrain","residence","chambre","magasin","hammam","hotel",""]);
+app.patch("/api/contacts/:phone/produit", async (req, res) => {
+  const pool  = require("./db");
+  const phone = req.params.phone.replace(/\D/g,"");
+  const key   = phone.length > 9 ? phone.slice(-9) : phone;
+  const prod  = (req.body.produit || "").toLowerCase().trim();
+  if (!VALID_PRODUITS.has(prod)) return res.status(400).json({ error: "منتج غير صالح" });
+  try {
+    await pool.query("UPDATE contacts SET produit=? WHERE phone=?", [prod||null, key]);
+    res.json({ ok: true, produit: prod||null });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+// ── تحديث مدينة جهة الاتصال (المغرب) ────────────────────────────────────
+const VILLES_MAROC = new Set(["casablanca","mohammedia","bouskoura","mediouna","nouaceur","birjdid","bouznika","rabat","sale","temara","tamesna","skhirat","khemisset","marrakech","tamansourt","chichaoua","essaouira","fes","meknes","imouzzer","sefrou","ifrane","azrou","taza","taounate","tanger","tetouan","larache","asilah","fnideq","mdiq","chefchaouen","ksar","oujda","nador","berkane","taourirt","alhoceima","guercif","jerada","figuig","agadir","inezgane","aitmeloul","tiznit","taroudant","biougra","settat","berrechid","khouribga","ouladzem","youssoufia","beniguerd","benimelal","azilal","fquihbensalah","khenifra","kasbahtadla","kenitra","sidikacem","sidislimane","soukarbaa","eljadida","safi","sidibennour","errachidia","ouarzazate","zagora","tinghir","midelt","rich","laayoune","dakhla","guelmim","tantan","sidifni","tarfaya","boujdour","smara",""]);
+app.patch("/api/contacts/:phone/ville", async (req, res) => {
+  const pool  = require("./db");
+  const phone = req.params.phone.replace(/\D/g,"");
+  const key   = phone.length > 9 ? phone.slice(-9) : phone;
+  const ville = (req.body.ville || "").toLowerCase().trim();
+  if (!VILLES_MAROC.has(ville)) return res.status(400).json({ error: "مدينة غير صالحة" });
+  try {
+    await pool.query("UPDATE contacts SET ville_maroc=? WHERE phone=?", [ville||null, key]);
+    res.json({ ok: true, ville: ville||null });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
 app.delete("/api/contacts/:phone", async (req, res) => {
   try {
     const pool = require("./db");
